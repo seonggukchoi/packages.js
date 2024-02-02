@@ -10,6 +10,8 @@ on:
         description: 'Release Comment'
         required: false
 
+permissions: write-all
+
 env:
   CI: true
   GH_TOKEN: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
