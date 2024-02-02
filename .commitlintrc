@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/commitlintrc.json",
+  "extends": [
+    "@commitlint/config-conventional"
+  ],
+  "rules": {
+    "scope-enum": [
+      2,
+      "always",
+      [
+        "config",
+        "packages",
+        "workflow"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "extends": "nx/presets/npm.json",
+  "npmScope": "@seonggukchoi",
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx/tasks-runners/default",
+      "options": {
+        "maxParallel": 100,
+        "cacheableOperations": ["build", "start", "lint", "test", "test:cov"],
+        "cacheDirectory": ".nx"
+      }
+    }
+  },
+  "targetDefaults": {
+    "build": { "dependsOn": ["^build"] },
+    "start": { "dependsOn": ["^build"] },
+    "lint": {},
+    "test": { "dependsOn": ["^build"] },
+    "test:cov": { "dependsOn": ["^build"] }
+  },
+  "affected": {
+    "defaultBase": "main"
+  }
+}

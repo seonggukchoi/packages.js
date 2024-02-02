@@ -1,0 +1,13 @@
+{
+  "conventionalCommits.scopes": ["config", "packages", "workflow"],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "editor.rulers": [140],
+  "files.insertFinalNewline": true,
+  "git.branchProtection": ["main", "beta"],
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "jest.autoRun": "off",
+  "typescript.updateImportsOnFileMove.enabled": "always"
+}

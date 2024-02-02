@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "vivaxy.vscode-conventional-commits",
+    "mikestead.dotenv",
+    "EditorConfig.EditorConfig",
+    "dbaeumer.vscode-eslint",
+    "DavidAnson.vscode-markdownlint",
+    "stringham.move-ts",
+    "nrwl.angular-console",
+    "pmneo.tsimporter",
+    "redhat.vscode-yaml"
+  ]
+}

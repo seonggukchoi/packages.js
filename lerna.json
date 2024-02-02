@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/lerna/schemas/lerna-schema.json",
+  "npmClient": "npm",
+  "version": "independent",
+  "useNx": true,
+  "packages": ["packages/*"],
+  "command": {
+    "version": {
+      "preid": "beta",
+      "conventionalCommits": true,
+      "createRelease": "github",
+      "ignoreChanges": ["*eslint*", "CHANGELOG*", "jest*", "README*", "tsconfig*"]
+    },
+    "publish": {
+      "conventionalCommits": true,
+      "preid": "beta",
+      "message": "chore(release): publish [skip ci]",
+      "createRelease": "github"
+    }
+  }
+}

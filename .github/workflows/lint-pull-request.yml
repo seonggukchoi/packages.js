@@ -1,0 +1,18 @@
+name: Validate PR
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+
+jobs:
+  validate:
+    name: Validate Pull Request
+    runs-on: [ubuntu-latest]
+
+    steps:
+      - name: Validate Pull Request
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

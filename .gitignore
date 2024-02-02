@@ -1,0 +1,8 @@
+.nx/
+coverage/
+dist/
+docker/
+node_modules/
+
+.env
+lerna-debug.log
