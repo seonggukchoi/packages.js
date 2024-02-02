@@ -81,6 +81,11 @@ jobs:
         continue-on-error: true
         run: npx nx affected --target=build
 
+      - name: Configure Git User
+        run: |
+          git config --global user.email "seonggukchoi.kr@gmail.com"
+          git config --global user.name "seonggukchoi"
+
       - name: Publish
         if: ${{ github.ref == 'refs/heads/main' }}
         run: npx lerna publish --yes
