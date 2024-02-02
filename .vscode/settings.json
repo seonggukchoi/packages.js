@@ -1,5 +1,5 @@
 {
-  "conventionalCommits.scopes": ["config", "packages", "workflow"],
+  "conventionalCommits.scopes": ["config", "packages", "workflow", "address"],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },

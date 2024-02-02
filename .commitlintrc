@@ -10,7 +10,8 @@
       [
         "config",
         "packages",
-        "workflow"
+        "workflow",
+        "address"
       ]
     ]
   }
