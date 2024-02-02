@@ -14,7 +14,7 @@
     "publish": {
       "conventionalCommits": true,
       "preid": "beta",
-      "message": "chore(release): publish [skip ci]",
+      "message": "chore: publish packages [skip ci]",
       "createRelease": "github"
     }
   }
