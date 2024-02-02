@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.0.5](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/phone@0.0.4...@seonggukchoi/phone@0.0.5) (2024-02-02)
+
+**Note:** Version bump only for package @seonggukchoi/phone
+
 ## [0.0.4](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/phone@0.0.3...@seonggukchoi/phone@0.0.4) (2024-02-02)
 
 **Note:** Version bump only for package @seonggukchoi/phone
