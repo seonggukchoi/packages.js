@@ -1,4 +1,4 @@
 src/
-.eslintrc.js
+.eslintrc.*
 jest.config.ts
 tsconfig.*
