@@ -17,6 +17,9 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rimraf dist && tsc -p tsconfig.build.json",
     "lint": "eslint --fix .",
