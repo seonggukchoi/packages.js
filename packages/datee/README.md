@@ -1,6 +1,6 @@
 # @seonggukchoi/datee
 
-[Datee](https://github.com/seonggukchoi/packages.js/packages/datee) is a simple and lightweight date library
+[Datee](https://github.com/seonggukchoi/packages.js/tree/main/packages/datee) is a simple and lightweight date library
 that extends a `Date` class of native JavaScript,
 and provide some useful methods like [day.js](https://day.js.org/).
 
