@@ -8,11 +8,12 @@
       2,
       "always",
       [
-        "config",
-        "packages",
-        "workflow",
         "address",
-        "phone"
+        "config",
+        "datee",
+        "packages",
+        "phone",
+        "workflow"
       ]
     ]
   }
