@@ -1,4 +1,0 @@
-src/
-.eslintrc.*
-jest.config.ts
-tsconfig.*
