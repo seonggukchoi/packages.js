@@ -1,7 +1,6 @@
 {
   "name": "@seonggukchoi/types",
   "version": "0.0.1",
-  "private": true,
   "author": "seonggukchoi",
   "license": "MIT",
   "engineStrict": true,
@@ -9,8 +8,7 @@
     "node": ">=18.0.0"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "restricted"
+    "access": "public"
   },
   "repository": {
     "type": "git",
