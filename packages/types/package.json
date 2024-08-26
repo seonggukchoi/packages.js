@@ -1,0 +1,33 @@
+{
+  "name": "@seonggukchoi/types",
+  "version": "0.0.0",
+  "private": true,
+  "author": "seonggukchoi",
+  "license": "MIT",
+  "engineStrict": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seonggukchoi/packages.js",
+    "directory": "packages/types"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "lint": "eslint --fix .",
+    "test": "jest",
+    "test:cov": "jest --coverage"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
