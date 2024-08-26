@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/types",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "author": "seonggukchoi",
   "license": "MIT",
@@ -27,7 +27,5 @@
     "lint": "eslint --fix .",
     "test": "jest",
     "test:cov": "jest --coverage"
-  },
-  "dependencies": {},
-  "devDependencies": {}
+  }
 }
