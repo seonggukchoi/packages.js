@@ -153,6 +153,7 @@
         "pathGroupsExcludedImportTypes": []
       }
     ],
+    "object-shorthand": "warn",
     "prettier/prettier": "warn",
     "unused-imports/no-unused-imports": "warn"
   },
