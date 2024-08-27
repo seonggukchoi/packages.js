@@ -1,0 +1,1 @@
+# @seonggukchoi/strict-class-transformer

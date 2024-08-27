@@ -1,0 +1,33 @@
+{
+  "name": "@seonggukchoi/strict-class-transformer",
+  "version": "0.0.0",
+  "author": "seonggukchoi",
+  "license": "MIT",
+  "engineStrict": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seonggukchoi/packages.js",
+    "directory": "packages/strict-class-transformer"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "lint": "eslint --fix .",
+    "test": "jest",
+    "test:cov": "jest --coverage"
+  },
+  "dependencies": {
+    "@seonggukchoi/types": "*",
+    "class-transformer": "^0.5.1"
+  }
+}
