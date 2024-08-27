@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/utility",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "author": "seonggukchoi",
   "license": "MIT",
   "engineStrict": true,
@@ -25,7 +25,5 @@
     "lint": "eslint --fix .",
     "test": "jest",
     "test:cov": "jest --coverage"
-  },
-  "dependencies": {},
-  "devDependencies": {}
+  }
 }
