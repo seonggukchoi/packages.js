@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/nestjs-contextual-pino",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "author": "seonggukchoi",
   "license": "MIT",
   "engineStrict": true,
