@@ -15,6 +15,7 @@
         "phone",
         "strict-class-transformer",
         "types",
+        "utility",
         "workflow"
       ]
     ]
