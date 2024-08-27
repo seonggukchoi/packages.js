@@ -11,6 +11,7 @@
         "address",
         "config",
         "datee",
+        "nestjs-contextual-pino",
         "packages",
         "phone",
         "strict-class-transformer",
