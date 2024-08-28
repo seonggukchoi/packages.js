@@ -12,6 +12,7 @@
         "config",
         "datee",
         "nestjs-contextual-pino",
+        "nestjs-transactional-typeorm",
         "packages",
         "phone",
         "strict-class-transformer",
