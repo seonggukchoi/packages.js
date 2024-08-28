@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/nestjs-transactional-typeorm",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "author": "seonggukchoi",
   "license": "MIT",
   "engineStrict": true,
@@ -38,6 +38,6 @@
   "devDependencies": {
     "@nestjs/cli": "^10.4.4",
     "@nestjs/testing": "^10.4.1",
-    "@seonggukchoi/types": "*"
+    "@seonggukchoi/types": "^0.1.0"
   }
 }
