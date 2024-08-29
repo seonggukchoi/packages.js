@@ -7,14 +7,14 @@
   "license": "MIT",
   "engineStrict": true,
   "engines": {
-    "npm": ">=9.0.0",
-    "node": ">=18.0.0"
+    "npm": ">=10.0.0",
+    "node": ">=20.0.0"
   },
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "prepare": "if [ \"$NODE_ENV\" != production ]; then husky install; fi",
+    "prepare": "if [ \"$NODE_ENV\" != production ]; then husky; fi",
     "upgrade": "ncu && npm install",
     "build": "nx run-many --target=build --all",
     "test": "nx run-many --target=test --all",
