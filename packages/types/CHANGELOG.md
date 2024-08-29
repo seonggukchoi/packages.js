@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.2.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/types@0.1.1...@seonggukchoi/types@0.2.0) (2024-08-29)
+
+### Features
+
+- **types:** add truthy/falsy value types ([32d2618](https://github.com/seonggukchoi/packages.js/commit/32d2618c9ca3666ba123101689189a1fbed876f3))
+
 ## [0.1.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/types@0.1.0...@seonggukchoi/types@0.1.1) (2024-08-29)
 
 **Note:** Version bump only for package @seonggukchoi/types

@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/regex",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "author": "seonggukchoi",
   "license": "MIT",
   "engineStrict": true,
@@ -27,6 +27,6 @@
     "test:cov": "jest --coverage"
   },
   "dependencies": {
-    "@seonggukchoi/types": "^0.1.1"
+    "@seonggukchoi/types": "^0.2.0"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/strict-class-transformer",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "author": "seonggukchoi",
   "license": "MIT",
   "engineStrict": true,
@@ -27,7 +27,7 @@
     "test:cov": "jest --coverage"
   },
   "dependencies": {
-    "@seonggukchoi/types": "^0.1.1",
+    "@seonggukchoi/types": "^0.2.0",
     "class-transformer": "^0.5.1"
   }
 }
