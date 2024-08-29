@@ -15,6 +15,7 @@
         "nestjs-transactional-typeorm",
         "packages",
         "phone",
+        "regex",
         "strict-class-transformer",
         "types",
         "utility",
