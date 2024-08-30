@@ -19,6 +19,7 @@
     "upgrade": "ncu && npm install",
     "build": "nx run-many --target=build --all",
     "test": "nx run-many --target=test --all",
+    "test:cov": "nx run-many --target=test:cov --all",
     "lint": "nx run-many --target=lint --all"
   },
   "devDependencies": {
