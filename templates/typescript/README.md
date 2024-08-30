@@ -1,1 +1,1 @@
-# @seonggukchoi/{{PACKAGE_NAME}}
+# @seonggukchoi/typescript-template

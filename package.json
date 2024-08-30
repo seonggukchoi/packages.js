@@ -11,7 +11,8 @@
     "node": ">=20.0.0"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "templates/*"
   ],
   "scripts": {
     "prepare": "if [ \"$NODE_ENV\" != production ]; then husky; fi",

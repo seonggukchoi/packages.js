@@ -9,6 +9,7 @@
     "phone",
     "regex",
     "strict-class-transformer",
+    "templates",
     "types",
     "utility",
     "workflow"

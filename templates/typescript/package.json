@@ -1,5 +1,6 @@
 {
-  "name": "@seonggukchoi/{{PACKAGE_NAME}}",
+  "name": "@seonggukchoi/typescript-template",
+  "private": true,
   "version": "0.0.0",
   "author": "seonggukchoi",
   "license": "MIT",
@@ -13,7 +14,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/seonggukchoi/packages.js",
-    "directory": "packages/{{PACKAGE_NAME}}"
+    "directory": "packages/typescript-template"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.js",

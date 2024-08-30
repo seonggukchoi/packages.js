@@ -4,9 +4,9 @@ import type { JestConfigWithTsJest } from 'ts-jest';
 
 const config: JestConfigWithTsJest = {
   ...baseConfig,
-  displayName: '@seonggukchoi/{{PACKAGE_NAME}}',
+  displayName: '@seonggukchoi/typescript-template',
   rootDir: '../../',
-  testRegex: `packages/{{PACKAGE_NAME}}/src/${baseConfig.testRegex}`,
+  testRegex: `packages/typescript-template/src/${baseConfig.testRegex}`,
 };
 
 export default config;
