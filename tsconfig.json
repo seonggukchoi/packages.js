@@ -6,8 +6,8 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "incremental": true,
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "outDir": "./dist",
@@ -17,7 +17,7 @@
     "sourceMap": true,
     "strict": true,
     "target": "ESNext",
-    "types": ["node", "jest"],
+    "types": ["node", "jest"]
   },
-  "exclude": ["node_modules", "dist"],
+  "exclude": ["node_modules", "dist"]
 }
