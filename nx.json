@@ -1,4 +1,6 @@
 {
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "tui": { "enabled": false },
   "extends": "nx/presets/npm.json",
   "npmScope": "@seonggukchoi",
   "tasksRunnerOptions": {
@@ -17,8 +19,5 @@
     "lint": {},
     "test": { "dependsOn": ["^build"] },
     "test:cov": { "dependsOn": ["^build"] }
-  },
-  "affected": {
-    "defaultBase": "main"
   }
 }

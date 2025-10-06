@@ -27,17 +27,25 @@
     "test:cov": "jest --coverage"
   },
   "dependencies": {
-    "@nestjs/common": "^10.4.1",
-    "@nestjs/typeorm": "^10.0.2",
-    "mysql2": "^3.11.0",
-    "pg": "^8.12.0",
-    "sqlite3": "^5.1.7",
-    "typeorm": "^0.3.20",
     "typeorm-transactional": "^0.5.0"
   },
   "devDependencies": {
-    "@nestjs/cli": "^10.4.4",
-    "@nestjs/testing": "^10.4.1",
-    "@seonggukchoi/types": "^0.2.0"
+    "@nestjs/cli": "^11.0.10",
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/testing": "^11.1.6",
+    "@nestjs/typeorm": "^11.0.0",
+    "@seonggukchoi/types": "^0.2.0",
+    "mysql2": "^3.15.1",
+    "pg": "^8.16.3",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.27"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/typeorm": "^11.0.0",
+    "mysql2": "^3.15.1",
+    "pg": "^8.16.3",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.27"
   }
 }
