@@ -27,22 +27,21 @@
     "test:cov": "jest --coverage"
   },
   "dependencies": {
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
     "@toss/nestjs-aop": "^2.1.7",
+    "nestjs-cls": "^6.0.1",
     "nestjs-pino": "^4.4.1",
     "pino-http": "^10.5.0",
-    "pino-pretty": "^13.1.1",
-    "rxjs": "^7.8.2"
+    "pino-pretty": "^13.1.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.10",
-    "@nestjs/testing": "^11.1.6",
-    "@nestjs/common": "^11.1.6",
-    "nestjs-cls": "^6.0.1",
-    "pino-pretty": "^13.1.1",
-    "rxjs": "^7.8.2"
+    "@nestjs/testing": "^11.1.6"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
     "nestjs-cls": "^6.0.1",
     "pino-pretty": "^13.1.1",
     "rxjs": "^7.8.2"
