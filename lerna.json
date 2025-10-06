@@ -9,7 +9,7 @@
       "preid": "beta",
       "conventionalCommits": true,
       "createRelease": "github",
-      "ignoreChanges": ["*eslint*", "CHANGELOG*", "jest*", "README*", "tsconfig*"]
+      "ignoreChanges": ["*eslint*", "CHANGELOG*", "jest*", "README*"]
     },
     "publish": {
       "conventionalCommits": true,
