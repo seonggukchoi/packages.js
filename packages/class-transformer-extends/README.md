@@ -1,0 +1,1 @@
+# @seonggukchoi/class-transformer-extends
