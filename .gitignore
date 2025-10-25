@@ -3,6 +3,7 @@ coverage/
 dist/
 docker/
 node_modules/
+.tsbuildinfo
 
 .env
 lerna-debug.log
