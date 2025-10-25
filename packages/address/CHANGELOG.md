@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/address@0.1.0...@seonggukchoi/address@0.1.1) (2025-10-25)
+
+**Note:** Version bump only for package @seonggukchoi/address
+
 # [0.1.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/address@0.0.7...@seonggukchoi/address@0.1.0) (2025-10-06)
 
 ### Features

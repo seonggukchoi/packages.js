@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/nestjs-transactional-typeorm",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "author": "seonggukchoi",
   "license": "MIT",
   "engineStrict": true,
@@ -38,10 +38,10 @@
     "@seonggukchoi/types": "workspace:*",
     "mysql2": "^3.15.1",
     "pg": "^8.16.3",
-    "sqlite3": "^5.1.7",
-    "typeorm": "^0.3.27",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.27"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.1.6",
@@ -49,9 +49,9 @@
     "@nestjs/typeorm": "^11.0.0",
     "mysql2": "^3.15.1",
     "pg": "^8.16.3",
-    "sqlite3": "^5.1.7",
-    "typeorm": "^0.3.27",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.27"
   }
 }
