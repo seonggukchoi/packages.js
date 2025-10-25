@@ -16,7 +16,7 @@
     "directory": "packages/nestjs-contextual-pino"
   },
   "main": "dist/index.js",
-  "types": "dist/index.d.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
