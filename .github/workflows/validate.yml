@@ -25,19 +25,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
+          cache: "pnpm"
+          cache-dependency-path: "**/pnpm-lock.yaml"
 
-      - name: Cache NPM and node_modules
-        id: npm-cache
+      - name: Cache Pnpm and node_modules
+        id: pnpm-cache
         uses: actions/cache@v4
         env:
-          cache-name: npm-cache
+          cache-name: pnpm
         with:
           path: |
-            ~/.npm
+            ~/.pnpm
             **/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
 
@@ -56,12 +56,12 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Install dependencies
-        if: steps.npm-cache.outputs.cache-hit != 'true'
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
         run: |
-          npm ci
+          pnpm install
 
       - name: Build
-        run: npx nx affected --target=build
+        run: pnpm nx affected --target=build
 
   test:
     name: Test
@@ -77,19 +77,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
+          cache: "pnpm"
+          cache-dependency-path: "**/pnpm-lock.yaml"
 
-      - name: Cache NPM and node_modules
-        id: npm-cache
+      - name: Cache Pnpm and node_modules
+        id: pnpm-cache
         uses: actions/cache@v4
         env:
-          cache-name: npm-cache
+          cache-name: pnpm
         with:
           path: |
-            ~/.npm
+            ~/.pnpm
             **/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
 
@@ -108,12 +108,12 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Install dependencies
-        if: steps.npm-cache.outputs.cache-hit != 'true'
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
         run: |
-          npm ci
+          pnpm install
 
       - name: Test
-        run: npx nx affected --target=test
+        run: pnpm nx affected --target=test
 
   lint:
     name: Lint
@@ -129,19 +129,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
+          cache: "pnpm"
+          cache-dependency-path: "**/pnpm-lock.yaml"
 
-      - name: Cache NPM and node_modules
-        id: npm-cache
+      - name: Cache Pnpm and node_modules
+        id: pnpm-cache
         uses: actions/cache@v4
         env:
-          cache-name: npm-cache
+          cache-name: pnpm
         with:
           path: |
-            ~/.npm
+            ~/.pnpm
             **/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
 
@@ -160,9 +160,9 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Install dependencies
-        if: steps.npm-cache.outputs.cache-hit != 'true'
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
         run: |
-          npm ci
+          pnpm install
 
       - name: Lint
-        run: npx nx affected --target=lint
+        run: pnpm nx affected --target=lint

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       comment:
-        description: 'Release Comment'
+        description: "Release Comment"
         required: false
 
 permissions: write-all
@@ -38,19 +38,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
+          cache: "pnpm"
+          cache-dependency-path: "**/pnpm-lock.yaml"
 
-      - name: Cache NPM and node_modules
-        id: npm-cache
+      - name: Cache Pnpm and node_modules
+        id: pnpm-cache
         uses: actions/cache@v4
         env:
-          cache-name: npm-cache
+          cache-name: pnpm-cache
         with:
           path: |
-            ~/.npm
+            ~/.pnpm
             **/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
 
@@ -69,17 +69,17 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Install dependencies
-        if: steps.npm-cache.outputs.cache-hit != 'true'
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
         run: |
-          npm ci
+          pnpm install
 
-      - name: Prepare NPM
-        if: steps.npm-cache.outputs.cache-hit == 'true'
-        run: npm run prepare
+      - name: Prepare Pnpm
+        if: steps.pnpm-cache.outputs.cache-hit == 'true'
+        run: pnpm prepare
 
       - name: Build
         continue-on-error: true
-        run: npx nx affected --target=build
+        run: pnpm nx affected --target=build
 
       - name: Configure Git User
         run: |
@@ -88,8 +88,8 @@ jobs:
 
       - name: Publish
         if: ${{ github.ref == 'refs/heads/main' }}
-        run: npx lerna publish --yes
+        run: pnpm lerna publish --yes
 
       - name: Publish (Beta)
         if: ${{ github.ref == 'refs/heads/beta' }}
-        run: npx lerna publish --conventional-prerelease --yes
+        run: pnpm lerna publish --conventional-prerelease --yes
