@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.3.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.2.1...@seonggukchoi/opencode-notifier@0.3.0) (2026-03-05)
+
+### Features
+
+- **opencode-notifier:** add i18n support with config file ([7894651](https://github.com/seonggukchoi/packages.js/commit/789465169b7f691216f8e668ac9af85eacdb0283))
+
 ## [0.2.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.2.0...@seonggukchoi/opencode-notifier@0.2.1) (2026-03-05)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-notifier
