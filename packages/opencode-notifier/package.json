@@ -1,0 +1,51 @@
+{
+  "name": "@seonggukchoi/opencode-notifier",
+  "version": "0.0.0",
+  "description": "OpenCode terminal notification plugin for macOS using terminal-notifier",
+  "author": "seonggukchoi",
+  "license": "MIT",
+  "type": "module",
+  "engineStrict": true,
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seonggukchoi/packages.js",
+    "directory": "packages/opencode-notifier"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "notification",
+    "terminal-notifier",
+    "macos"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rimraf dist .tsbuildinfo && tsc -p tsconfig.build.json",
+    "lint": "eslint --fix .",
+    "test": "jest",
+    "test:cov": "jest --coverage"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.2.16",
+    "@types/node": "^25.3.3"
+  }
+}
