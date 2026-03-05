@@ -1,13 +1,18 @@
-import baseConfig, { getDefaultCoverageDirectory, getDefaultTestRegex } from '../../jest.config';
-
 import type { JestConfigWithTsJest } from 'ts-jest';
 
 const config: JestConfigWithTsJest = {
-  ...baseConfig,
+  moduleFileExtensions: ['js', 'json', 'ts'],
+  testEnvironment: 'node',
   rootDir: './',
-  testRegex: getDefaultTestRegex(__dirname),
-  coverageDirectory: getDefaultCoverageDirectory(__dirname),
+  testRegex: 'src/.*\\.(e2e-)?(spec|test)\\.[tj]sx?$',
+  coverageDirectory: './coverage',
   transform: { '^.+\\.[tj]sx?$': ['ts-jest', { tsconfig: './tsconfig.json', isolatedModules: true }] },
+  passWithNoTests: true,
+  silent: false,
+  detectOpenHandles: true,
+  forceExit: true,
+  clearMocks: true,
+  resetMocks: true,
 };
 
 export default config;
