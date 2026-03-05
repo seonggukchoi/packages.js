@@ -1,29 +1,30 @@
-import type { NotifyFunction } from '../types.js';
+import type { Messages, NotifyFunction } from '../types.js';
 
-export function createToolBeforeHandler(notify: NotifyFunction) {
+export function createToolBeforeHandler(notify: NotifyFunction, messages: Messages) {
   return async (input: unknown, output: unknown) => {
     const toolName = ((input as Record<string, unknown>).tool as string) || 'tool';
     const args = ((output as Record<string, unknown>).args as Record<string, unknown>) || {};
 
     if (toolName === 'question') {
       const questions = (args.questions as Array<{ question?: string }>) || [];
-      const firstQ = questions[0]?.question || 'Decision required';
-      notify('🙋 OpenCode', `Decision needed: ${firstQ}`, 'Glass');
+      const firstQ = questions[0]?.question || messages.decisionRequired;
+      notify('🙋 OpenCode', messages.decisionNeeded(firstQ), 'Glass');
     } else if (toolName.toLowerCase() === 'task') {
-      notify('🤖 OpenCode', `Subagent started: ${(args.description as string) || 'task delegation'}`, 'Submarine');
+      const description = (args.description as string) || 'task delegation';
+      notify('🤖 OpenCode', messages.subagentStarted(description), 'Submarine');
     } else if (toolName.startsWith('mcp_')) {
-      notify('🔧 OpenCode', `${toolName.replace('mcp_', '')} executing...`, 'Tink');
+      notify('🔧 OpenCode', messages.toolExecuting(toolName.replace('mcp_', '')), 'Tink');
     }
   };
 }
 
-export function createToolAfterHandler(notify: NotifyFunction) {
+export function createToolAfterHandler(notify: NotifyFunction, messages: Messages) {
   return async (input: unknown) => {
     const toolName = ((input as Record<string, unknown>).tool as string) || 'tool';
     if (toolName.toLowerCase() === 'task') {
-      notify('🤖 OpenCode', 'Subagent task completed', 'Hero');
+      notify('🤖 OpenCode', messages.subagentCompleted, 'Hero');
     } else if (toolName.startsWith('mcp_')) {
-      notify('✓ OpenCode', `${toolName.replace('mcp_', '')} completed`, 'Blow');
+      notify('✓ OpenCode', messages.toolCompleted(toolName.replace('mcp_', '')), 'Blow');
     }
   };
 }
