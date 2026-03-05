@@ -1,8 +1,7 @@
 import { spawn } from 'node:child_process';
 
 export function sendNotification(context: string, icon: string, title: string, message: string, sound = 'default'): void {
-  const fullMessage = `${context}: ${message}`;
-  const args = ['-title', title, '-message', fullMessage, '-sound', sound];
+  const args = ['-title', title, '-subtitle', context, '-message', message, '-sound', sound];
   if (icon) {
     args.push('-contentImage', icon);
   }
