@@ -13,6 +13,7 @@
         "datee",
         "nestjs-contextual-pino",
         "nestjs-transactional-typeorm",
+        "opencode-notifier",
         "packages",
         "phone",
         "regex",
