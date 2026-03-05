@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.3.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.3.0...@seonggukchoi/opencode-notifier@0.3.1) (2026-03-05)
+
+### Bug Fixes
+
+- **opencode-notifier:** use -subtitle for context to prevent message truncation ([1aa4f49](https://github.com/seonggukchoi/packages.js/commit/1aa4f490950db2f27518dcd4042c0e25efee642e))
+- **opencode-notifier:** wrap terminal-notifier args in quotes for macOS compatibility ([52c7803](https://github.com/seonggukchoi/packages.js/commit/52c7803a527c345d72e98732986936006f2d4ea6))
+
 # [0.3.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.2.1...@seonggukchoi/opencode-notifier@0.3.0) (2026-03-05)
 
 ### Features
