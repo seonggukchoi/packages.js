@@ -5,7 +5,7 @@ export type EventKey =
   | 'sessionCompleted'
   | 'sessionError'
   | 'sessionCompacted'
-  | 'permissionChanged'
+  | 'permissionRequested'
   | 'decisionNeeded'
   | 'subagentStarted'
   | 'subagentCompleted'
@@ -27,7 +27,7 @@ export interface Messages {
   sessionCompleted: string;
   sessionError: string;
   sessionCompacted: string;
-  permissionChanged: string;
+  permissionRequested: string;
   decisionRequired: string;
   decisionNeeded: (question: string) => string;
   subagentStarted: (description: string) => string;
