@@ -17,7 +17,7 @@ export const OpencodeNotifier: Plugin = async ({ directory }) => {
   ensureIconCache();
 
   const termInfo = detectTerminal(directory);
-  const context = `[${termInfo.app}] ${termInfo.projectName}`;
+  const context = termInfo.projectName;
 
   const notify = (title: string, message: string, sound?: string): void => {
     sendNotification(context, termInfo.icon, title, message, sound);
