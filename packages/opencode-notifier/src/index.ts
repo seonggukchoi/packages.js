@@ -29,6 +29,9 @@ export const OpencodeNotifier: Plugin = async ({ directory }) => {
 
   return {
     event: createEventHandler(notify, messages),
+    'permission.ask': async () => {
+      notify('permissionChanged', '🔐 OpenCode', messages.permissionChanged, 'Glass');
+    },
     'tool.execute.before': createToolBeforeHandler(notify, messages),
     'tool.execute.after': createToolAfterHandler(notify, messages),
   };

@@ -76,13 +76,18 @@ Omitted events default to `{ "enabled": true }` with the i18n message.
 
 ### Session events
 
-| Event                | Title       | Sound | Description            |
-| -------------------- | ----------- | ----- | ---------------------- |
-| `session.status`     | ⚡ OpenCode | Pop   | Session started (busy) |
-| `session.idle`       | ✅ OpenCode | Hero  | Session completed      |
-| `session.error`      | ❌ OpenCode | Basso | An error occurred      |
-| `session.compacted`  | 📦 OpenCode | Purr  | Session compacted      |
-| `permission.updated` | 🔐 OpenCode | Glass | Permission changed     |
+| Event               | Title       | Sound | Description            |
+| ------------------- | ----------- | ----- | ---------------------- |
+| `session.status`    | ⚡ OpenCode | Pop   | Session started (busy) |
+| `session.idle`      | ✅ OpenCode | Hero  | Session completed      |
+| `session.error`     | ❌ OpenCode | Basso | An error occurred      |
+| `session.compacted` | 📦 OpenCode | Purr  | Session compacted      |
+
+### Permission events
+
+| Hook             | Title       | Sound | Description               |
+| ---------------- | ----------- | ----- | ------------------------- |
+| `permission.ask` | 🔐 OpenCode | Glass | Permission approval asked |
 
 ### Tool events
 
