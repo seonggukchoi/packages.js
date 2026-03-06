@@ -6,21 +6,21 @@ export function createEventHandler(notify: NotifyFunction, messages: Messages) {
       case 'session.status': {
         const status = event.properties?.status as { type: string } | undefined;
         if (status?.type === 'busy') {
-          notify('⚡ OpenCode', messages.sessionStarted, 'Pop');
+          notify('sessionStarted', '⚡ OpenCode', messages.sessionStarted, 'Pop');
         }
         break;
       }
       case 'session.idle':
-        notify('✅ OpenCode', messages.sessionCompleted, 'Hero');
+        notify('sessionCompleted', '✅ OpenCode', messages.sessionCompleted, 'Hero');
         break;
       case 'session.error':
-        notify('❌ OpenCode', messages.sessionError, 'Basso');
+        notify('sessionError', '❌ OpenCode', messages.sessionError, 'Basso');
         break;
       case 'session.compacted':
-        notify('📦 OpenCode', messages.sessionCompacted, 'Purr');
+        notify('sessionCompacted', '📦 OpenCode', messages.sessionCompacted, 'Purr');
         break;
       case 'permission.updated':
-        notify('🔐 OpenCode', messages.permissionChanged, 'Glass');
+        notify('permissionChanged', '🔐 OpenCode', messages.permissionChanged, 'Glass');
         break;
       default:
         break;
