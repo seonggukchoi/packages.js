@@ -29,15 +29,48 @@ Create a configuration file at `~/.config/opencode/opencode-notifier.json`:
 
 ```json
 {
-  "locale": "ko"
+  "locale": "ko",
+  "events": {
+    "toolExecuting": { "enabled": false },
+    "toolCompleted": { "enabled": false },
+    "sessionCompleted": { "message": "All done!" },
+    "decisionNeeded": { "message": "Need input: {{question}}" }
+  }
 }
 ```
 
 | Option   | Type     | Default | Description                            |
 | -------- | -------- | ------- | -------------------------------------- |
 | `locale` | `string` | `"en"`  | Notification language (`"en"`, `"ko"`) |
+| `events` | `object` | —       | Per-event configuration (see below)    |
 
 If the config file is missing or contains an invalid locale, the plugin falls back to English.
+
+### Event configuration
+
+Each event can be configured with:
+
+| Property  | Type      | Default | Description                       |
+| --------- | --------- | ------- | --------------------------------- |
+| `enabled` | `boolean` | `true`  | Whether to send this notification |
+| `message` | `string`  | —       | Custom message (overrides i18n)   |
+
+Available event keys:
+
+| Key                 | Description                     | Template variable |
+| ------------------- | ------------------------------- | ----------------- |
+| `sessionStarted`    | Session started (busy)          | —                 |
+| `sessionCompleted`  | Session completed               | —                 |
+| `sessionError`      | An error occurred               | —                 |
+| `sessionCompacted`  | Session compacted               | —                 |
+| `permissionChanged` | Permission changed              | —                 |
+| `decisionNeeded`    | Question tool (decision needed) | `{{question}}`    |
+| `subagentStarted`   | Subagent task started           | `{{description}}` |
+| `subagentCompleted` | Subagent task completed         | —                 |
+| `toolExecuting`     | MCP tool executing              | `{{toolName}}`    |
+| `toolCompleted`     | MCP tool completed              | `{{toolName}}`    |
+
+Omitted events default to `{ "enabled": true }` with the i18n message.
 
 ## Notifications
 
