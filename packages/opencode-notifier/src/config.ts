@@ -13,7 +13,7 @@ const EVENT_KEYS: readonly EventKey[] = [
   'sessionCompleted',
   'sessionError',
   'sessionCompacted',
-  'permissionChanged',
+  'permissionRequested',
   'decisionNeeded',
   'subagentStarted',
   'subagentCompleted',

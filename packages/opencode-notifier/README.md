@@ -57,18 +57,18 @@ Each event can be configured with:
 
 Available event keys:
 
-| Key                 | Description                     | Template variable |
-| ------------------- | ------------------------------- | ----------------- |
-| `sessionStarted`    | Session started (busy)          | —                 |
-| `sessionCompleted`  | Session completed               | —                 |
-| `sessionError`      | An error occurred               | —                 |
-| `sessionCompacted`  | Session compacted               | —                 |
-| `permissionChanged` | Permission changed              | —                 |
-| `decisionNeeded`    | Question tool (decision needed) | `{{question}}`    |
-| `subagentStarted`   | Subagent task started           | `{{description}}` |
-| `subagentCompleted` | Subagent task completed         | —                 |
-| `toolExecuting`     | MCP tool executing              | `{{toolName}}`    |
-| `toolCompleted`     | MCP tool completed              | `{{toolName}}`    |
+| Key                   | Description                     | Template variable |
+| --------------------- | ------------------------------- | ----------------- |
+| `sessionStarted`      | Session started (busy)          | —                 |
+| `sessionCompleted`    | Session completed               | —                 |
+| `sessionError`        | An error occurred               | —                 |
+| `sessionCompacted`    | Session compacted               | —                 |
+| `permissionRequested` | Permission approval requested   | —                 |
+| `decisionNeeded`      | Question tool (decision needed) | `{{question}}`    |
+| `subagentStarted`     | Subagent task started           | `{{description}}` |
+| `subagentCompleted`   | Subagent task completed         | —                 |
+| `toolExecuting`       | MCP tool executing              | `{{toolName}}`    |
+| `toolCompleted`       | MCP tool completed              | `{{toolName}}`    |
 
 Omitted events default to `{ "enabled": true }` with the i18n message.
 

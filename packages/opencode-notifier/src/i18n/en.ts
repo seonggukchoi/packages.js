@@ -5,7 +5,7 @@ export const en: Messages = {
   sessionCompleted: 'Session completed.',
   sessionError: 'An error occurred.',
   sessionCompacted: 'Session compacted.',
-  permissionChanged: 'Permission changed.',
+  permissionRequested: 'Permission requested.',
   decisionRequired: 'Decision required.',
   decisionNeeded: (question: string) => `Decision needed: ${question}.`,
   subagentStarted: (description: string) => `Subagent started: ${description}.`,

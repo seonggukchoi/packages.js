@@ -1,5 +1,6 @@
 import { loadConfig } from './config.js';
 import { createEventHandler } from './handlers/event-handler.js';
+import { createPermissionHandler } from './handlers/permission-handler.js';
 import { createToolAfterHandler, createToolBeforeHandler } from './handlers/tool-handler.js';
 import { getMessages } from './i18n/index.js';
 import { ensureIconCache } from './icon.js';
@@ -29,9 +30,7 @@ export const OpencodeNotifier: Plugin = async ({ directory }) => {
 
   return {
     event: createEventHandler(notify, messages),
-    'permission.ask': async () => {
-      notify('permissionChanged', '🔐 OpenCode', messages.permissionChanged, 'Glass');
-    },
+    'permission.ask': createPermissionHandler(notify, messages),
     'tool.execute.before': createToolBeforeHandler(notify, messages),
     'tool.execute.after': createToolAfterHandler(notify, messages),
   };
