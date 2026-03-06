@@ -85,9 +85,9 @@ Omitted events default to `{ "enabled": true }` with the i18n message.
 
 ### Permission events
 
-| Hook             | Title       | Sound | Description               |
-| ---------------- | ----------- | ----- | ------------------------- |
-| `permission.ask` | 🔐 OpenCode | Glass | Permission approval asked |
+| Event              | Title       | Sound | Description               |
+| ------------------ | ----------- | ----- | ------------------------- |
+| `permission.asked` | 🔐 OpenCode | Glass | Permission approval asked |
 
 ### Tool events
 
