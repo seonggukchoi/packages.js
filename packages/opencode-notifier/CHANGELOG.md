@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.3](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.4.2...@seonggukchoi/opencode-notifier@0.4.3) (2026-03-06)
+
+### Bug Fixes
+
+- **opencode-notifier:** add permission.asked event to event handler ([2b9d3e7](https://github.com/seonggukchoi/packages.js/commit/2b9d3e788eeaddd1872615e497cf2b1b9fbc468b))
+- **opencode-notifier:** remove unused permission.ask hook and update docs ([2c945d4](https://github.com/seonggukchoi/packages.js/commit/2c945d4e3b92d38c16072c96fe5bf09c75b9cec2))
+
 ## [0.4.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.4.1...@seonggukchoi/opencode-notifier@0.4.2) (2026-03-06)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-notifier
