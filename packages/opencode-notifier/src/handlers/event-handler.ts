@@ -19,9 +19,6 @@ export function createEventHandler(notify: NotifyFunction, messages: Messages) {
       case 'session.compacted':
         notify('sessionCompacted', '📦 OpenCode', messages.sessionCompacted, 'Purr');
         break;
-      case 'permission.updated':
-        notify('permissionChanged', '🔐 OpenCode', messages.permissionChanged, 'Glass');
-        break;
       default:
         break;
     }
