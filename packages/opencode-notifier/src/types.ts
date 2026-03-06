@@ -1,7 +1,25 @@
 export type Locale = 'en' | 'ko';
 
+export type EventKey =
+  | 'sessionStarted'
+  | 'sessionCompleted'
+  | 'sessionError'
+  | 'sessionCompacted'
+  | 'permissionChanged'
+  | 'decisionNeeded'
+  | 'subagentStarted'
+  | 'subagentCompleted'
+  | 'toolExecuting'
+  | 'toolCompleted';
+
+export interface EventOptions {
+  enabled: boolean;
+  message?: string;
+}
+
 export interface NotifierConfig {
   locale: Locale;
+  events: Record<EventKey, EventOptions>;
 }
 
 export interface Messages {
@@ -24,4 +42,4 @@ export interface TerminalInfo {
   icon: string;
 }
 
-export type NotifyFunction = (title: string, message: string, sound?: string) => void;
+export type NotifyFunction = (eventKey: EventKey, title: string, message: string, sound?: string) => void;

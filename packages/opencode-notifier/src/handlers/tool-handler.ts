@@ -8,12 +8,12 @@ export function createToolBeforeHandler(notify: NotifyFunction, messages: Messag
     if (toolName === 'question') {
       const questions = (args.questions as Array<{ question?: string }>) || [];
       const firstQ = questions[0]?.question || messages.decisionRequired;
-      notify('🙋 OpenCode', messages.decisionNeeded(firstQ), 'Glass');
+      notify('decisionNeeded', '🙋 OpenCode', messages.decisionNeeded(firstQ), 'Glass');
     } else if (toolName.toLowerCase() === 'task') {
       const description = (args.description as string) || 'task delegation';
-      notify('🤖 OpenCode', messages.subagentStarted(description), 'Submarine');
+      notify('subagentStarted', '🤖 OpenCode', messages.subagentStarted(description), 'Submarine');
     } else if (toolName.startsWith('mcp_')) {
-      notify('🔧 OpenCode', messages.toolExecuting(toolName.replace('mcp_', '')), 'Tink');
+      notify('toolExecuting', '🔧 OpenCode', messages.toolExecuting(toolName.replace('mcp_', '')), 'Tink');
     }
   };
 }
@@ -22,9 +22,9 @@ export function createToolAfterHandler(notify: NotifyFunction, messages: Message
   return async (input: unknown) => {
     const toolName = ((input as Record<string, unknown>).tool as string) || 'tool';
     if (toolName.toLowerCase() === 'task') {
-      notify('🤖 OpenCode', messages.subagentCompleted, 'Hero');
+      notify('subagentCompleted', '🤖 OpenCode', messages.subagentCompleted, 'Hero');
     } else if (toolName.startsWith('mcp_')) {
-      notify('✓ OpenCode', messages.toolCompleted(toolName.replace('mcp_', '')), 'Blow');
+      notify('toolCompleted', '✓ OpenCode', messages.toolCompleted(toolName.replace('mcp_', '')), 'Blow');
     }
   };
 }

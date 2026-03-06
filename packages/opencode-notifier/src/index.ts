@@ -6,20 +6,24 @@ import { ensureIconCache } from './icon.js';
 import { sendNotification } from './notification.js';
 import { detectTerminal } from './terminal.js';
 
+import type { EventKey } from './types.js';
 import type { Plugin } from '@opencode-ai/plugin';
 
-export type { Locale, Messages, NotifierConfig, NotifyFunction, TerminalInfo } from './types.js';
+export type { EventKey, EventOptions, Locale, Messages, NotifierConfig, NotifyFunction, TerminalInfo } from './types.js';
 
 export const OpencodeNotifier: Plugin = async ({ directory }) => {
   const config = loadConfig();
-  const messages = getMessages(config.locale);
+  const messages = getMessages(config.locale, config.events);
 
   ensureIconCache();
 
   const termInfo = detectTerminal(directory);
   const context = termInfo.projectName;
 
-  const notify = (title: string, message: string, sound?: string): void => {
+  const notify = (eventKey: EventKey, title: string, message: string, sound?: string): void => {
+    if (!config.events[eventKey].enabled) {
+      return;
+    }
     sendNotification(context, termInfo.icon, title, message, sound);
   };
 
