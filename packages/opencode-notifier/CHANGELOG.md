@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.4.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.3.2...@seonggukchoi/opencode-notifier@0.4.0) (2026-03-06)
+
+### Features
+
+- **opencode-notifier:** add per-event enable/disable and custom message support ([82cb8ad](https://github.com/seonggukchoi/packages.js/commit/82cb8ad95a3fac95bb821d76f5da9928d7149d85))
+
 ## [0.3.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.3.1...@seonggukchoi/opencode-notifier@0.3.2) (2026-03-06)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-notifier
