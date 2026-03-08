@@ -3,7 +3,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
-import jestPlugin from 'eslint-plugin-jest';
+import vitestPlugin from '@vitest/eslint-plugin';
 import prettierPlugin from 'eslint-plugin-prettier';
 import unusedImportsPlugin from 'eslint-plugin-unused-imports';
 
@@ -230,23 +230,23 @@ const config: Linter.Config[] = [
     },
   },
 
-  // Configuration for jest.config files
+  // Configuration for vitest.config files
   {
-    files: ['**/jest.config.ts', '**/jest.config.js'],
+    files: ['**/vitest.config.ts', '**/vitest.config.js'],
     rules: {
-      '@typescript-eslint/naming-convention': 'off', // Jest config uses regex patterns as keys
+      '@typescript-eslint/naming-convention': 'off',
     },
   },
 
-  // Jest configuration for test files
+  // Vitest configuration for test files
   {
     files: ['**/*.spec.ts', '**/*.test.ts', '**/*.e2e-spec.ts'],
     plugins: {
-      jest: jestPlugin,
+      vitest: vitestPlugin,
     },
     languageOptions: {
       globals: {
-        // Jest globals
+        // Vitest globals
         describe: 'readonly',
         it: 'readonly',
         expect: 'readonly',
@@ -254,12 +254,12 @@ const config: Linter.Config[] = [
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
-        jest: 'readonly',
+        vi: 'readonly',
         test: 'readonly',
       },
     },
     rules: {
-      ...jestPlugin.configs.recommended.rules,
+      ...vitestPlugin.configs.recommended.rules,
     },
   },
 

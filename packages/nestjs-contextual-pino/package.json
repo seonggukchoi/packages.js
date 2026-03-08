@@ -23,8 +23,8 @@
   "scripts": {
     "build": "nest build",
     "lint": "eslint --fix .",
-    "test": "jest",
-    "test:cov": "jest --coverage"
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",
