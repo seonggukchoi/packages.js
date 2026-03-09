@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.4](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.4.3...@seonggukchoi/opencode-notifier@0.4.4) (2026-03-09)
+
+### Bug Fixes
+
+- **opencode-notifier:** remove trailing period from template messages ([44bfa53](https://github.com/seonggukchoi/packages.js/commit/44bfa53a674287182942a8f3563e9bb311f001b2))
+
 ## [0.4.3](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.4.2...@seonggukchoi/opencode-notifier@0.4.3) (2026-03-06)
 
 ### Bug Fixes
