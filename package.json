@@ -26,13 +26,14 @@
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
+    "@swc/core": "^1.15.18",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
+    "@vitest/eslint-plugin": "^1.6.9",
     "eslint": "^9.37.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
-    "@vitest/eslint-plugin": "^1.6.9",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-unused-imports": "^4.2.0",
     "husky": "^9.1.7",
@@ -44,6 +45,7 @@
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
+    "unplugin-swc": "^1.5.9",
     "vitest": "^4.0.2"
   },
   "optionalDependencies": {

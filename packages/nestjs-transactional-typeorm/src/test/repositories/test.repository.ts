@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, FindOneOptions } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 
 import { BaseRepository } from '../../base.repository';
 import { TestEntity } from '../entities';
+
+import type { FindOneOptions } from 'typeorm';
 
 @Injectable()
 export class TestRepository extends BaseRepository<TestEntity> {

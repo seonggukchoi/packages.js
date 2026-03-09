@@ -1,7 +1,10 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { TypeOrmModule, TypeOrmModuleAsyncOptions, TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { DataSource, DataSourceOptions } from 'typeorm';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, getDataSourceByName } from 'typeorm-transactional';
+
+import type { TypeOrmModuleAsyncOptions, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import type { DataSourceOptions } from 'typeorm';
 
 @Module({})
 export class TransactionalTypeOrmModule extends TypeOrmModule {

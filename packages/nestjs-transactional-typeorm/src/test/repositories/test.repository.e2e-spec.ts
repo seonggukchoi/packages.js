@@ -1,12 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { Not, IsNull } from 'typeorm';
 
-import { Equal } from '@seonggukchoi/types';
+import type { Equal } from '@seonggukchoi/types';
 
 import { TransactionalTypeOrmModule } from '../../transactional-typeorm.module';
 import { TestEntity } from '../entities';
 
 import { TestRepository } from './test.repository';
+
+import type { TestingModule } from '@nestjs/testing';
 
 describe('TestRepository', () => {
   let moduleRef: TestingModule;
@@ -93,7 +95,7 @@ describe('TestRepository', () => {
 
       const originalFooFindOne = testRepository.findOne;
 
-      jest.spyOn(testRepository, 'findOne').mockImplementation(async (...args) => {
+      vi.spyOn(testRepository, 'findOne').mockImplementation(async (...args) => {
         isTransactionActive = !!testRepository.manager.queryRunner?.isTransactionActive;
 
         return originalFooFindOne.apply(testRepository, [...args]);
