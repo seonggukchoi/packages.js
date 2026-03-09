@@ -114,6 +114,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Rebuild native dependencies
+        run: pnpm rebuild sqlite3
+
       - name: Test
         run: pnpm nx affected --target=test
 
