@@ -20,8 +20,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "types": ["vitest/globals"]
+    "resolveJsonModule": true
   },
   "exclude": ["node_modules", "dist"]
 }
