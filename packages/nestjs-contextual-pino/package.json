@@ -24,7 +24,8 @@
     "build": "nest build",
     "lint": "eslint --fix .",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:typecheck": "tsc -p tsconfig.check.json --noEmit"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",

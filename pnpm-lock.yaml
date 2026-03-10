@@ -17,6 +17,9 @@ importers:
       '@swc/core':
         specifier: ^1.15.18
         version: 1.15.18
+      '@types/node':
+        specifier: ^24.9.1
+        version: 24.9.1
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.45.0
         version: 8.46.2(@typescript-eslint/parser@8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
