@@ -24,7 +24,8 @@
     "build": "nest build",
     "lint": "eslint --fix .",
     "test": "vitest run",
-    "test:cov": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:typecheck": "tsc -p tsconfig.check.json --noEmit"
   },
   "dependencies": {
     "typeorm-transactional": "^0.5.0"

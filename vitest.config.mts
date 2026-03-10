@@ -33,7 +33,14 @@ export const createVitestConfig = (dir: string) =>
       clearMocks: true,
       mockReset: true,
       coverage: {
+        provider: 'v8',
+        reporter: ['text', 'lcov'],
         reportsDirectory: resolve(dir, 'coverage'),
+        include: ['src/**/*.ts'],
+        exclude: ['src/**/index.ts', 'src/**/*.{spec,test}.ts', 'src/**/*.e2e-{spec,test}.ts'],
+        thresholds: {
+          100: true,
+        },
       },
     },
   });

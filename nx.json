@@ -8,7 +8,7 @@
       "runner": "nx/tasks-runners/default",
       "options": {
         "maxParallel": 100,
-        "cacheableOperations": ["build", "start", "lint", "test", "test:cov"],
+        "cacheableOperations": ["build", "start", "lint", "test", "test:typecheck", "test:coverage"],
         "cacheDirectory": ".nx"
       }
     }
@@ -18,6 +18,7 @@
     "start": { "dependsOn": ["^build"] },
     "lint": {},
     "test": { "dependsOn": ["^build"] },
-    "test:cov": { "dependsOn": ["^build"] }
+    "test:typecheck": { "dependsOn": ["^build"] },
+    "test:coverage": { "dependsOn": ["^build"] }
   }
 }
