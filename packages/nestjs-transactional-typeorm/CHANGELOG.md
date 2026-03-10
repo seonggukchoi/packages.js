@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.0.7](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/nestjs-transactional-typeorm@0.0.6...@seonggukchoi/nestjs-transactional-typeorm@0.0.7) (2026-03-10)
+
+**Note:** Version bump only for package @seonggukchoi/nestjs-transactional-typeorm
+
 ## [0.0.6](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/nestjs-transactional-typeorm@0.0.5...@seonggukchoi/nestjs-transactional-typeorm@0.0.6) (2026-03-10)
 
 ### Bug Fixes
