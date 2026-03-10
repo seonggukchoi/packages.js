@@ -29,7 +29,7 @@ export const createVitestConfig = (dir: string) =>
       environment: 'node',
       include: defaultInclude,
       root: dir,
-      passWithNoTests: true,
+      passWithNoTests: false,
       clearMocks: true,
       mockReset: true,
       coverage: {
