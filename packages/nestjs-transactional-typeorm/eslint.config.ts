@@ -3,7 +3,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
-import jestPlugin from 'eslint-plugin-jest';
+import vitestPlugin from '@vitest/eslint-plugin';
 import prettierPlugin from 'eslint-plugin-prettier';
 import unusedImportsPlugin from 'eslint-plugin-unused-imports';
 
@@ -12,7 +12,7 @@ import type { Linter } from 'eslint';
 const config: Linter.Config[] = [
   // Ignore patterns (replaces .eslintignore)
   {
-    ignores: ['dist/**', 'node_modules/**', 'eslint.config.ts', 'jest.config.ts'],
+    ignores: ['dist/**', 'node_modules/**', 'eslint.config.ts', 'vitest.config.ts'],
   },
 
   // Base ESLint recommended rules
@@ -30,18 +30,17 @@ const config: Linter.Config[] = [
     },
   },
 
-  // Jest plugin configuration
+  // Vitest plugin configuration
   {
     files: ['**/*.spec.ts', '**/*.test.ts', '**/__tests__/**/*.ts', '**/*.e2e-spec.ts'],
     plugins: {
-      jest: jestPlugin,
+      vitest: vitestPlugin,
     },
     rules: {
-      ...jestPlugin.configs.recommended.rules,
+      ...vitestPlugin.configs.recommended.rules,
     },
     languageOptions: {
       globals: {
-        ...jestPlugin.environments.globals.globals,
         describe: 'readonly',
         it: 'readonly',
         test: 'readonly',
@@ -50,7 +49,7 @@ const config: Linter.Config[] = [
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
-        jest: 'readonly',
+        vi: 'readonly',
       },
     },
   },

@@ -23,7 +23,7 @@
   "scripts": {
     "build": "rimraf dist && tsc -p tsconfig.build.json",
     "lint": "eslint --fix .",
-    "test": "jest",
-    "test:cov": "jest --coverage"
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage"
   }
 }

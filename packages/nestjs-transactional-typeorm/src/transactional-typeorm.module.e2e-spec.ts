@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 
 import { Test } from '@nestjs/testing';
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 import { TransactionalTypeOrmModule } from './transactional-typeorm.module';
+
+import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 describe('TransactionalTypeOrmModule', () => {
   const configFactory = (): TypeOrmModuleOptions => ({

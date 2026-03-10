@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, FindOneOptions } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { getDataSourceByName } from 'typeorm-transactional';
 
 import { BaseRepository } from '../../base.repository';
 import { FOO_DATA_SOURCE_NAME } from '../constants';
 import { FooTransactional } from '../decorators';
 import { FooTestEntity } from '../entities';
+
+import type { FindOneOptions } from 'typeorm';
 
 @Injectable()
 export class FooTestRepository extends BaseRepository<FooTestEntity> {

@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 
 import { TransactionalTypeOrmModule } from '../../transactional-typeorm.module';
 import { FOO_DATA_SOURCE_NAME, BAR_DATA_SOURCE_NAME } from '../constants';
@@ -6,6 +6,8 @@ import { FooTestEntity, BarTestEntity } from '../entities';
 import { FooTestRepository, BarTestRepository } from '../repositories';
 
 import { TestService } from './test.service';
+
+import type { TestingModule } from '@nestjs/testing';
 
 describe('TestService', () => {
   let moduleRef: TestingModule;
@@ -38,8 +40,6 @@ describe('TestService', () => {
       ],
       providers: [TestService, FooTestRepository, BarTestRepository],
     }).compile();
-    moduleRef.enableShutdownHooks();
-
     testService = moduleRef.get(TestService);
 
     fooTestRepository = moduleRef.get(FooTestRepository);
@@ -65,13 +65,13 @@ describe('TestService', () => {
     const originalFooFindOne = fooTestRepository.findOne;
     const originalBarFindOne = barTestRepository.findOne;
 
-    jest.spyOn(fooTestRepository, 'findOne').mockImplementation(async (...args) => {
+    vi.spyOn(fooTestRepository, 'findOne').mockImplementation(async (...args) => {
       isFooTransactionActive = !!fooTestRepository.manager.queryRunner?.isTransactionActive;
 
       return originalFooFindOne.apply(fooTestRepository, [...args]);
     });
 
-    jest.spyOn(barTestRepository, 'findOne').mockImplementation(async (...args) => {
+    vi.spyOn(barTestRepository, 'findOne').mockImplementation(async (...args) => {
       isBarTransactionActive = !!barTestRepository.manager.queryRunner?.isTransactionActive;
 
       return originalBarFindOne.apply(barTestRepository, [...args]);
@@ -93,13 +93,13 @@ describe('TestService', () => {
     const originalFooFindOne = fooTestRepository.save;
     const originalBarFindOne = barTestRepository.save;
 
-    jest.spyOn(fooTestRepository, 'save').mockImplementation(async (...args) => {
+    vi.spyOn(fooTestRepository, 'save').mockImplementation(async (...args) => {
       isFooTransactionActive = !!fooTestRepository.manager.queryRunner?.isTransactionActive;
 
       return originalFooFindOne.apply(fooTestRepository, [...args]);
     });
 
-    jest.spyOn(barTestRepository, 'save').mockImplementation(async (...args) => {
+    vi.spyOn(barTestRepository, 'save').mockImplementation(async (...args) => {
       isBarTransactionActive = !!barTestRepository.manager.queryRunner?.isTransactionActive;
 
       return originalBarFindOne.apply(barTestRepository, [...args]);

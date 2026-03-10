@@ -1,13 +1,13 @@
-import {
-  FindOptionsSelectByString,
-  EntityManager,
+import { EntityManager, Repository } from 'typeorm';
+
+import type {
   EntityTarget,
   FindManyOptions,
   FindOneOptions,
   FindOptionsSelect,
+  FindOptionsSelectByString,
   ObjectLiteral,
   QueryRunner,
-  Repository,
 } from 'typeorm';
 
 type TrueKeys<Type extends object> = { [Key in keyof Type]: Type[Key] extends true ? Key : never }[keyof Type];
