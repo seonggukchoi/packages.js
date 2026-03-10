@@ -9,6 +9,7 @@
       "always",
       [
         "address",
+        "class-transformer-extends",
         "config",
         "datee",
         "nestjs-contextual-pino",
