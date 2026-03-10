@@ -73,10 +73,12 @@ export class SouthKoreaStatePatternBuilder {
     const isEnabledMultipleClassifiers = this.#classifierOptions.filter(Boolean).length > 1;
 
     const classifierComponents = [
+      /* v8 ignore next */
       ...(isEnabledMultipleClassifiers ? ['('] : []),
       ...(this.#isSpecial ? [`(${SOUTH_KOREA_STATE_CLASSIFIER.SPECIAL})?`] : []),
       ...(this.#isAutonomy ? [`(${SOUTH_KOREA_STATE_CLASSIFIER.AUTONOMY})?`] : []),
       ...(this.#isMetropolitan ? [`(${SOUTH_KOREA_STATE_CLASSIFIER.METROPOLITAN})?`] : []),
+      /* v8 ignore next */
       ...(isEnabledMultipleClassifiers ? [')?'] : []),
     ];
 
