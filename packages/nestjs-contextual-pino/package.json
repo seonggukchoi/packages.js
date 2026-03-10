@@ -24,7 +24,7 @@
     "build": "nest build",
     "lint": "eslint --fix .",
     "test": "vitest run",
-    "test:cov": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",

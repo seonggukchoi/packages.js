@@ -25,7 +25,7 @@
     "build": "rimraf dist && tsc -p tsconfig.build.json",
     "lint": "eslint --fix .",
     "test": "vitest run",
-    "test:cov": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {},
   "devDependencies": {}
