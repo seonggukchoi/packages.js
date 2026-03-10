@@ -3,10 +3,8 @@ packages:
   - 'templates/*'
 
 onlyBuiltDependencies:
+  - '@swc/core'
   - esbuild
   - nx
   - sqlite3
   - unrs-resolver
-
-ignoredBuiltDependencies:
-  - '@nestjs/core'
