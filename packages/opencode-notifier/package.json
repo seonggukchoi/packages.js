@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/opencode-notifier",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "OpenCode terminal notification plugin for macOS using terminal-notifier",
   "author": "seonggukchoi",
   "license": "MIT",
