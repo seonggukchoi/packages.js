@@ -110,6 +110,56 @@ describe('TestRepository', () => {
   });
 
   describe('findPick', () => {
+    describe('Validate runtime value', () => {
+      it('should remove non-selected fields when select is an object.', async () => {
+        await testRepository.insert({ test: 42 });
+
+        // Spy on find to return entities with all fields regardless of select,
+        // so that removeNotIncludesFields actually deletes non-selected fields.
+        const originalFind = testRepository.find.bind(testRepository);
+
+        vi.spyOn(testRepository, 'find').mockImplementation(async (options) => {
+          const entities = await originalFind({ ...options, select: undefined });
+
+          return entities;
+        });
+
+        const result = await testRepository.findPick({ select: { idx: true } });
+
+        expect(result).toHaveLength(1);
+        expect(result[0]).toHaveProperty('idx');
+        expect(result[0]).not.toHaveProperty('test');
+      });
+
+      it('should remove non-selected fields when select is a string array.', async () => {
+        await testRepository.insert({ test: 42 });
+
+        const originalFind = testRepository.find.bind(testRepository);
+
+        vi.spyOn(testRepository, 'find').mockImplementation(async (options) => {
+          const entities = await originalFind({ ...options, select: undefined });
+
+          return entities;
+        });
+
+        const result = await testRepository.findPick({ select: ['idx'] });
+
+        expect(result).toHaveLength(1);
+        expect(result[0]).toHaveProperty('idx');
+        expect(result[0]).not.toHaveProperty('test');
+      });
+
+      it('should return all fields when select is not provided.', async () => {
+        await testRepository.insert({ test: 42 });
+
+        const result = await testRepository.findPick({});
+
+        expect(result).toHaveLength(1);
+        expect(result[0]).toHaveProperty('idx');
+        expect(result[0]).toHaveProperty('test');
+      });
+    });
+
     describe('Validate return type', () => {
       describe('Select by object', () => {
         it('should return an array of picked entity.', async () => {
@@ -182,6 +232,42 @@ describe('TestRepository', () => {
   });
 
   describe('findPickAndCount', () => {
+    describe('Validate runtime value', () => {
+      it('should remove non-selected fields and return correct count when select is an object.', async () => {
+        await testRepository.insert([{ test: 1 }, { test: 2 }, { test: 3 }]);
+
+        const originalFindAndCount = testRepository.findAndCount.bind(testRepository);
+
+        vi.spyOn(testRepository, 'findAndCount').mockImplementation(async (options) => {
+          return originalFindAndCount({ ...options, select: undefined });
+        });
+
+        const [entities, count] = await testRepository.findPickAndCount({ select: { idx: true } });
+
+        expect(count).toBe(3);
+        expect(entities).toHaveLength(3);
+
+        for (const entity of entities) {
+          expect(entity).toHaveProperty('idx');
+          expect(entity).not.toHaveProperty('test');
+        }
+      });
+
+      it('should return all fields and correct count when select is not provided.', async () => {
+        await testRepository.insert([{ test: 1 }, { test: 2 }]);
+
+        const [entities, count] = await testRepository.findPickAndCount({});
+
+        expect(count).toBe(2);
+        expect(entities).toHaveLength(2);
+
+        for (const entity of entities) {
+          expect(entity).toHaveProperty('idx');
+          expect(entity).toHaveProperty('test');
+        }
+      });
+    });
+
     describe('Validate return type', () => {
       describe('Select by object', () => {
         it('should return an array of picked entity.', async () => {
@@ -254,6 +340,40 @@ describe('TestRepository', () => {
   });
 
   describe('findOnePick', () => {
+    describe('Validate runtime value', () => {
+      it('should remove non-selected fields when select is an object.', async () => {
+        await testRepository.insert({ test: 42 });
+
+        const originalFindOne = testRepository.findOne.bind(testRepository);
+
+        vi.spyOn(testRepository, 'findOne').mockImplementation(async (options) => {
+          return originalFindOne({ ...options, select: undefined });
+        });
+
+        const result = await testRepository.findOnePick({ select: { idx: true }, where: { test: 42 } });
+
+        expect(result).not.toBeNull();
+        expect(result).toHaveProperty('idx');
+        expect(result).not.toHaveProperty('test');
+      });
+
+      it('should return null when no entity matches.', async () => {
+        const result = await testRepository.findOnePick({ select: { idx: true }, where: { test: 999 } });
+
+        expect(result).toBeNull();
+      });
+
+      it('should return all fields when select is not provided.', async () => {
+        await testRepository.insert({ test: 42 });
+
+        const result = await testRepository.findOnePick({ where: { test: 42 } });
+
+        expect(result).not.toBeNull();
+        expect(result).toHaveProperty('idx');
+        expect(result).toHaveProperty('test');
+      });
+    });
+
     describe('Validate return type', () => {
       describe('Select by object', () => {
         it('should return a picked entity.', async () => {
@@ -326,6 +446,36 @@ describe('TestRepository', () => {
   });
 
   describe('findOnePickOrFail', () => {
+    describe('Validate runtime value', () => {
+      it('should remove non-selected fields when select is an object.', async () => {
+        await testRepository.insert({ test: 42 });
+
+        const originalFindOneOrFail = testRepository.findOneOrFail.bind(testRepository);
+
+        vi.spyOn(testRepository, 'findOneOrFail').mockImplementation(async (options) => {
+          return originalFindOneOrFail({ ...options, select: undefined });
+        });
+
+        const result = await testRepository.findOnePickOrFail({ select: { idx: true }, where: { test: 42 } });
+
+        expect(result).toHaveProperty('idx');
+        expect(result).not.toHaveProperty('test');
+      });
+
+      it('should throw an error when no entity matches.', async () => {
+        await expect(testRepository.findOnePickOrFail({ select: { idx: true }, where: { test: 999 } })).rejects.toThrow();
+      });
+
+      it('should return all fields when select is not provided.', async () => {
+        await testRepository.insert({ test: 42 });
+
+        const result = await testRepository.findOnePickOrFail({ where: { test: 42 } });
+
+        expect(result).toHaveProperty('idx');
+        expect(result).toHaveProperty('test');
+      });
+    });
+
     describe('Validate return type', () => {
       describe('Select by object', () => {
         it('should return a picked entity.', async () => {

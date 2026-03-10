@@ -21,5 +21,8 @@ export default mergeConfig(createVitestConfig(__dirname), {
     },
     fileParallelism: false,
     teardownTimeout: 1000,
+    coverage: {
+      exclude: ['src/test/**'],
+    },
   },
 });
