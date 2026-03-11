@@ -6,6 +6,7 @@ export function detectTerminal(directory: string): TerminalInfo {
   const termProgram = process.env.TERM_PROGRAM || '';
   const itermSession = process.env.ITERM_SESSION_ID;
   const cursorEditor = process.env.CURSOR_EDITOR || process.env.VSCODE_GIT_IPC_HANDLE;
+  const zedTerm = process.env.ZED_TERM;
 
   let app = 'Terminal.app';
   if (itermSession) {
@@ -14,6 +15,8 @@ export function detectTerminal(directory: string): TerminalInfo {
     app = 'Cursor';
   } else if (termProgram === 'vscode' || process.env.VSCODE_GIT_IPC_HANDLE) {
     app = 'VS Code';
+  } else if (zedTerm || termProgram === 'zed') {
+    app = 'Zed';
   } else if (termProgram === 'Apple_Terminal') {
     app = 'Terminal.app';
   } else if (termProgram === 'WarpTerminal') {

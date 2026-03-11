@@ -9,6 +9,7 @@ const APP_ICONS: Record<string, string> = {
   iTerm2: '/Applications/iTerm.app/Contents/Resources/iTerm2 App Icon for Release.icns',
   Cursor: '/Applications/Cursor.app/Contents/Resources/Cursor.icns',
   'VS Code': '/Applications/Visual Studio Code.app/Contents/Resources/Code.icns',
+  Zed: '/Applications/Zed.app/Contents/Resources/Zed.icns',
   'Terminal.app': '/System/Applications/Utilities/Terminal.app/Contents/Resources/Terminal.icns',
   Warp: '/Applications/Warp.app/Contents/Resources/AppIcon.icns',
   Hyper: '/Applications/Hyper.app/Contents/Resources/Hyper.icns',

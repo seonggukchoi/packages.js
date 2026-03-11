@@ -106,6 +106,7 @@ The plugin detects the current terminal app and includes its icon in notificatio
 - iTerm2
 - Cursor
 - VS Code
+- Zed
 - Terminal.app
 - Warp
 - Hyper
