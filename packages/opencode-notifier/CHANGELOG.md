@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.5.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.4.6...@seonggukchoi/opencode-notifier@0.5.0) (2026-03-11)
+
+### Features
+
+- **opencode-notifier:** add Zed editor detection support ([e40be16](https://github.com/seonggukchoi/packages.js/commit/e40be160959ce2fa9ed69c8faa05212b90eba4d4))
+
 ## [0.4.6](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.4.5...@seonggukchoi/opencode-notifier@0.4.6) (2026-03-10)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-notifier
