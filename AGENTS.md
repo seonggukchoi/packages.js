@@ -77,6 +77,27 @@ feat(datee): Add date. # uppercase start, period at end
 - The PR author is automatically assigned as the assignee.
 - PRs with `wip` in the title skip reviewer assignment.
 
+## Adding Commits to Existing Branches
+
+Before pushing additional commits to an existing branch, **always** verify the remote branch state first:
+
+1. Run `git fetch origin` to sync remote tracking information.
+2. Check whether the branch's PR has already been **merged or closed** (e.g. `gh pr view <branch>`).
+3. If the PR is already merged or the remote branch has been deleted:
+   - Do **not** push to the old branch.
+   - Switch to `main`, pull the latest changes, and create a **new branch** for the follow-up work.
+
+```
+# Example: verify before pushing
+git fetch origin
+gh pr view feat/my-feature          # check PR status
+# If merged → checkout main, pull, create new branch
+git checkout main && git pull
+git checkout -b fix/follow-up-issue
+```
+
+> Reason: Pushing to a branch whose PR is already merged results in orphaned commits that are not associated with any open PR. This causes confusion and may require force-push or manual cleanup.
+
 ## Git Hooks
 
 Two hooks run automatically on every commit:
