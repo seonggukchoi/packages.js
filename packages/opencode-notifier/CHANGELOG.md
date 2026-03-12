@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.5.0...@seonggukchoi/opencode-notifier@0.5.1) (2026-03-12)
+
+### Bug Fixes
+
+- **opencode-notifier:** remove extraneous quotes from spawn arguments ([a931b5d](https://github.com/seonggukchoi/packages.js/commit/a931b5d203ddc6b155fae164d78635c2e3a7c83a))
+
 # [0.5.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.4.6...@seonggukchoi/opencode-notifier@0.5.0) (2026-03-11)
 
 ### Features
