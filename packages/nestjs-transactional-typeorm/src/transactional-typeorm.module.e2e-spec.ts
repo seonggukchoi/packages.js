@@ -34,6 +34,19 @@ describe('TransactionalTypeOrmModule', () => {
       expect(moduleRef.get(TransactionalTypeOrmModule)).toBeInstanceOf(TransactionalTypeOrmModule);
     });
 
+    it('should be created a module successfully with custom dataSourceFactory.', async () => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [
+          TransactionalTypeOrmModule.forRootAsync({
+            useFactory: () => ({ ...configFactory() }),
+            dataSourceFactory: async (options) => new (await import('typeorm')).DataSource(options!),
+          }),
+        ],
+      }).compile();
+
+      expect(moduleRef.get(TransactionalTypeOrmModule)).toBeInstanceOf(TransactionalTypeOrmModule);
+    });
+
     it('should be created a module successfully with extra providers.', async () => {
       const CONFIG_TOKEN = Symbol('CONFIG_TOKEN');
       const moduleRef = await Test.createTestingModule({

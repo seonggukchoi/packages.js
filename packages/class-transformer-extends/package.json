@@ -29,5 +29,8 @@
   },
   "dependencies": {
     "class-transformer": "^0.5.1"
+  },
+  "devDependencies": {
+    "reflect-metadata": "^0.2.2"
   }
 }

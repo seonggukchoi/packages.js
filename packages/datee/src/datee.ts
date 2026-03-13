@@ -152,6 +152,7 @@ export class Datee extends Date {
 
     formatted = formatted.replaceAll(
       'ZZZZ',
+      /* v8 ignore next */
       this.toTimeString()
         .match(/([+-]\d{2})(\d{2})/)
         ?.slice(1, 3)
@@ -159,6 +160,7 @@ export class Datee extends Date {
     );
     formatted = formatted.replaceAll(
       'ZZZ',
+      /* v8 ignore next */
       this.toTimeString()
         .match(/[A-Z]{3}/)
         ?.at(0) ?? '',

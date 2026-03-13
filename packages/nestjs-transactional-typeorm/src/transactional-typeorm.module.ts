@@ -21,6 +21,7 @@ export class TransactionalTypeOrmModule extends TypeOrmModule {
         // This function is required to use the transactional context,
         // and if exists the function in the options, this will be overridden.
         async dataSourceFactory(dataSourceOptions?: DataSourceOptions) {
+          /* v8 ignore next 3 -- defensive guard: TypeORM always provides dataSourceOptions */
           if (!dataSourceOptions) {
             throw new Error('Invalid options passed');
           }

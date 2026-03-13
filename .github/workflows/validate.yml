@@ -28,8 +28,8 @@ jobs:
         uses: actions/setup-node@v6.0.0
         with:
           node-version: 24
-          cache: "pnpm"
-          cache-dependency-path: "**/pnpm-lock.yaml"
+          cache: 'pnpm'
+          cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Cache Pnpm and node_modules
         id: pnpm-cache
@@ -83,8 +83,8 @@ jobs:
         uses: actions/setup-node@v6.0.0
         with:
           node-version: 24
-          cache: "pnpm"
-          cache-dependency-path: "**/pnpm-lock.yaml"
+          cache: 'pnpm'
+          cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Cache Pnpm and node_modules
         id: pnpm-cache
@@ -118,8 +118,11 @@ jobs:
         run: |
           pnpm install
 
+      - name: Type Check
+        run: pnpm nx affected --target=test:typecheck
+
       - name: Test
-        run: pnpm nx affected --target=test
+        run: pnpm nx affected --target=test:coverage
 
   lint:
     name: Lint
@@ -138,8 +141,8 @@ jobs:
         uses: actions/setup-node@v6.0.0
         with:
           node-version: 24
-          cache: "pnpm"
-          cache-dependency-path: "**/pnpm-lock.yaml"
+          cache: 'pnpm'
+          cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Cache Pnpm and node_modules
         id: pnpm-cache

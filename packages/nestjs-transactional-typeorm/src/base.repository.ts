@@ -130,6 +130,7 @@ export abstract class BaseRepository<Entity extends ObjectLiteral> extends Repos
   }
 
   private getIncludesFieldKeys(select?: FindOptionsSelectUnion<Entity>): (keyof Entity)[] {
+    /* v8 ignore next 3 -- defensive guard: callers always pass a truthy select */
     if (!select) {
       return [];
     }

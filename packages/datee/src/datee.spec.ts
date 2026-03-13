@@ -343,4 +343,126 @@ describe('Datee', () => {
       });
     });
   });
+
+  describe('getWeek() edge cases', () => {
+    it('should return week 1 for Dec 31, 2024 (belongs to ISO week 1 of 2025).', () => {
+      const datee = new Datee('2024-12-31T00:00:00.000Z');
+
+      expect(datee.getWeek()).toBe(1);
+    });
+
+    it('should return week 1 for Jan 1, 2025 (Wednesday, belongs to ISO week 1).', () => {
+      const datee = new Datee('2025-01-01T00:00:00.000Z');
+
+      expect(datee.getWeek()).toBe(1);
+    });
+
+    it('should return week 29 for July 15, 2024.', () => {
+      const datee = new Datee('2024-07-15T00:00:00.000Z');
+
+      expect(datee.getWeek()).toBe(29);
+    });
+
+    it('should return week 53 for Dec 31, 2020 (ISO week 53 edge case).', () => {
+      const datee = new Datee('2020-12-31T00:00:00.000Z');
+
+      expect(datee.getWeek()).toBe(53);
+    });
+
+    it('should return week 1 for Jan 1, 2024 (Monday, start of ISO week 1).', () => {
+      const datee = new Datee('2024-01-01T00:00:00.000Z');
+
+      expect(datee.getWeek()).toBe(1);
+    });
+  });
+
+  describe('Combined format strings', () => {
+    it('should format full ISO datetime with YYYY-MM-DDTHH:mm:ss.SSSZZZ.', () => {
+      const datee = new Datee('2024-07-15T14:30:45.123Z');
+
+      expect(datee.format('YYYY-MM-DDTHH:mm:ss.SSSZZZ')).toBe('2024-07-15T14:30:45.123GMT');
+    });
+
+    it('should format date only with YYYY/MM/DD.', () => {
+      const datee = new Datee('2024-07-15T00:00:00.000Z');
+
+      expect(datee.format('YYYY/MM/DD')).toBe('2024/07/15');
+    });
+
+    it('should format time only with HH:mm:ss.', () => {
+      const datee = new Datee('2024-01-01T14:30:45.000Z');
+
+      expect(datee.format('HH:mm:ss')).toBe('14:30:45');
+    });
+  });
+
+  describe('formatQuarter edge cases', () => {
+    it('should return 0 for Q1 (January).', () => {
+      const datee = new Datee('2024-01-15T00:00:00.000Z');
+
+      expect(datee.format('Q')).toBe('0');
+    });
+
+    it('should return 1 for Q2 (April).', () => {
+      const datee = new Datee('2024-04-15T00:00:00.000Z');
+
+      expect(datee.format('Q')).toBe('1');
+    });
+
+    it('should return 2 for Q3 (July).', () => {
+      const datee = new Datee('2024-07-15T00:00:00.000Z');
+
+      expect(datee.format('Q')).toBe('2');
+    });
+
+    it('should return 3 for Q4 (October).', () => {
+      const datee = new Datee('2024-10-15T00:00:00.000Z');
+
+      expect(datee.format('Q')).toBe('3');
+    });
+
+    it('should return 0 for March (last month of Q1).', () => {
+      const datee = new Datee('2024-03-31T00:00:00.000Z');
+
+      expect(datee.format('Q')).toBe('0');
+    });
+
+    it('should return 3 for December (last month of Q4).', () => {
+      const datee = new Datee('2024-12-31T00:00:00.000Z');
+
+      expect(datee.format('Q')).toBe('3');
+    });
+  });
+
+  describe('getWeek() called via format', () => {
+    it('should format ww as 01 for Jan 1, 2024.', () => {
+      const datee = new Datee('2024-01-01T00:00:00.000Z');
+
+      expect(datee.format('ww')).toBe('01');
+    });
+
+    it('should format ww as 29 for July 15, 2024.', () => {
+      const datee = new Datee('2024-07-15T00:00:00.000Z');
+
+      expect(datee.format('ww')).toBe('29');
+    });
+
+    it('should format ww as 53 for Dec 31, 2020.', () => {
+      const datee = new Datee('2020-12-31T00:00:00.000Z');
+
+      expect(datee.format('ww')).toBe('53');
+    });
+
+    it('should format ww as 01 for Dec 31, 2024 (ISO week 1 of 2025).', () => {
+      const datee = new Datee('2024-12-31T00:00:00.000Z');
+
+      expect(datee.format('ww')).toBe('01');
+    });
+
+    it('should format w (without padding) for single-digit weeks.', () => {
+      const datee = new Datee('2024-01-01T00:00:00.000Z');
+
+      expect(datee.format('w')).toBe('1');
+    });
+  });
 });
