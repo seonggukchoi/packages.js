@@ -282,6 +282,38 @@ describe('loadConfig', () => {
     expect(config.channels.macos?.enabled).toBe(true);
   });
 
+  it('defaults macos channel to enabled when channels is null', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: null,
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.macos?.enabled).toBe(true);
+  });
+
+  it('defaults macos channel enabled to true when enabled is not a boolean', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: {
+          macos: {
+            enabled: 'yes',
+          },
+        },
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.macos?.enabled).toBe(true);
+  });
+
   it('converts numeric chatId to string', () => {
     mockedExistsSync.mockReturnValue(true);
     mockedReadFileSync.mockReturnValue(
@@ -300,6 +332,77 @@ describe('loadConfig', () => {
     const config = loadConfig();
 
     expect(config.channels.telegram?.chatId).toBe('987654');
+  });
+
+  it('defaults telegram enabled to false when enabled is not a boolean', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: {
+          telegram: {
+            enabled: 'yes',
+            botToken: 'tok',
+            chatId: '123',
+          },
+        },
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.telegram?.enabled).toBe(false);
+  });
+
+  it('ignores empty channel event objects', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: {
+          macos: {
+            enabled: true,
+            events: {},
+          },
+          telegram: {
+            enabled: true,
+            botToken: 'tok',
+            chatId: '123',
+            events: {},
+          },
+        },
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.macos?.events).toBeUndefined();
+    expect(config.channels.telegram?.events).toBeUndefined();
+  });
+
+  it('defaults channel event enabled to true when override enabled is not a boolean', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: {
+          telegram: {
+            enabled: true,
+            botToken: 'tok',
+            chatId: '123',
+            events: {
+              sessionStarted: {
+                enabled: 'yes',
+              },
+            },
+          },
+        },
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.telegram?.events?.sessionStarted?.enabled).toBe(true);
   });
 });
 
