@@ -16,6 +16,7 @@ describe('detectTerminal', () => {
     delete process.env.ITERM_SESSION_ID;
     delete process.env.CURSOR_EDITOR;
     delete process.env.VSCODE_GIT_IPC_HANDLE;
+    delete process.env.ZED_TERM;
     mockedGetPngIcon.mockReturnValue('');
   });
 
@@ -88,6 +89,23 @@ describe('detectTerminal', () => {
     const result = detectTerminal('/projects/my-app');
 
     expect(result.app).toBe('Hyper');
+  });
+
+  it('detects Zed from ZED_TERM', () => {
+    process.env.ZED_TERM = '1';
+
+    const result = detectTerminal('/projects/my-app');
+
+    expect(result.app).toBe('Zed');
+    expect(mockedGetPngIcon).toHaveBeenCalledWith('Zed');
+  });
+
+  it('detects Zed from TERM_PROGRAM === zed', () => {
+    process.env.TERM_PROGRAM = 'zed';
+
+    const result = detectTerminal('/projects/my-app');
+
+    expect(result.app).toBe('Zed');
   });
 
   it('falls back to Terminal.app when no env vars set', () => {

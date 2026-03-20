@@ -17,10 +17,44 @@ export interface EventOptions {
   message?: string;
 }
 
+// --- Channel types ---
+
+export interface NotificationChannel {
+  readonly type: string;
+  send(params: { title: string; message: string; context: string; icon?: string; sound?: string }): void | Promise<void>;
+}
+
+export interface ChannelConfig {
+  enabled: boolean;
+  events?: Partial<Record<EventKey, EventOptions>>;
+}
+
+export type MacOSChannelConfig = ChannelConfig;
+
+export interface TelegramChannelConfig extends ChannelConfig {
+  botToken: string;
+  chatId: string;
+}
+
+export interface ChannelsConfig {
+  macos?: MacOSChannelConfig;
+  telegram?: TelegramChannelConfig;
+}
+
+export interface ChannelEntry {
+  channel: NotificationChannel;
+  events: Record<EventKey, EventOptions>;
+}
+
+// --- Config ---
+
 export interface NotifierConfig {
   locale: Locale;
   events: Record<EventKey, EventOptions>;
+  channels: ChannelsConfig;
 }
+
+// --- Messages ---
 
 export interface Messages {
   sessionStarted: string;

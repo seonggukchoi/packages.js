@@ -4,16 +4,23 @@ vi.mock('node:child_process', () => ({
 
 import { spawn } from 'node:child_process';
 
-import { sendNotification } from './notification.js';
+import { createMacOSChannel } from './macos.js';
 
 const mockedSpawn = vi.mocked(spawn);
 
-describe('sendNotification', () => {
+describe('createMacOSChannel', () => {
+  it('returns a channel with type macos', () => {
+    const channel = createMacOSChannel('my-project', '/path/icon.png');
+
+    expect(channel.type).toBe('macos');
+  });
+
   it('spawns terminal-notifier with correct arguments', () => {
     const unrefMock = vi.fn();
     mockedSpawn.mockReturnValue({ unref: unrefMock } as never);
 
-    sendNotification('my-project', '', 'Test Title', 'Test message', 'Pop');
+    const channel = createMacOSChannel('my-project', '');
+    channel.send({ title: 'Test Title', message: 'Test message', context: 'ctx', sound: 'Pop' });
 
     expect(mockedSpawn).toHaveBeenCalledWith(
       'terminal-notifier',
@@ -27,7 +34,8 @@ describe('sendNotification', () => {
     const unrefMock = vi.fn();
     mockedSpawn.mockReturnValue({ unref: unrefMock } as never);
 
-    sendNotification('my-project', '/path/to/icon.png', 'Title', 'Message');
+    const channel = createMacOSChannel('my-project', '/path/to/icon.png');
+    channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
 
     const args = mockedSpawn.mock.calls[0]![1] as string[];
     expect(args).toContain('-contentImage');
@@ -38,7 +46,8 @@ describe('sendNotification', () => {
     const unrefMock = vi.fn();
     mockedSpawn.mockReturnValue({ unref: unrefMock } as never);
 
-    sendNotification('my-project', '', 'Title', 'Message');
+    const channel = createMacOSChannel('my-project', '');
+    channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
 
     const args = mockedSpawn.mock.calls[0]![1] as string[];
     expect(args).not.toContain('-contentImage');
@@ -48,7 +57,8 @@ describe('sendNotification', () => {
     const unrefMock = vi.fn();
     mockedSpawn.mockReturnValue({ unref: unrefMock } as never);
 
-    sendNotification('my-project', '', 'Title', 'Message');
+    const channel = createMacOSChannel('my-project', '');
+    channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
 
     const args = mockedSpawn.mock.calls[0]![1] as string[];
     expect(args).toContain('-sound');
@@ -60,8 +70,10 @@ describe('sendNotification', () => {
       throw new Error('spawn failed');
     });
 
+    const channel = createMacOSChannel('my-project', '');
+
     expect(() => {
-      sendNotification('my-project', '', 'Title', 'Message');
+      channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
     }).not.toThrow();
   });
 });
