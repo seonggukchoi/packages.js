@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.5.2...@seonggukchoi/opencode-notifier@0.6.0) (2026-03-20)
+
+### Features
+
+- **opencode-notifier:** add channel-based notification configuration ([cee780b](https://github.com/seonggukchoi/packages.js/commit/cee780b3313b42889ee90a26568161c458da4e71))
+
 ## [0.5.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.5.1...@seonggukchoi/opencode-notifier@0.5.2) (2026-03-13)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-notifier
