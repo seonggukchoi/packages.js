@@ -164,12 +164,14 @@ function mapAssistantMessage(message: SDKAssistantMessage, state: StreamState): 
 
       state.toolResultIds.add(toolCallId);
 
+      const toolName = state.toolNames.get(toolCallId) ?? blockType;
+
       parts.push({
         ...(isAssistantToolResultError(block) ? { isError: true } : {}),
         providerExecuted: true,
-        result: getAssistantToolResult(block),
+        result: getAssistantToolResult(blockType, block, toolName),
         toolCallId,
-        toolName: state.toolNames.get(toolCallId) ?? blockType,
+        toolName,
         type: 'tool-result',
       });
     }
@@ -415,7 +417,25 @@ function getToolLinkId(block: Record<string, unknown>): string | undefined {
   );
 }
 
-function getAssistantToolResult(block: Record<string, unknown>): unknown {
+function getAssistantToolResult(blockType: string, block: Record<string, unknown>, toolName: string): unknown {
+  const rawResult = getAssistantToolRawResult(block);
+
+  return {
+    metadata: getAssistantToolMetadata(blockType, rawResult),
+    output: getAssistantToolOutput(blockType, rawResult),
+    title: toolName,
+  };
+}
+
+function isAssistantToolResultError(block: Record<string, unknown>): boolean {
+  if (typeof block.is_error === 'boolean') {
+    return block.is_error;
+  }
+
+  return typeof block.error_code === 'string';
+}
+
+function getAssistantToolRawResult(block: Record<string, unknown>): unknown {
   if (block.content !== undefined) {
     return block.content;
   }
@@ -431,12 +451,60 @@ function getAssistantToolResult(block: Record<string, unknown>): unknown {
   return block;
 }
 
-function isAssistantToolResultError(block: Record<string, unknown>): boolean {
-  if (typeof block.is_error === 'boolean') {
-    return block.is_error;
+function getAssistantToolMetadata(blockType: string, rawResult: unknown): Record<string, unknown> {
+  const metadata: Record<string, unknown> = { blockType };
+  const record = getRecord(rawResult);
+  const returnCode = getNumber(record?.return_code);
+  const errorCode = getString(record?.error_code) ?? getString(getRecord(record?.error)?.code);
+
+  if (returnCode !== undefined) {
+    metadata.returnCode = returnCode;
   }
 
-  return typeof block.error_code === 'string';
+  if (errorCode) {
+    metadata.errorCode = errorCode;
+  }
+
+  return metadata;
+}
+
+function getAssistantToolOutput(blockType: string, rawResult: unknown): string {
+  const record = getRecord(rawResult);
+
+  if (blockType === 'bash_code_execution_tool_result') {
+    const stdout = getString(record?.stdout);
+    const stderr = getString(record?.stderr);
+    const returnCode = getNumber(record?.return_code);
+    const errorCode = getString(record?.error_code) ?? getString(getRecord(record?.error)?.code);
+
+    if (returnCode === 0 && stdout) {
+      return stdout;
+    }
+
+    if (stderr) {
+      return stderr;
+    }
+
+    if (stdout) {
+      return stdout;
+    }
+
+    if (errorCode) {
+      return `Tool error: ${errorCode}`;
+    }
+  }
+
+  const text =
+    getString(rawResult) ??
+    getString(record?.text) ??
+    getString(record?.output) ??
+    getString(record?.stdout) ??
+    getString(record?.stderr) ??
+    getString(record?.message) ??
+    getString(getRecord(record?.error)?.message) ??
+    getString(getRecord(record?.error)?.code);
+
+  return text ?? safeJsonStringify(rawResult);
 }
 
 function safeJsonStringify(value: unknown): string {
