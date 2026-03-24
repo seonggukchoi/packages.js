@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import ClaudeCodePlugin from './index.js';
+import { ClaudeCodePlugin } from './index.js';
 
 type PluginContextInput = Parameters<typeof ClaudeCodePlugin>[0];
 type ResolvedPlugin = Awaited<ReturnType<typeof ClaudeCodePlugin>>;
@@ -28,6 +28,15 @@ describe('ClaudeCodePlugin', () => {
 
     expect(paramsOutput.options.cwd).toBe('/repo');
     expect(systemOutput.system).toHaveLength(1);
+  });
+
+  it('skips the system transform when model input is missing', async () => {
+    const plugin = await ClaudeCodePlugin({ worktree: '/repo' } as PluginContextInput);
+    const systemOutput = { system: [] as string[] };
+
+    await plugin['experimental.chat.system.transform']?.({} as Parameters<SystemTransformHook>[0], systemOutput);
+
+    expect(systemOutput.system).toEqual([]);
   });
 });
 
