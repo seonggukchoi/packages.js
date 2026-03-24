@@ -143,7 +143,7 @@ describe('mapSdkMessage', () => {
     expect(stopParts).toEqual([
       { id: 'tool-1', type: 'tool-input-end' },
       {
-        input: '{"questions":[]}',
+        input: { questions: [] },
         providerExecuted: true,
         toolCallId: 'tool-1',
         toolName: 'question',
@@ -224,7 +224,7 @@ describe('mapSdkMessage', () => {
       { delta: '{"filePath":"README.md"}', id: 'server-read', type: 'tool-input-delta' },
       { id: 'server-read', type: 'tool-input-end' },
       {
-        input: '{"filePath":"README.md"}',
+        input: { filePath: 'README.md' },
         providerExecuted: true,
         toolCallId: 'server-read',
         toolName: 'Read',
@@ -250,7 +250,7 @@ describe('mapSdkMessage', () => {
       { delta: '{"command":"ls"}', id: 'server-bash', type: 'tool-input-delta' },
       { id: 'server-bash', type: 'tool-input-end' },
       {
-        input: '{"command":"ls"}',
+        input: { command: 'ls' },
         providerExecuted: true,
         toolCallId: 'server-bash',
         toolName: 'Bash',
@@ -334,7 +334,7 @@ describe('mapSdkMessage', () => {
       { delta: '{"query":"repo"}', id: 'server-search', type: 'tool-input-delta' },
       { id: 'server-search', type: 'tool-input-end' },
       {
-        input: '{"query":"repo"}',
+        input: { query: 'repo' },
         providerExecuted: true,
         toolCallId: 'server-search',
         toolName: 'WebSearch',
@@ -360,7 +360,7 @@ describe('mapSdkMessage', () => {
       { delta: '{"command":"pwd"}', id: 'server-error', type: 'tool-input-delta' },
       { id: 'server-error', type: 'tool-input-end' },
       {
-        input: '{"command":"pwd"}',
+        input: { command: 'pwd' },
         providerExecuted: true,
         toolCallId: 'server-error',
         toolName: 'Bash',
@@ -387,7 +387,7 @@ describe('mapSdkMessage', () => {
       { delta: '{"command":"ls missing"}', id: 'server-stderr', type: 'tool-input-delta' },
       { id: 'server-stderr', type: 'tool-input-end' },
       {
-        input: '{"command":"ls missing"}',
+        input: { command: 'ls missing' },
         providerExecuted: true,
         toolCallId: 'server-stderr',
         toolName: 'Bash',
@@ -413,7 +413,7 @@ describe('mapSdkMessage', () => {
       { delta: '{"command":"printf foo"}', id: 'server-stdout-only', type: 'tool-input-delta' },
       { id: 'server-stdout-only', type: 'tool-input-end' },
       {
-        input: '{"command":"printf foo"}',
+        input: { command: 'printf foo' },
         providerExecuted: true,
         toolCallId: 'server-stdout-only',
         toolName: 'Bash',
@@ -439,7 +439,7 @@ describe('mapSdkMessage', () => {
       { delta: '{"command":"cat secret"}', id: 'server-error-code', type: 'tool-input-delta' },
       { id: 'server-error-code', type: 'tool-input-end' },
       {
-        input: '{"command":"cat secret"}',
+        input: { command: 'cat secret' },
         providerExecuted: true,
         toolCallId: 'server-error-code',
         toolName: 'Bash',
@@ -465,7 +465,7 @@ describe('mapSdkMessage', () => {
       { delta: '{"command":"noop"}', id: 'server-empty-bash', type: 'tool-input-delta' },
       { id: 'server-empty-bash', type: 'tool-input-end' },
       {
-        input: '{"command":"noop"}',
+        input: { command: 'noop' },
         providerExecuted: true,
         toolCallId: 'server-empty-bash',
         toolName: 'Bash',
@@ -491,7 +491,7 @@ describe('mapSdkMessage', () => {
       { delta: '{"path":"."}', id: 'server-fallback', type: 'tool-input-delta' },
       { id: 'server-fallback', type: 'tool-input-end' },
       {
-        input: '{"path":"."}',
+        input: { path: '.' },
         providerExecuted: true,
         toolCallId: 'server-fallback',
         toolName: 'Remote',
@@ -590,7 +590,7 @@ describe('mapSdkMessage', () => {
       },
       { id: 'remembered-tool', type: 'tool-input-end' },
       {
-        input: '{}',
+        input: {},
         providerExecuted: true,
         toolCallId: 'remembered-tool',
         toolName: 'RememberedTool',
@@ -604,7 +604,7 @@ describe('mapSdkMessage', () => {
       },
       { id: 'unknown-tool', type: 'tool-input-end' },
       {
-        input: '{}',
+        input: {},
         providerExecuted: true,
         toolCallId: 'unknown-tool',
         toolName: 'unknown',
@@ -619,7 +619,7 @@ describe('mapSdkMessage', () => {
       { delta: '{"filePath":"."}', id: 'dup-tool', type: 'tool-input-delta' },
       { id: 'dup-tool', type: 'tool-input-end' },
       {
-        input: '{"filePath":"."}',
+        input: { filePath: '.' },
         providerExecuted: true,
         toolCallId: 'dup-tool',
         toolName: 'Read',
@@ -683,7 +683,7 @@ describe('mapSdkMessage', () => {
       { delta: '{"filePath":"."}', id: 'tool-0', type: 'tool-input-delta' },
       { id: 'tool-0', type: 'tool-input-end' },
       {
-        input: '{"filePath":"."}',
+        input: { filePath: '.' },
         providerExecuted: true,
         toolCallId: 'tool-0',
         toolName: 'Read',
@@ -760,7 +760,7 @@ describe('mapSdkMessage', () => {
     ).toEqual([
       { id: 'tool-7', type: 'tool-input-end' },
       {
-        input: '{}',
+        input: {},
         providerExecuted: true,
         toolCallId: 'tool-7',
         toolName: 'unknown',
@@ -1086,8 +1086,85 @@ describe('mapSdkMessage', () => {
           uuid: 'evt-tool-circular',
         } as unknown as SDKMessage,
         state,
-      )[1],
-    ).toEqual({ delta: '{}', id: 'tool-circular', type: 'tool-input-delta' });
+      ),
+    ).toEqual([
+      {
+        id: 'tool-circular',
+        providerExecuted: true,
+        toolName: 'question',
+        type: 'tool-input-start',
+      },
+    ]);
+    expect(
+      mapSdkMessage(
+        {
+          message: {
+            content: [
+              { id: 'tool-empty-string', input: '', name: 'question', type: 'server_tool_use' },
+              { id: 'tool-invalid-json', input: '{', name: 'question', type: 'server_tool_use' },
+              {
+                id: 'tool-non-record-json',
+                input: {
+                  toJSON() {
+                    return 'not-a-record';
+                  },
+                },
+                name: 'question',
+                type: 'server_tool_use',
+              },
+            ],
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'assistant',
+          uuid: 'assistant-string-inputs',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([
+      {
+        id: 'tool-empty-string',
+        providerExecuted: true,
+        toolName: 'question',
+        type: 'tool-input-start',
+      },
+      { id: 'tool-empty-string', type: 'tool-input-end' },
+      {
+        input: {},
+        providerExecuted: true,
+        toolCallId: 'tool-empty-string',
+        toolName: 'question',
+        type: 'tool-call',
+      },
+      {
+        id: 'tool-invalid-json',
+        providerExecuted: true,
+        toolName: 'question',
+        type: 'tool-input-start',
+      },
+      { id: 'tool-invalid-json', type: 'tool-input-end' },
+      {
+        input: {},
+        providerExecuted: true,
+        toolCallId: 'tool-invalid-json',
+        toolName: 'question',
+        type: 'tool-call',
+      },
+      {
+        id: 'tool-non-record-json',
+        providerExecuted: true,
+        toolName: 'question',
+        type: 'tool-input-start',
+      },
+      { id: 'tool-non-record-json', type: 'tool-input-end' },
+      {
+        input: {},
+        providerExecuted: true,
+        toolCallId: 'tool-non-record-json',
+        toolName: 'question',
+        type: 'tool-call',
+      },
+    ]);
     expect(
       mapSdkMessage(
         {
@@ -1118,7 +1195,7 @@ describe('mapSdkMessage', () => {
     ).toEqual([
       { id: 'tool-circular', type: 'tool-input-end' },
       {
-        input: '{}',
+        input: {},
         providerExecuted: true,
         toolCallId: 'tool-circular',
         toolName: 'question',
