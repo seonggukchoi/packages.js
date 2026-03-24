@@ -259,14 +259,14 @@ describe('ClaudeCodeLanguageModel', () => {
         {
           id: 'server-read',
           providerExecuted: true,
-          toolName: 'Read',
+          toolName: 'read',
           type: 'tool-input-start',
         },
         {
           input: { filePath: '.' },
           providerExecuted: true,
           toolCallId: 'server-read',
-          toolName: 'Read',
+          toolName: 'read',
           type: 'tool-call',
         },
         {
@@ -274,23 +274,23 @@ describe('ClaudeCodeLanguageModel', () => {
           result: {
             metadata: { blockType: 'text_editor_code_execution_tool_result' },
             output: 'README.md',
-            title: 'Read',
+            title: 'read',
           },
           toolCallId: 'server-read',
-          toolName: 'Read',
+          toolName: 'read',
           type: 'tool-result',
         },
         {
           id: 'server-bash',
           providerExecuted: true,
-          toolName: 'Bash',
+          toolName: 'bash',
           type: 'tool-input-start',
         },
         {
           input: { command: 'ls' },
           providerExecuted: true,
           toolCallId: 'server-bash',
-          toolName: 'Bash',
+          toolName: 'bash',
           type: 'tool-call',
         },
         {
@@ -298,10 +298,10 @@ describe('ClaudeCodeLanguageModel', () => {
           result: {
             metadata: { blockType: 'bash_code_execution_tool_result', returnCode: 0 },
             output: 'README.md',
-            title: 'Bash',
+            title: 'bash',
           },
           toolCallId: 'server-bash',
-          toolName: 'Bash',
+          toolName: 'bash',
           type: 'tool-result',
         },
         {
@@ -520,21 +520,21 @@ describe('ClaudeCodeLanguageModel', () => {
         {
           id: 'native-read',
           providerExecuted: true,
-          toolName: 'Read',
+          toolName: 'read',
           type: 'tool-input-start',
         },
         {
           input: { filePath: 'README.md' },
           providerExecuted: true,
           toolCallId: 'native-read',
-          toolName: 'Read',
+          toolName: 'read',
           type: 'tool-call',
         },
         {
           providerExecuted: true,
           result: { content: 'native read result' },
           toolCallId: 'native-read',
-          toolName: 'Read',
+          toolName: 'read',
           type: 'tool-result',
         },
         {

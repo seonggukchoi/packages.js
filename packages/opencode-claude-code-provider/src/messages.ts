@@ -38,6 +38,22 @@ type OpenCodeToolCallPart = Omit<Extract<LanguageModelV2StreamPart, { type: 'too
 };
 
 const TOOL_INPUT_STRING_COMPAT = Symbol('toolInputStringCompat');
+const CANONICAL_TOOL_NAME_MAP = new Map(
+  Object.entries({
+    ApplyPatch: 'apply_patch',
+    Bash: 'bash',
+    Codesearch: 'codesearch',
+    Edit: 'edit',
+    Glob: 'glob',
+    Grep: 'grep',
+    Read: 'read',
+    Task: 'task',
+    TodoWrite: 'todowrite',
+    WebFetch: 'webfetch',
+    WebSearch: 'websearch',
+    Write: 'write',
+  }),
+);
 
 const TOOL_INPUT_BLOCK_TYPES = new Set(['tool_use', 'server_tool_use', 'mcp_tool_use']);
 const TOOL_RESULT_BLOCK_TYPES = new Set([
@@ -132,7 +148,7 @@ function mapAssistantMessage(message: SDKAssistantMessage, state: StreamState): 
         continue;
       }
 
-      const toolName = getString(block.name) ?? state.toolNames.get(id) ?? 'unknown';
+      const toolName = normalizeToolName(getString(block.name) ?? state.toolNames.get(id) ?? 'unknown');
       const input = getToolInput(block.input);
       const inputText = serializeToolInput(input, { omitEmpty: true });
 
@@ -166,7 +182,7 @@ function mapAssistantMessage(message: SDKAssistantMessage, state: StreamState): 
 
       state.toolResultIds.add(toolCallId);
 
-      const toolName = state.toolNames.get(toolCallId) ?? blockType;
+      const toolName = normalizeToolName(state.toolNames.get(toolCallId) ?? blockType);
 
       parts.push({
         ...(isAssistantToolResultError(block) ? { isError: true } : {}),
@@ -228,7 +244,7 @@ function onContentBlockStart(event: Record<string, unknown>, index: number, stat
 
   if (blockType && TOOL_INPUT_BLOCK_TYPES.has(blockType)) {
     const id = getString(block.id) ?? `tool-${index}`;
-    const toolName = getString(block.name) ?? 'unknown';
+    const toolName = normalizeToolName(getString(block.name) ?? 'unknown');
     const input = getToolInput(block.input);
     const initialInput = serializeToolInput(input, { omitEmpty: true });
 
@@ -329,7 +345,7 @@ function mapToolResultMessage(message: Extract<SDKMessage, { type: 'user' }>, st
 
   state.toolResultIds.add(message.parent_tool_use_id);
 
-  const toolName = state.toolNames.get(message.parent_tool_use_id) ?? 'unknown';
+  const toolName = normalizeToolName(state.toolNames.get(message.parent_tool_use_id) ?? 'unknown');
 
   return [
     {
@@ -417,6 +433,10 @@ function getToolLinkId(block: Record<string, unknown>): string | undefined {
     getString(block.toolCallId) ??
     getString(block.id)
   );
+}
+
+function normalizeToolName(toolName: string): string {
+  return CANONICAL_TOOL_NAME_MAP.get(toolName) ?? toolName;
 }
 
 function getAssistantToolResult(blockType: string, block: Record<string, unknown>, toolName: string): unknown {
