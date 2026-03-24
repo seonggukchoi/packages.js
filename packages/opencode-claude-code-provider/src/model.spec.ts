@@ -10,7 +10,7 @@ describe('ClaudeCodeLanguageModel', () => {
     vi.restoreAllMocks();
   });
 
-  it('streams the first turn and forwards native and bridged tool configuration', async () => {
+  it('streams the first turn and prefers OpenCode bridge tools when executors exist', async () => {
     const calls: Array<{ options?: Record<string, unknown>; prompt: string }> = [];
     const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6', {
       queryRunner(input) {
@@ -73,14 +73,22 @@ describe('ClaudeCodeLanguageModel', () => {
       ],
       providerOptions: {
         'claude-code': {
-          bridgeTools: ['question'],
+          bridgeTools: ['bash', 'question'],
           nativeTools: ['bash'],
         },
       },
-      tools: [
-        { inputSchema: { type: 'object' }, name: 'bash', type: 'function' },
-        { inputSchema: { properties: { query: { type: 'string' } }, type: 'object' }, name: 'question', type: 'function' },
-      ],
+      tools: {
+        bash: {
+          execute: async () => 'ok',
+          inputSchema: { properties: { command: { type: 'string' } }, type: 'object' },
+          type: 'function',
+        },
+        question: {
+          execute: async () => 'ok',
+          inputSchema: { properties: { query: { type: 'string' } }, type: 'object' },
+          type: 'function',
+        },
+      },
     } as unknown as LanguageModelV2CallOptions);
 
     const parts = await readStream(result.stream);
@@ -113,10 +121,41 @@ describe('ClaudeCodeLanguageModel', () => {
 
     expect(calls[0].prompt).toContain('Say hello.');
     expect(calls[0].options?.allowDangerouslySkipPermissions).toBe(true);
-    expect(calls[0].options?.tools).toEqual(['Bash']);
-    expect(calls[0].options?.allowedTools).toEqual(['Bash', 'mcp__opencode__*']);
+    expect(calls[0].options?.tools).toEqual([]);
+    expect(calls[0].options?.allowedTools).toEqual(['mcp__opencode__*']);
     expect(calls[0].options?.permissionMode).toBe('bypassPermissions');
+    expect(calls[0].options?.permissionPromptToolName).toBe('mcp__opencode__question');
     expect(calls[0].options?.resume).toBeUndefined();
+  });
+
+  it('falls back to Claude native permissions when no OpenCode executor is attached', async () => {
+    const calls: Array<{ options?: Record<string, unknown>; prompt: string }> = [];
+    const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6', {
+      queryRunner(input) {
+        calls.push(input as { options?: Record<string, unknown>; prompt: string });
+        return createQuery([{ session_id: 'sess_native', subtype: 'init', type: 'system', uuid: 'sys-native' }]);
+      },
+    });
+
+    await model.doStream({
+      prompt: [{ content: [{ text: 'List files.', type: 'text' }], role: 'user' }],
+      providerOptions: {
+        'claude-code': {
+          bridgeTools: ['bash', 'question'],
+          nativeTools: ['bash'],
+        },
+      },
+      tools: [
+        { inputSchema: { type: 'object' }, name: 'bash', type: 'function' },
+        { inputSchema: { properties: { query: { type: 'string' } }, type: 'object' }, name: 'question', type: 'function' },
+      ],
+    } as unknown as LanguageModelV2CallOptions);
+
+    expect(calls[0].options?.allowDangerouslySkipPermissions).toBeUndefined();
+    expect(calls[0].options?.allowedTools).toEqual(['Bash']);
+    expect(calls[0].options?.permissionMode).toBe('default');
+    expect(calls[0].options?.permissionPromptToolName).toBeUndefined();
+    expect(calls[0].options?.tools).toEqual(['Bash']);
   });
 
   it('throws when non-streaming generation is requested', async () => {
@@ -507,10 +546,17 @@ describe('ClaudeCodeLanguageModel', () => {
           nativeTools: ['read'],
         },
       },
-      tools: [
-        { inputSchema: { type: 'object' }, name: 'read', type: 'function' },
-        { inputSchema: { properties: { questions: { type: 'array' } }, type: 'object' }, name: 'question', type: 'function' },
-      ],
+      tools: {
+        question: {
+          execute: async () => 'ok',
+          inputSchema: { properties: { questions: { type: 'array' } }, type: 'object' },
+          type: 'function',
+        },
+        read: {
+          inputSchema: { type: 'object' },
+          type: 'function',
+        },
+      },
     } as unknown as LanguageModelV2CallOptions);
 
     const parts = await readStream(result.stream);

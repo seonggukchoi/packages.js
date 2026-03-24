@@ -23,6 +23,7 @@ export function normalizeChatParams(input: ChatParamsInput, output: ChatParamsOu
   output.options = {
     ...output.options,
     bridgeOpenCodeMcp: normalizeBoolean(output.options.bridgeOpenCodeMcp) ?? false,
+    bridgeTools: normalizeStringArray(output.options.bridgeTools),
     claudeMdPath: normalizeString(output.options.claudeMdPath),
     cwd: normalizeString(output.options.cwd) ?? defaults.cwd,
     effort: normalizeClaudeCodeEffort(output.options.effort),
@@ -30,8 +31,11 @@ export function normalizeChatParams(input: ChatParamsInput, output: ChatParamsOu
     loadClaudeMd: normalizeBoolean(output.options.loadClaudeMd) ?? false,
     maxTurns: normalizeNumber(output.options.maxTurns) ?? 12,
     mcpServers: normalizeMcpServers(output.options.mcpServers) ?? {},
+    nativeTools: normalizeStringArray(output.options.nativeTools),
     pathToClaudeCodeExecutable: normalizeString(output.options.pathToClaudeCodeExecutable) ?? 'claude',
+    permissionMode: normalizePermissionMode(output.options.permissionMode),
     settingSources: normalizeStringArray(output.options.settingSources) ?? [],
+    toolPreference: normalizeToolPreference(output.options.toolPreference) ?? 'opencode-first',
   };
 }
 
@@ -63,4 +67,14 @@ function normalizeStringArray(value: unknown): string[] | undefined {
   }
 
   return value.filter((item): item is string => typeof item === 'string');
+}
+
+function normalizePermissionMode(value: unknown): string | undefined {
+  return value === 'acceptEdits' || value === 'bypassPermissions' || value === 'default' || value === 'dontAsk' || value === 'plan'
+    ? value
+    : undefined;
+}
+
+function normalizeToolPreference(value: unknown): string | undefined {
+  return value === 'claude-first' || value === 'opencode-first' ? value : undefined;
 }

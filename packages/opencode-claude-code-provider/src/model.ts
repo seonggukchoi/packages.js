@@ -40,6 +40,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       bridgeTools: normalizedOptions.bridgeTools,
       nativeTools: normalizedOptions.nativeTools,
       prompt: options.prompt,
+      toolPreference: normalizedOptions.toolPreference,
       tools: options.tools,
     });
     const opencodeMcp = normalizedOptions.bridgeOpenCodeMcp ? toAgentMcp(normalizedOptions.openCodeMcp) : { servers: {}, warnings: [] };
@@ -59,9 +60,10 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       abortController.abort(options.abortSignal?.reason);
     });
 
+    const permissionMode = resolvePermissionMode(normalizedOptions.permissionMode, bridge.nativeTools.length > 0);
+
     const run = normalizedOptions.queryRunner({
       options: {
-        allowDangerouslySkipPermissions: true,
         abortController,
         allowedTools: bridge.allowedTools,
         cwd: normalizedOptions.cwd,
@@ -76,7 +78,9 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
         },
         model: this.modelId,
         pathToClaudeCodeExecutable: normalizedOptions.pathToClaudeCodeExecutable,
-        permissionMode: 'bypassPermissions',
+        ...(bridge.permissionPromptToolName ? { permissionPromptToolName: bridge.permissionPromptToolName } : {}),
+        ...(permissionMode === 'bypassPermissions' ? { allowDangerouslySkipPermissions: true } : {}),
+        permissionMode,
         resume: resumeSessionId,
         systemPrompt: system
           ? {
@@ -96,6 +100,10 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
     const stream = new ReadableStream<LanguageModelV2StreamPart>({
       async start(controller) {
         controller.enqueue({ type: 'stream-start', warnings: [] });
+
+        for (const warning of bridge.warnings) {
+          controller.enqueue({ error: new Error(warning), type: 'error' });
+        }
 
         for (const warning of opencodeMcp.warnings) {
           controller.enqueue({ error: new Error(warning), type: 'error' });
@@ -140,6 +148,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
         body: {
           allowedTools: bridge.allowedTools,
           model: this.modelId,
+          permissionMode,
           prompt,
           resume: resumeSessionId,
           system,
@@ -161,4 +170,12 @@ function buildProviderMetadata(modelId: string, sessionId: string | undefined) {
       ...(sessionId ? { sessionId } : {}),
     },
   };
+}
+
+function resolvePermissionMode(explicitPermissionMode: ClaudeCodeProviderOptions['permissionMode'], hasNativeTools: boolean) {
+  if (explicitPermissionMode) {
+    return explicitPermissionMode;
+  }
+
+  return hasNativeTools ? 'default' : 'bypassPermissions';
 }
