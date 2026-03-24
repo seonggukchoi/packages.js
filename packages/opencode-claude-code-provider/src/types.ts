@@ -111,6 +111,7 @@ export function normalizeProviderOptions(
     claudeMdPath: getString(raw.claudeMdPath) ?? defaults.claudeMdPath,
     cwd: getString(raw.cwd) ?? defaults.cwd ?? process.cwd(),
     env: {
+      ...getProcessEnv(),
       ...(defaults.env ?? {}),
       ...(rawEnv ?? {}),
     },
@@ -186,4 +187,8 @@ function getEffort(value: unknown): ClaudeCodeEffort | undefined {
   }
 
   return undefined;
+}
+
+function getProcessEnv(): Record<string, string> {
+  return Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
 }
