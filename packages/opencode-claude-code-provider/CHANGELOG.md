@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.5](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.4...@seonggukchoi/opencode-claude-code-provider@0.1.5) (2026-03-24)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** normalize server tool results ([da69899](https://github.com/seonggukchoi/packages.js/commit/da69899e6b1b4b4802fb36ed6fa0e052c7275a11))
+
 ## [0.1.4](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.3...@seonggukchoi/opencode-claude-code-provider@0.1.4) (2026-03-24)
 
 ### Bug Fixes
