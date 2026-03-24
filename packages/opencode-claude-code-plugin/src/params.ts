@@ -16,7 +16,7 @@ type NormalizeChatParamsOptions = {
 };
 
 export function normalizeChatParams(input: ChatParamsInput, output: ChatParamsOutput, defaults: NormalizeChatParamsOptions): void {
-  if (input.model.providerID !== 'claude-code') {
+  if (input.model?.providerID !== 'claude-code') {
     return;
   }
 
