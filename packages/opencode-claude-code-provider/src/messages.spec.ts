@@ -41,7 +41,7 @@ describe('mapSdkMessage', () => {
       mapSdkMessage(
         {
           event: {
-            delta: { text: 'check', type: 'thinking_delta' },
+            delta: { thinking: 'check', type: 'thinking_delta' },
             index: 0,
             type: 'content_block_delta',
           },
@@ -53,6 +53,23 @@ describe('mapSdkMessage', () => {
         state,
       ),
     ).toEqual([{ delta: 'check', id: 'reasoning-0', type: 'reasoning-delta' }]);
+
+    expect(
+      mapSdkMessage(
+        {
+          event: {
+            delta: { text: 'fallback', type: 'text_delta' },
+            index: 0,
+            type: 'content_block_delta',
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'stream_event',
+          uuid: 'evt-2b',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([{ delta: 'fallback', id: 'reasoning-0', type: 'reasoning-delta' }]);
 
     expect(
       mapSdkMessage(

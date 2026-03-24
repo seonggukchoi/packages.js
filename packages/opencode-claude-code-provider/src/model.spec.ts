@@ -194,6 +194,95 @@ describe('ClaudeCodeLanguageModel', () => {
     expect(calls[0].options?.permissionMode).toBe('bypassPermissions');
   });
 
+  it('streams thinking deltas as reasoning parts', async () => {
+    const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6', {
+      queryRunner() {
+        return createQuery([
+          { session_id: 'sess_reasoning', subtype: 'init', type: 'system', uuid: 'sys-thinking' },
+          {
+            event: { content_block: { type: 'thinking' }, index: 0, type: 'content_block_start' },
+            parent_tool_use_id: null,
+            session_id: 'sess_reasoning',
+            type: 'stream_event',
+            uuid: 'evt-thinking-start',
+          },
+          {
+            event: { delta: { thinking: 'check repo state', type: 'thinking_delta' }, index: 0, type: 'content_block_delta' },
+            parent_tool_use_id: null,
+            session_id: 'sess_reasoning',
+            type: 'stream_event',
+            uuid: 'evt-thinking-delta',
+          },
+          {
+            event: { index: 0, type: 'content_block_stop' },
+            parent_tool_use_id: null,
+            session_id: 'sess_reasoning',
+            type: 'stream_event',
+            uuid: 'evt-thinking-stop',
+          },
+          {
+            duration_api_ms: 1,
+            duration_ms: 1,
+            fast_mode_state: 'off',
+            is_error: false,
+            modelUsage: {},
+            num_turns: 1,
+            permission_denials: [],
+            result: 'done',
+            session_id: 'sess_reasoning',
+            stop_reason: 'end_turn',
+            subtype: 'success',
+            total_cost_usd: 0,
+            type: 'result',
+            usage: {
+              cache_creation_input_tokens: 0,
+              cache_read_input_tokens: 0,
+              input_tokens: 3,
+              output_tokens: 2,
+              server_tool_use: null,
+              service_tier: 'standard',
+              thinking_tokens: 7,
+            },
+            uuid: 'result-thinking',
+          },
+        ]);
+      },
+    });
+
+    const result = await model.doStream({
+      prompt: [{ content: [{ text: 'show your reasoning', type: 'text' }], role: 'user' }],
+      tools: [],
+    } as unknown as LanguageModelV2CallOptions);
+
+    const parts = await readStream(result.stream);
+
+    expect(parts).toEqual(
+      expect.arrayContaining([
+        { type: 'stream-start', warnings: [] },
+        { id: 'reasoning-0', type: 'reasoning-start' },
+        { delta: 'check repo state', id: 'reasoning-0', type: 'reasoning-delta' },
+        { id: 'reasoning-0', type: 'reasoning-end' },
+        {
+          finishReason: 'stop',
+          providerMetadata: {
+            'claude-code': {
+              modelId: 'claude-sonnet-4-6',
+              sessionId: 'sess_reasoning',
+            },
+          },
+          type: 'finish',
+          usage: {
+            cachedInputTokens: 0,
+            inputTokens: 3,
+            outputTokens: 2,
+            reasoningTokens: 7,
+            totalTokens: 5,
+          },
+        },
+      ]),
+    );
+  });
+
   it('round-trips native and bridged tool calls through the stream mapper', async () => {
     const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6', {
       queryRunner() {

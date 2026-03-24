@@ -152,7 +152,7 @@ function onContentBlockDelta(event: Record<string, unknown>, index: number, stat
   }
 
   if (block.kind === 'reasoning' && (deltaType === 'thinking_delta' || deltaType === 'text_delta')) {
-    const text = getString(delta.text) ?? '';
+    const text = getString(delta.thinking) ?? getString(delta.text) ?? '';
     return text.length > 0 ? [{ delta: text, id: block.id, type: 'reasoning-delta' }] : [];
   }
 
