@@ -164,7 +164,7 @@ describe('ClaudeCodeLanguageModel', () => {
       prompt: [
         {
           content: [{ text: 'done', type: 'text' }],
-          providerMetadata: {
+          providerOptions: {
             'claude-code': {
               modelId: 'claude-sonnet-4-6',
               sessionId: 'sess_resume',
@@ -192,6 +192,129 @@ describe('ClaudeCodeLanguageModel', () => {
     expect(calls[0].options?.effort).toBe('high');
     expect(calls[0].options?.maxTurns).toBe(3);
     expect(calls[0].options?.permissionMode).toBe('bypassPermissions');
+  });
+
+  it('streams assistant server tool blocks for read and bash', async () => {
+    const model = new ClaudeCodeLanguageModel('claude-opus-4-6', {
+      queryRunner() {
+        return createQuery([
+          { session_id: 'sess_server_tools', subtype: 'init', type: 'system', uuid: 'sys-server-tools' },
+          {
+            message: {
+              content: [
+                { id: 'server-read', input: { filePath: '.' }, name: 'Read', type: 'server_tool_use' },
+                { content: { text: 'README.md' }, tool_use_id: 'server-read', type: 'text_editor_code_execution_tool_result' },
+                { id: 'server-bash', input: { command: 'ls' }, name: 'Bash', type: 'server_tool_use' },
+                {
+                  content: { return_code: 0, stdout: 'README.md', type: 'bash_code_execution_result' },
+                  tool_use_id: 'server-bash',
+                  type: 'bash_code_execution_tool_result',
+                },
+              ],
+              usage: { input_tokens: 8, output_tokens: 5, total_tokens: 13 },
+            },
+            parent_tool_use_id: null,
+            session_id: 'sess_server_tools',
+            type: 'assistant',
+            uuid: 'assistant-server-tools',
+          },
+          {
+            duration_api_ms: 1,
+            duration_ms: 1,
+            fast_mode_state: 'off',
+            is_error: false,
+            modelUsage: {},
+            num_turns: 1,
+            permission_denials: [],
+            result: 'done',
+            session_id: 'sess_server_tools',
+            stop_reason: 'end_turn',
+            subtype: 'success',
+            total_cost_usd: 0,
+            type: 'result',
+            usage: {
+              cache_creation_input_tokens: 0,
+              cache_read_input_tokens: 0,
+              input_tokens: 8,
+              output_tokens: 5,
+              server_tool_use: null,
+              service_tier: 'standard',
+              total_tokens: 13,
+            },
+            uuid: 'result-server-tools',
+          },
+        ]);
+      },
+    });
+
+    const result = await model.doStream({
+      prompt: [{ content: [{ text: 'what files are here?', type: 'text' }], role: 'user' }],
+      tools: [],
+    } as unknown as LanguageModelV2CallOptions);
+
+    const parts = await readStream(result.stream);
+
+    expect(parts).toEqual(
+      expect.arrayContaining([
+        {
+          id: 'server-read',
+          providerExecuted: true,
+          toolName: 'Read',
+          type: 'tool-input-start',
+        },
+        {
+          input: '{"filePath":"."}',
+          providerExecuted: true,
+          toolCallId: 'server-read',
+          toolName: 'Read',
+          type: 'tool-call',
+        },
+        {
+          providerExecuted: true,
+          result: { text: 'README.md' },
+          toolCallId: 'server-read',
+          toolName: 'Read',
+          type: 'tool-result',
+        },
+        {
+          id: 'server-bash',
+          providerExecuted: true,
+          toolName: 'Bash',
+          type: 'tool-input-start',
+        },
+        {
+          input: '{"command":"ls"}',
+          providerExecuted: true,
+          toolCallId: 'server-bash',
+          toolName: 'Bash',
+          type: 'tool-call',
+        },
+        {
+          providerExecuted: true,
+          result: { return_code: 0, stdout: 'README.md', type: 'bash_code_execution_result' },
+          toolCallId: 'server-bash',
+          toolName: 'Bash',
+          type: 'tool-result',
+        },
+        {
+          finishReason: 'stop',
+          providerMetadata: {
+            'claude-code': {
+              modelId: 'claude-opus-4-6',
+              sessionId: 'sess_server_tools',
+            },
+          },
+          type: 'finish',
+          usage: {
+            cachedInputTokens: 0,
+            inputTokens: 8,
+            outputTokens: 5,
+            reasoningTokens: undefined,
+            totalTokens: 13,
+          },
+        },
+      ]),
+    );
   });
 
   it('streams thinking deltas as reasoning parts', async () => {

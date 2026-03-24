@@ -60,7 +60,7 @@ describe('prompt helpers', () => {
     const prompt = [
       {
         content: [{ text: 'done', type: 'text' as const }],
-        providerMetadata: {
+        providerOptions: {
           'claude-code': {
             modelId: 'sonnet',
             sessionId: 'sess_123',
@@ -78,7 +78,7 @@ describe('prompt helpers', () => {
     const prompt = [
       {
         content: [{ text: 'done', type: 'text' as const }],
-        providerMetadata: {
+        providerOptions: {
           'claude-code': {
             modelId: 'sonnet',
           },
@@ -94,7 +94,7 @@ describe('prompt helpers', () => {
     const prompt = [
       {
         content: [{ text: 'done', type: 'text' as const }],
-        providerMetadata: {
+        providerOptions: {
           'claude-code': {
             sessionId: 'sess_no_model',
           },
@@ -104,6 +104,50 @@ describe('prompt helpers', () => {
     ];
 
     expect(getResume(prompt, 'sonnet')).toBe('sess_no_model');
+  });
+
+  it('reads resume metadata from the latest assistant part provider options', () => {
+    const prompt = [
+      {
+        content: [
+          { text: 'done', type: 'text' as const },
+          {
+            providerOptions: {
+              'claude-code': {
+                modelId: 'sonnet',
+                sessionId: 'sess_part',
+              },
+            },
+            text: 'later',
+            type: 'text' as const,
+          },
+        ],
+        role: 'assistant' as const,
+      },
+    ];
+
+    expect(getResume(prompt, 'sonnet')).toBe('sess_part');
+  });
+
+  it('ignores assistant part provider options without a session id', () => {
+    const prompt = [
+      {
+        content: [
+          {
+            providerOptions: {
+              'claude-code': {
+                modelId: 'sonnet',
+              },
+            },
+            text: 'later',
+            type: 'text' as const,
+          },
+        ],
+        role: 'assistant' as const,
+      },
+    ];
+
+    expect(getResume(prompt, 'sonnet')).toBeUndefined();
   });
 
   it('falls back to the last conversation chunk when no resumed user text exists', () => {
@@ -173,7 +217,7 @@ describe('prompt helpers', () => {
     expect(output).toContain('bytes=3');
     expect(output).toContain('url=https://example.com/file.txt');
     expect(output).toContain('stringLength=11');
-    expect(output).toContain('[reasoning]');
+    expect(output).not.toContain('[reasoning]');
     expect(output).toContain('[tool-call:question] [object Object]');
     expect(output).toContain('[tool-result:question]');
     expect(output).toContain('[file mediaType=application/json]');
