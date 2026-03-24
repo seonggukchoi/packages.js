@@ -263,7 +263,7 @@ describe('ClaudeCodeLanguageModel', () => {
           type: 'tool-input-start',
         },
         {
-          input: '{"filePath":"."}',
+          input: { filePath: '.' },
           providerExecuted: true,
           toolCallId: 'server-read',
           toolName: 'Read',
@@ -287,7 +287,7 @@ describe('ClaudeCodeLanguageModel', () => {
           type: 'tool-input-start',
         },
         {
-          input: '{"command":"ls"}',
+          input: { command: 'ls' },
           providerExecuted: true,
           toolCallId: 'server-bash',
           toolName: 'Bash',
@@ -524,7 +524,7 @@ describe('ClaudeCodeLanguageModel', () => {
           type: 'tool-input-start',
         },
         {
-          input: '{"filePath":"README.md"}',
+          input: { filePath: 'README.md' },
           providerExecuted: true,
           toolCallId: 'native-read',
           toolName: 'Read',
@@ -538,7 +538,7 @@ describe('ClaudeCodeLanguageModel', () => {
           type: 'tool-result',
         },
         {
-          input: '{"questions":[]}',
+          input: { questions: [] },
           providerExecuted: true,
           toolCallId: 'bridge-question',
           toolName: 'question',

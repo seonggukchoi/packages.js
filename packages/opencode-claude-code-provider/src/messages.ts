@@ -16,6 +16,7 @@ type BlockState =
     }
   | {
       id: string;
+      input: Record<string, unknown>;
       index: number;
       inputText: string;
       kind: 'tool';
@@ -30,6 +31,10 @@ export type StreamState = {
   toolNames: Map<string, string>;
   toolResultIds: Set<string>;
   usage: LanguageModelV2Usage;
+};
+
+type OpenCodeToolCallPart = Omit<Extract<LanguageModelV2StreamPart, { type: 'tool-call' }>, 'input'> & {
+  input: Record<string, unknown>;
 };
 
 const TOOL_INPUT_BLOCK_TYPES = new Set(['tool_use', 'server_tool_use', 'mcp_tool_use']);
@@ -126,7 +131,8 @@ function mapAssistantMessage(message: SDKAssistantMessage, state: StreamState): 
       }
 
       const toolName = getString(block.name) ?? state.toolNames.get(id) ?? 'unknown';
-      const inputText = block.input === undefined ? '' : safeJsonStringify(block.input);
+      const input = getToolInput(block.input);
+      const inputText = serializeToolInput(input, { omitEmpty: true });
 
       state.toolCallIds.add(id);
       state.toolNames.set(id, toolName);
@@ -144,13 +150,7 @@ function mapAssistantMessage(message: SDKAssistantMessage, state: StreamState): 
       }
 
       parts.push({ id, type: 'tool-input-end' });
-      parts.push({
-        input: inputText || '{}',
-        providerExecuted: true,
-        toolCallId: id,
-        toolName,
-        type: 'tool-call',
-      });
+      parts.push(createToolCallPart({ input, providerExecuted: true, toolCallId: id, toolName }));
 
       continue;
     }
@@ -227,9 +227,10 @@ function onContentBlockStart(event: Record<string, unknown>, index: number, stat
   if (blockType && TOOL_INPUT_BLOCK_TYPES.has(blockType)) {
     const id = getString(block.id) ?? `tool-${index}`;
     const toolName = getString(block.name) ?? 'unknown';
-    const initialInput = block.input === undefined ? '' : safeJsonStringify(block.input);
+    const input = getToolInput(block.input);
+    const initialInput = serializeToolInput(input, { omitEmpty: true });
 
-    state.blocks.set(index, { id, index, inputText: initialInput, kind: 'tool', toolName });
+    state.blocks.set(index, { id, index, input, inputText: '', kind: 'tool', toolName });
     state.toolCallIds.add(id);
     state.toolNames.set(id, toolName);
 
@@ -306,13 +307,12 @@ function onContentBlockStop(index: number, state: StreamState): LanguageModelV2S
 
   return [
     { id: block.id, type: 'tool-input-end' },
-    {
-      input: block.inputText || '{}',
+    createToolCallPart({
+      input: block.inputText.length > 0 ? getToolInput(block.inputText, block.input) : block.input,
       providerExecuted: true,
       toolCallId: block.id,
       toolName: block.toolName,
-      type: 'tool-call',
-    },
+    }),
   ];
 }
 
@@ -513,4 +513,44 @@ function safeJsonStringify(value: unknown): string {
   } catch {
     return '{}';
   }
+}
+
+function getToolInput(value: unknown, fallback: Record<string, unknown> = {}): Record<string, unknown> {
+  if (typeof value === 'string') {
+    return parseToolInput(value) ?? fallback;
+  }
+
+  if (!isRecord(value)) {
+    return fallback;
+  }
+
+  return parseToolInput(safeJsonStringify(value)) ?? fallback;
+}
+
+function parseToolInput(value: string): Record<string, unknown> | undefined {
+  if (value.trim().length === 0) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return isRecord(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function serializeToolInput(value: Record<string, unknown>, options?: { omitEmpty?: boolean }): string {
+  if (options?.omitEmpty && Object.keys(value).length === 0) {
+    return '';
+  }
+
+  return safeJsonStringify(value);
+}
+
+function createToolCallPart(part: Omit<OpenCodeToolCallPart, 'type'>): LanguageModelV2StreamPart {
+  return {
+    ...part,
+    type: 'tool-call',
+  } as unknown as LanguageModelV2StreamPart;
 }

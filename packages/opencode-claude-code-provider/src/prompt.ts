@@ -127,7 +127,7 @@ function serializeAssistantPart(
   }
 
   if (part.type === 'tool-call') {
-    return `[tool-call:${part.toolName}] ${safeJsonStringify(part.input)}`;
+    return `[tool-call:${part.toolName}] ${safeJsonStringify(normalizeToolInput(part.input))}`;
   }
 
   if (part.type === 'tool-result') {
@@ -146,6 +146,18 @@ function safeJsonStringify(value: unknown): string {
     return JSON.stringify(value, null, 2);
   } catch {
     return String(value);
+  }
+}
+
+function normalizeToolInput(value: unknown): unknown {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
   }
 }
 
