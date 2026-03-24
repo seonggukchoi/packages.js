@@ -1,0 +1,92 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["@seonggukchoi/opencode-claude-code-plugin"],
+  "provider": {
+    "claude-code": {
+      "name": "Claude Code",
+      "npm": "@seonggukchoi/opencode-claude-code-provider",
+      "options": {
+        "bridgeOpenCodeMcp": true,
+        "bridgeTools": ["question", "task", "todowrite", "webfetch", "oc_apply_patch", "oc_codesearch", "oc_websearch"],
+        "cwd": ".",
+        "maxTurns": 12,
+        "nativeTools": ["read", "write", "edit", "glob", "grep", "bash"],
+        "pathToClaudeCodeExecutable": "claude"
+      },
+      "models": {
+        "sonnet": {
+          "id": "claude-sonnet-4-6",
+          "limit": {
+            "context": 1000000,
+            "output": 64000
+          },
+          "name": "Claude Sonnet",
+          "options": {
+            "effort": "medium"
+          },
+          "reasoning": true,
+          "tool_call": true,
+          "variants": {
+            "low": {
+              "effort": "low"
+            },
+            "medium": {
+              "effort": "medium"
+            },
+            "high": {
+              "effort": "high"
+            }
+          }
+        },
+        "opus": {
+          "id": "claude-opus-4-6",
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
+          "name": "Claude Opus",
+          "options": {
+            "effort": "medium"
+          },
+          "reasoning": true,
+          "tool_call": true,
+          "variants": {
+            "low": {
+              "effort": "low"
+            },
+            "medium": {
+              "effort": "medium"
+            },
+            "high": {
+              "effort": "high"
+            },
+            "max": {
+              "effort": "max"
+            }
+          }
+        },
+        "haiku": {
+          "id": "claude-haiku-4-5",
+          "limit": {
+            "context": 200000,
+            "output": 64000
+          },
+          "name": "Claude Haiku",
+          "options": {
+            "effort": "low"
+          },
+          "reasoning": true,
+          "tool_call": true,
+          "variants": {
+            "low": {
+              "effort": "low"
+            },
+            "medium": {
+              "effort": "medium"
+            }
+          }
+        }
+      }
+    }
+  }
+}

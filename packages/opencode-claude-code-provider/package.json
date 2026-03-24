@@ -1,0 +1,59 @@
+{
+  "name": "@seonggukchoi/opencode-claude-code-provider",
+  "version": "0.0.0",
+  "description": "OpenCode provider backed by Claude Agent SDK",
+  "author": "seonggukchoi",
+  "license": "MIT",
+  "type": "module",
+  "engineStrict": true,
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seonggukchoi/packages.js",
+    "directory": "packages/opencode-claude-code-provider"
+  },
+  "keywords": [
+    "opencode",
+    "claude",
+    "provider",
+    "anthropic",
+    "ai-sdk"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rimraf dist .tsbuildinfo && tsc -p tsconfig.build.json",
+    "lint": "eslint --fix .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:smoke": "node ./test/smoke.mjs",
+    "test:typecheck": "tsc -p tsconfig.check.json --noEmit",
+    "typecheck": "pnpm run test:typecheck"
+  },
+  "peerDependencies": {
+    "@ai-sdk/provider": ">=3.0.0",
+    "zod": ">=4.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.81",
+    "@ai-sdk/provider": "^3.0.8",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.1"
+  }
+}

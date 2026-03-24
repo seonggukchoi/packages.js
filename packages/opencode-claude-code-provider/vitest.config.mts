@@ -1,0 +1,14 @@
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { mergeConfig } from 'vitest/config';
+
+import { createVitestConfig } from '../../vitest.config.mjs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+export default mergeConfig(createVitestConfig(__dirname), {
+  test: {
+    passWithNoTests: true,
+  },
+});
