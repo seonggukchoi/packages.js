@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-plugin@0.1.1...@seonggukchoi/opencode-claude-code-plugin@0.1.2) (2026-03-24)
+
+### Bug Fixes
+
+- **opencode-claude-code-plugin:** harden plugin runtime loading ([6effe09](https://github.com/seonggukchoi/packages.js/commit/6effe09aff196f2edf2320acc691707a4ff7f3dd))
+
 ## [0.1.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-plugin@0.1.0...@seonggukchoi/opencode-claude-code-plugin@0.1.1) (2026-03-24)
 
 ### Bug Fixes

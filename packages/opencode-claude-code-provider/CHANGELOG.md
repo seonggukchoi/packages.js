@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.1...@seonggukchoi/opencode-claude-code-provider@0.1.2) (2026-03-24)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** restore runtime coverage and defaults ([97000bb](https://github.com/seonggukchoi/packages.js/commit/97000bb78c35a3ef0a149203c9185aceb22e4f61))
+
 ## [0.1.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.0...@seonggukchoi/opencode-claude-code-provider@0.1.1) (2026-03-24)
 
 ### Bug Fixes
