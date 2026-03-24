@@ -172,6 +172,372 @@ describe('mapSdkMessage', () => {
         type: 'tool-result',
       },
     ]);
+
+    expect(
+      mapSdkMessage(
+        {
+          message: { role: 'user' },
+          parent_tool_use_id: 'tool-1',
+          session_id: 'sess_123',
+          tool_use_result: { answer: 'yes again' },
+          type: 'user',
+          uuid: 'user-duplicate',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([]);
+  });
+
+  it('maps assistant server tool blocks for read and bash flows', () => {
+    const state = createStreamState();
+
+    const parts = mapSdkMessage(
+      {
+        message: {
+          content: [
+            { id: 'server-read', input: { filePath: 'README.md' }, name: 'Read', type: 'server_tool_use' },
+            { content: { text: 'read ok' }, tool_use_id: 'server-read', type: 'text_editor_code_execution_tool_result' },
+            { id: 'server-bash', input: { command: 'ls' }, name: 'Bash', type: 'server_tool_use' },
+            {
+              content: { return_code: 0, stdout: 'README.md', type: 'bash_code_execution_result' },
+              tool_use_id: 'server-bash',
+              type: 'bash_code_execution_tool_result',
+            },
+          ],
+          usage: { input_tokens: 8, output_tokens: 3, total_tokens: 11 },
+        },
+        parent_tool_use_id: null,
+        session_id: 'sess_123',
+        type: 'assistant',
+        uuid: 'assistant-tools',
+      } as unknown as SDKMessage,
+      state,
+    );
+
+    expect(parts).toEqual([
+      {
+        id: 'server-read',
+        providerExecuted: true,
+        toolName: 'Read',
+        type: 'tool-input-start',
+      },
+      { delta: '{"filePath":"README.md"}', id: 'server-read', type: 'tool-input-delta' },
+      { id: 'server-read', type: 'tool-input-end' },
+      {
+        input: '{"filePath":"README.md"}',
+        providerExecuted: true,
+        toolCallId: 'server-read',
+        toolName: 'Read',
+        type: 'tool-call',
+      },
+      {
+        providerExecuted: true,
+        result: { text: 'read ok' },
+        toolCallId: 'server-read',
+        toolName: 'Read',
+        type: 'tool-result',
+      },
+      {
+        id: 'server-bash',
+        providerExecuted: true,
+        toolName: 'Bash',
+        type: 'tool-input-start',
+      },
+      { delta: '{"command":"ls"}', id: 'server-bash', type: 'tool-input-delta' },
+      { id: 'server-bash', type: 'tool-input-end' },
+      {
+        input: '{"command":"ls"}',
+        providerExecuted: true,
+        toolCallId: 'server-bash',
+        toolName: 'Bash',
+        type: 'tool-call',
+      },
+      {
+        providerExecuted: true,
+        result: { return_code: 0, stdout: 'README.md', type: 'bash_code_execution_result' },
+        toolCallId: 'server-bash',
+        toolName: 'Bash',
+        type: 'tool-result',
+      },
+    ]);
+
+    expect(state.usage.totalTokens).toBe(11);
+  });
+
+  it('handles assistant tool result fallbacks and duplicate suppression', () => {
+    const state = createStreamState();
+
+    expect(
+      mapSdkMessage(
+        {
+          message: {
+            content: [
+              { id: 'server-search', input: { query: 'repo' }, name: 'WebSearch', type: 'server_tool_use' },
+              { result: { hits: 1 }, tool_call_id: 'server-search', type: 'tool_search_tool_result' },
+              { id: 'server-error', input: { command: 'pwd' }, name: 'Bash', type: 'server_tool_use' },
+              {
+                error: { code: 'permission_denied' },
+                is_error: true,
+                server_tool_use_id: 'server-error',
+                type: 'bash_code_execution_tool_result',
+              },
+              { id: 'server-fallback', input: { path: '.' }, name: 'Remote', type: 'mcp_tool_use' },
+              { mystery: 'value', toolUseId: 'server-fallback', type: 'mcp_tool_result' },
+            ],
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'assistant',
+          uuid: 'assistant-fallbacks',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([
+      {
+        id: 'server-search',
+        providerExecuted: true,
+        toolName: 'WebSearch',
+        type: 'tool-input-start',
+      },
+      { delta: '{"query":"repo"}', id: 'server-search', type: 'tool-input-delta' },
+      { id: 'server-search', type: 'tool-input-end' },
+      {
+        input: '{"query":"repo"}',
+        providerExecuted: true,
+        toolCallId: 'server-search',
+        toolName: 'WebSearch',
+        type: 'tool-call',
+      },
+      {
+        providerExecuted: true,
+        result: { hits: 1 },
+        toolCallId: 'server-search',
+        toolName: 'WebSearch',
+        type: 'tool-result',
+      },
+      {
+        id: 'server-error',
+        providerExecuted: true,
+        toolName: 'Bash',
+        type: 'tool-input-start',
+      },
+      { delta: '{"command":"pwd"}', id: 'server-error', type: 'tool-input-delta' },
+      { id: 'server-error', type: 'tool-input-end' },
+      {
+        input: '{"command":"pwd"}',
+        providerExecuted: true,
+        toolCallId: 'server-error',
+        toolName: 'Bash',
+        type: 'tool-call',
+      },
+      {
+        isError: true,
+        providerExecuted: true,
+        result: { error: { code: 'permission_denied' } },
+        toolCallId: 'server-error',
+        toolName: 'Bash',
+        type: 'tool-result',
+      },
+      {
+        id: 'server-fallback',
+        providerExecuted: true,
+        toolName: 'Remote',
+        type: 'tool-input-start',
+      },
+      { delta: '{"path":"."}', id: 'server-fallback', type: 'tool-input-delta' },
+      { id: 'server-fallback', type: 'tool-input-end' },
+      {
+        input: '{"path":"."}',
+        providerExecuted: true,
+        toolCallId: 'server-fallback',
+        toolName: 'Remote',
+        type: 'tool-call',
+      },
+      {
+        providerExecuted: true,
+        result: { mystery: 'value', toolUseId: 'server-fallback', type: 'mcp_tool_result' },
+        toolCallId: 'server-fallback',
+        toolName: 'Remote',
+        type: 'tool-result',
+      },
+    ]);
+
+    expect(
+      mapSdkMessage(
+        {
+          message: {
+            content: [{ content: { ignored: true }, tool_use_id: 'server-search', type: 'web_fetch_tool_result' }],
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'assistant',
+          uuid: 'assistant-duplicate-result',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapSdkMessage(
+        {
+          message: {
+            content: [{ content: { ignored: true }, type: 'web_fetch_tool_result' }],
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'assistant',
+          uuid: 'assistant-missing-link',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([]);
+  });
+
+  it('covers assistant message guard branches and duplicate tool inputs', () => {
+    const state = createStreamState();
+    state.toolNames.set('remembered-tool', 'RememberedTool');
+
+    expect(
+      mapSdkMessage(
+        {
+          message: {
+            content: 'not-an-array',
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'assistant',
+          uuid: 'assistant-bad-content',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapSdkMessage(
+        {
+          message: {
+            content: [
+              null,
+              {},
+              { id: 'remembered-tool', type: 'server_tool_use' },
+              { id: 'unknown-tool', type: 'server_tool_use' },
+              { type: 'not-a-tool' },
+              { id: 'dup-tool', input: { filePath: '.' }, name: 'Read', type: 'server_tool_use' },
+              { id: 'dup-tool', name: 'Read', type: 'server_tool_use' },
+            ],
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'assistant',
+          uuid: 'assistant-duplicate-tool',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([
+      {
+        id: 'remembered-tool',
+        providerExecuted: true,
+        toolName: 'RememberedTool',
+        type: 'tool-input-start',
+      },
+      { id: 'remembered-tool', type: 'tool-input-end' },
+      {
+        input: '{}',
+        providerExecuted: true,
+        toolCallId: 'remembered-tool',
+        toolName: 'RememberedTool',
+        type: 'tool-call',
+      },
+      {
+        id: 'unknown-tool',
+        providerExecuted: true,
+        toolName: 'unknown',
+        type: 'tool-input-start',
+      },
+      { id: 'unknown-tool', type: 'tool-input-end' },
+      {
+        input: '{}',
+        providerExecuted: true,
+        toolCallId: 'unknown-tool',
+        toolName: 'unknown',
+        type: 'tool-call',
+      },
+      {
+        id: 'dup-tool',
+        providerExecuted: true,
+        toolName: 'Read',
+        type: 'tool-input-start',
+      },
+      { delta: '{"filePath":"."}', id: 'dup-tool', type: 'tool-input-delta' },
+      { id: 'dup-tool', type: 'tool-input-end' },
+      {
+        input: '{"filePath":"."}',
+        providerExecuted: true,
+        toolCallId: 'dup-tool',
+        toolName: 'Read',
+        type: 'tool-call',
+      },
+    ]);
+
+    expect(
+      mapSdkMessage(
+        {
+          message: {
+            content: [{ content: { bare: true }, tool_use_id: 'ghost-tool', type: 'web_fetch_tool_result' }],
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'assistant',
+          uuid: 'assistant-unknown-tool-name',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([
+      {
+        providerExecuted: true,
+        result: { bare: true },
+        toolCallId: 'ghost-tool',
+        toolName: 'web_fetch_tool_result',
+        type: 'tool-result',
+      },
+    ]);
+  });
+
+  it('covers unknown top-level messages and assistant fallback tool ids', () => {
+    const state = createStreamState();
+
+    expect(mapSdkMessage({ type: 'noop' } as unknown as SDKMessage, state)).toEqual([]);
+
+    expect(
+      mapSdkMessage(
+        {
+          message: {
+            content: [{ input: { filePath: '.' }, name: 'Read', type: 'server_tool_use' }],
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'assistant',
+          uuid: 'assistant-fallback-tool-id',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([
+      {
+        id: 'tool-0',
+        providerExecuted: true,
+        toolName: 'Read',
+        type: 'tool-input-start',
+      },
+      { delta: '{"filePath":"."}', id: 'tool-0', type: 'tool-input-delta' },
+      { id: 'tool-0', type: 'tool-input-end' },
+      {
+        input: '{"filePath":"."}',
+        providerExecuted: true,
+        toolCallId: 'tool-0',
+        toolName: 'Read',
+        type: 'tool-call',
+      },
+    ]);
   });
 
   it('covers tool fallback ids, empty text deltas, and unknown tool results', () => {
@@ -690,6 +1056,28 @@ describe('mapSdkMessage', () => {
         type: 'result',
         usage: { input_tokens: 1, output_tokens: 2 },
         uuid: 'result-stop',
+      } as unknown as SDKMessage,
+      state,
+    );
+    expect(state.finishReason).toBe('stop');
+
+    mapSdkMessage(
+      {
+        duration_api_ms: 1,
+        duration_ms: 1,
+        fast_mode_state: 'off',
+        is_error: false,
+        modelUsage: {},
+        num_turns: 1,
+        permission_denials: [],
+        result: 'pause',
+        session_id: 'sess_123',
+        stop_reason: 'pause_turn',
+        subtype: 'success',
+        total_cost_usd: 0,
+        type: 'result',
+        usage: {},
+        uuid: 'result-pause',
       } as unknown as SDKMessage,
       state,
     );

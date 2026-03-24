@@ -1,7 +1,7 @@
 import { isRecord } from './types.js';
 
 import type { LanguageModelV2FinishReason, LanguageModelV2StreamPart, LanguageModelV2Usage } from '@ai-sdk/provider';
-import type { SDKMessage, SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
+import type { SDKAssistantMessage, SDKMessage, SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
 
 type BlockState =
   | {
@@ -26,15 +26,32 @@ export type StreamState = {
   blocks: Map<number, BlockState>;
   finishReason: LanguageModelV2FinishReason;
   sessionId?: string;
+  toolCallIds: Set<string>;
   toolNames: Map<string, string>;
+  toolResultIds: Set<string>;
   usage: LanguageModelV2Usage;
 };
+
+const TOOL_INPUT_BLOCK_TYPES = new Set(['tool_use', 'server_tool_use', 'mcp_tool_use']);
+const TOOL_RESULT_BLOCK_TYPES = new Set([
+  'bash_code_execution_tool_result',
+  'code_execution_tool_result',
+  'compaction',
+  'container_upload',
+  'mcp_tool_result',
+  'text_editor_code_execution_tool_result',
+  'tool_search_tool_result',
+  'web_fetch_tool_result',
+  'web_search_tool_result',
+]);
 
 export function createStreamState(): StreamState {
   return {
     blocks: new Map(),
     finishReason: 'unknown',
+    toolCallIds: new Set(),
     toolNames: new Map(),
+    toolResultIds: new Set(),
     usage: {
       inputTokens: undefined,
       outputTokens: undefined,
@@ -53,16 +70,112 @@ export function mapSdkMessage(message: SDKMessage, state: StreamState): Language
     return mapStreamEvent(message.event, state);
   }
 
+  if (message.type === 'assistant') {
+    return mapAssistantMessage(message, state);
+  }
+
   if (message.type === 'user') {
     return mapToolResultMessage(message, state);
   }
 
   if (message.type === 'result') {
     state.finishReason = mapFinishReason(message);
-    state.usage = mapUsage(message);
+    state.usage = mergeUsage(state.usage, mapUsageRecord(getRecord(message.usage)));
   }
 
   return [];
+}
+
+function mapAssistantMessage(message: SDKAssistantMessage, state: StreamState): LanguageModelV2StreamPart[] {
+  const assistantMessage = getRecord(message.message);
+
+  if (!assistantMessage) {
+    return [];
+  }
+
+  state.usage = mergeUsage(state.usage, mapUsageRecord(getRecord(assistantMessage.usage)));
+
+  if (!Array.isArray(assistantMessage.content)) {
+    return [];
+  }
+
+  const parts: LanguageModelV2StreamPart[] = [];
+  const pendingToolCallIds: string[] = [];
+  let fallbackToolIndex = 0;
+
+  for (const item of assistantMessage.content) {
+    const block = getRecord(item);
+
+    if (!block) {
+      continue;
+    }
+
+    const blockType = getString(block.type);
+
+    if (!blockType) {
+      continue;
+    }
+
+    if (TOOL_INPUT_BLOCK_TYPES.has(blockType)) {
+      const id = getToolLinkId(block) ?? `tool-${state.toolCallIds.size + fallbackToolIndex}`;
+      fallbackToolIndex += 1;
+
+      if (state.toolCallIds.has(id)) {
+        pendingToolCallIds.push(id);
+        continue;
+      }
+
+      const toolName = getString(block.name) ?? state.toolNames.get(id) ?? 'unknown';
+      const inputText = block.input === undefined ? '' : safeJsonStringify(block.input);
+
+      state.toolCallIds.add(id);
+      state.toolNames.set(id, toolName);
+      pendingToolCallIds.push(id);
+
+      parts.push({
+        id,
+        providerExecuted: true,
+        toolName,
+        type: 'tool-input-start',
+      });
+
+      if (inputText.length > 0) {
+        parts.push({ delta: inputText, id, type: 'tool-input-delta' });
+      }
+
+      parts.push({ id, type: 'tool-input-end' });
+      parts.push({
+        input: inputText || '{}',
+        providerExecuted: true,
+        toolCallId: id,
+        toolName,
+        type: 'tool-call',
+      });
+
+      continue;
+    }
+
+    if (TOOL_RESULT_BLOCK_TYPES.has(blockType)) {
+      const toolCallId = getToolLinkId(block) ?? pendingToolCallIds.shift();
+
+      if (!toolCallId || state.toolResultIds.has(toolCallId)) {
+        continue;
+      }
+
+      state.toolResultIds.add(toolCallId);
+
+      parts.push({
+        ...(isAssistantToolResultError(block) ? { isError: true } : {}),
+        providerExecuted: true,
+        result: getAssistantToolResult(block),
+        toolCallId,
+        toolName: state.toolNames.get(toolCallId) ?? blockType,
+        type: 'tool-result',
+      });
+    }
+  }
+
+  return parts;
 }
 
 function mapStreamEvent(event: unknown, state: StreamState): LanguageModelV2StreamPart[] {
@@ -109,12 +222,13 @@ function onContentBlockStart(event: Record<string, unknown>, index: number, stat
     return [{ id, type: 'reasoning-start' }];
   }
 
-  if (blockType === 'tool_use') {
+  if (blockType && TOOL_INPUT_BLOCK_TYPES.has(blockType)) {
     const id = getString(block.id) ?? `tool-${index}`;
     const toolName = getString(block.name) ?? 'unknown';
     const initialInput = block.input === undefined ? '' : safeJsonStringify(block.input);
 
     state.blocks.set(index, { id, index, inputText: initialInput, kind: 'tool', toolName });
+    state.toolCallIds.add(id);
     state.toolNames.set(id, toolName);
 
     const parts: LanguageModelV2StreamPart[] = [
@@ -205,6 +319,12 @@ function mapToolResultMessage(message: Extract<SDKMessage, { type: 'user' }>, st
     return [];
   }
 
+  if (state.toolResultIds.has(message.parent_tool_use_id)) {
+    return [];
+  }
+
+  state.toolResultIds.add(message.parent_tool_use_id);
+
   const toolName = state.toolNames.get(message.parent_tool_use_id) ?? 'unknown';
 
   return [
@@ -231,24 +351,33 @@ function mapFinishReason(message: SDKResultMessage): LanguageModelV2FinishReason
     return 'length';
   }
 
-  if (message.stop_reason === 'end_turn' || message.stop_reason === 'stop_sequence') {
+  if (message.stop_reason === 'end_turn' || message.stop_reason === 'pause_turn' || message.stop_reason === 'stop_sequence') {
     return 'stop';
   }
 
   return 'unknown';
 }
 
-function mapUsage(message: SDKResultMessage): LanguageModelV2Usage {
-  const usage = message.usage as Record<string, unknown>;
-  const inputTokens = getNumber(usage.input_tokens);
-  const outputTokens = getNumber(usage.output_tokens);
+function mapUsageRecord(usage: Record<string, unknown> | undefined): LanguageModelV2Usage {
+  const inputTokens = getNumber(usage?.input_tokens);
+  const outputTokens = getNumber(usage?.output_tokens);
 
   return {
-    cachedInputTokens: getNumber(usage.cache_read_input_tokens),
+    cachedInputTokens: getNumber(usage?.cache_read_input_tokens),
     inputTokens,
     outputTokens,
-    reasoningTokens: getNumber(usage.thinking_tokens),
-    totalTokens: getNumber(usage.total_tokens) ?? sumNumbers(inputTokens, outputTokens),
+    reasoningTokens: getNumber(usage?.thinking_tokens),
+    totalTokens: getNumber(usage?.total_tokens) ?? sumNumbers(inputTokens, outputTokens),
+  };
+}
+
+function mergeUsage(current: LanguageModelV2Usage, next: LanguageModelV2Usage): LanguageModelV2Usage {
+  return {
+    cachedInputTokens: next.cachedInputTokens ?? current.cachedInputTokens,
+    inputTokens: next.inputTokens ?? current.inputTokens,
+    outputTokens: next.outputTokens ?? current.outputTokens,
+    reasoningTokens: next.reasoningTokens ?? current.reasoningTokens,
+    totalTokens: next.totalTokens ?? current.totalTokens,
   };
 }
 
@@ -272,6 +401,42 @@ function getNumber(value: unknown): number | undefined {
 
 function getRecord(value: unknown): Record<string, unknown> | undefined {
   return isRecord(value) ? value : undefined;
+}
+
+function getToolLinkId(block: Record<string, unknown>): string | undefined {
+  return (
+    getString(block.tool_use_id) ??
+    getString(block.toolUseId) ??
+    getString(block.server_tool_use_id) ??
+    getString(block.serverToolUseId) ??
+    getString(block.tool_call_id) ??
+    getString(block.toolCallId) ??
+    getString(block.id)
+  );
+}
+
+function getAssistantToolResult(block: Record<string, unknown>): unknown {
+  if (block.content !== undefined) {
+    return block.content;
+  }
+
+  if (block.result !== undefined) {
+    return block.result;
+  }
+
+  if (block.error !== undefined) {
+    return { error: block.error };
+  }
+
+  return block;
+}
+
+function isAssistantToolResultError(block: Record<string, unknown>): boolean {
+  if (typeof block.is_error === 'boolean') {
+    return block.is_error;
+  }
+
+  return typeof block.error_code === 'string';
 }
 
 function safeJsonStringify(value: unknown): string {

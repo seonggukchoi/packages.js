@@ -123,7 +123,7 @@ function serializeAssistantPart(
   }
 
   if (part.type === 'reasoning') {
-    return `[reasoning]\n${part.text}`;
+    return '';
   }
 
   if (part.type === 'tool-call') {
