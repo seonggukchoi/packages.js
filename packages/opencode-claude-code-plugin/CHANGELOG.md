@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-plugin@0.1.0...@seonggukchoi/opencode-claude-code-plugin@0.1.1) (2026-03-24)
+
+### Bug Fixes
+
+- **opencode-claude-code-plugin:** guard params hook without model input ([c37548f](https://github.com/seonggukchoi/packages.js/commit/c37548f79548498d962c8e335d65eb15c18f5df6))
+
 # 0.1.0 (2026-03-24)
 
 ### Features
