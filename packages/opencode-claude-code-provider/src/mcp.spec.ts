@@ -37,4 +37,35 @@ describe('toAgentMcp', () => {
     expect(result.servers.remoteOauth).toBeUndefined();
     expect(result.warnings).toHaveLength(1);
   });
+
+  it('handles empty input, disabled servers, and missing local commands', () => {
+    expect(toAgentMcp(undefined)).toEqual({ servers: {}, warnings: [] });
+
+    const result = toAgentMcp({
+      disabled: {
+        command: ['node'],
+        enabled: false,
+        type: 'local',
+      },
+      invalid: 123,
+      missingCommand: {
+        command: [],
+        type: 'local',
+      },
+      remoteSse: {
+        transport: 'sse',
+        type: 'remote',
+        url: 'https://example.com/sse',
+      },
+    } as unknown as Parameters<typeof toAgentMcp>[0]);
+
+    expect(result.servers).toEqual({
+      remoteSse: {
+        headers: undefined,
+        type: 'sse',
+        url: 'https://example.com/sse',
+      },
+    });
+    expect(result.warnings).toEqual(['MCP server "missingCommand" is skipped because no command was provided.']);
+  });
 });

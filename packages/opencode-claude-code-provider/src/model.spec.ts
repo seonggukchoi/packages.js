@@ -119,6 +119,12 @@ describe('ClaudeCodeLanguageModel', () => {
     expect(calls[0].options?.resume).toBeUndefined();
   });
 
+  it('throws when non-streaming generation is requested', async () => {
+    const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6');
+
+    await expect(model.doGenerate()).rejects.toThrow('only supports the streaming path');
+  });
+
   it('resumes with the latest session id and keeps provider options namespaced', async () => {
     const calls: Array<{ options?: Record<string, unknown>; prompt: string }> = [];
     const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6', {
@@ -385,6 +391,105 @@ describe('ClaudeCodeLanguageModel', () => {
     await Promise.resolve();
 
     expect(closeCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('emits metadata without a session id when init is never received', async () => {
+    const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6', {
+      queryRunner() {
+        return createQuery([
+          {
+            duration_api_ms: 1,
+            duration_ms: 1,
+            fast_mode_state: 'off',
+            is_error: false,
+            modelUsage: {},
+            num_turns: 1,
+            permission_denials: [],
+            result: 'done',
+            session_id: 'missing-init',
+            stop_reason: 'end_turn',
+            subtype: 'success',
+            total_cost_usd: 0,
+            type: 'result',
+            usage: {
+              cache_creation_input_tokens: 0,
+              cache_read_input_tokens: 0,
+              input_tokens: 1,
+              output_tokens: 1,
+              server_tool_use: null,
+              service_tier: 'standard',
+            },
+            uuid: 'result-no-init',
+          },
+        ]);
+      },
+    });
+
+    const result = await model.doStream({
+      prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }],
+      providerOptions: { 'claude-code': {} },
+      tools: [],
+    } as unknown as LanguageModelV2CallOptions);
+
+    const parts = await readStream(result.stream);
+    expect(parts[parts.length - 1]).toEqual({
+      finishReason: 'stop',
+      providerMetadata: {
+        'claude-code': {
+          modelId: 'claude-sonnet-4-6',
+        },
+      },
+      type: 'finish',
+      usage: {
+        cachedInputTokens: 0,
+        inputTokens: 1,
+        outputTokens: 1,
+        reasoningTokens: undefined,
+        totalTokens: 2,
+      },
+    });
+  });
+
+  it('propagates the abort signal reason to the SDK abort controller', async () => {
+    let capturedReason: unknown;
+    const signalController = new AbortController();
+    const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6', {
+      queryRunner(input) {
+        input.options?.abortController?.signal.addEventListener('abort', () => {
+          capturedReason = input.options?.abortController?.signal.reason;
+        });
+
+        return createQuery([]);
+      },
+    });
+
+    await model.doStream({
+      abortSignal: signalController.signal,
+      prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }],
+      providerOptions: { 'claude-code': {} },
+      tools: [],
+    } as unknown as LanguageModelV2CallOptions);
+
+    signalController.abort('stop-now');
+
+    expect(capturedReason).toBe('stop-now');
+  });
+
+  it('accepts missing providerOptions and falls back to defaults', async () => {
+    const calls: Array<{ options?: Record<string, unknown>; prompt: string }> = [];
+    const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6', {
+      queryRunner(input) {
+        calls.push(input as { options?: Record<string, unknown>; prompt: string });
+        return createQuery([]);
+      },
+    });
+
+    await model.doStream({
+      prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }],
+      tools: [],
+    } as unknown as LanguageModelV2CallOptions);
+
+    expect(calls[0]?.options?.model).toBe('claude-sonnet-4-6');
   });
 });
 

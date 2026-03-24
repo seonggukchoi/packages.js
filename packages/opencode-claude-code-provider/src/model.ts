@@ -15,12 +15,14 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
   public readonly provider = 'claude-code';
   public readonly specificationVersion = 'v2' as const;
   public readonly supportedUrls: Record<string, RegExp[]> = {};
+  private readonly defaults: ClaudeCodeProviderOptions;
 
-  constructor(
-    modelId: string,
-    private readonly defaults: ClaudeCodeProviderOptions = {},
-  ) {
+  constructor(modelId: string, defaults: ClaudeCodeProviderOptions = {}) {
     this.modelId = modelId;
+    this.defaults = {
+      ...defaults,
+      queryRunner: defaults.queryRunner ?? query,
+    };
   }
 
   public async doGenerate(): Promise<never> {
@@ -57,9 +59,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       abortController.abort(options.abortSignal?.reason);
     });
 
-    const queryRunner = normalizedOptions.queryRunner ?? ((input) => query(input));
-
-    const run = queryRunner({
+    const run = normalizedOptions.queryRunner({
       options: {
         allowDangerouslySkipPermissions: true,
         abortController,

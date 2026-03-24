@@ -86,7 +86,7 @@ export type NormalizedClaudeCodeOptions = {
   nativeTools: string[];
   openCodeMcp?: OpenCodeMcpConfig;
   pathToClaudeCodeExecutable: string;
-  queryRunner?: QueryRunner;
+  queryRunner: QueryRunner;
   settingSources: string[];
 };
 
@@ -122,7 +122,7 @@ export function normalizeProviderOptions(
     nativeTools: getStringArray(raw.nativeTools) ?? defaults.nativeTools ?? [...DEFAULT_NATIVE_TOOLS],
     openCodeMcp: getRecord<OpenCodeLocalMcpConfig | OpenCodeRemoteMcpConfig>(raw.openCodeMcp) ?? defaults.openCodeMcp,
     pathToClaudeCodeExecutable: getString(raw.pathToClaudeCodeExecutable) ?? defaults.pathToClaudeCodeExecutable ?? DEFAULT_EXECUTABLE_PATH,
-    queryRunner: defaults.queryRunner,
+    queryRunner: defaults.queryRunner ?? createMissingQueryRunner(),
     settingSources: getStringArray(raw.settingSources) ?? defaults.settingSources ?? [],
   };
 }
@@ -191,4 +191,10 @@ function getEffort(value: unknown): ClaudeCodeEffort | undefined {
 
 function getProcessEnv(): Record<string, string> {
   return Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
+}
+
+function createMissingQueryRunner(): QueryRunner {
+  return () => {
+    throw new Error('Query runner is not configured.');
+  };
 }
