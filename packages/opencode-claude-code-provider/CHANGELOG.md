@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.3](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.2...@seonggukchoi/opencode-claude-code-provider@0.1.3) (2026-03-24)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** stream claude thinking deltas ([8164420](https://github.com/seonggukchoi/packages.js/commit/81644207dcc6176139374313fc129defe7fcc0d0))
+
 ## [0.1.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.1...@seonggukchoi/opencode-claude-code-provider@0.1.2) (2026-03-24)
 
 ### Bug Fixes
