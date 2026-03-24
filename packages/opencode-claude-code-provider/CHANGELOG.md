@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.7](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.6...@seonggukchoi/opencode-claude-code-provider@0.1.7) (2026-03-24)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** support string-compatible tool inputs ([3c21a04](https://github.com/seonggukchoi/packages.js/commit/3c21a04daef733e89b1f6bd04a6ec45a2bb5ef6b))
+
 ## [0.1.6](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.5...@seonggukchoi/opencode-claude-code-provider@0.1.6) (2026-03-24)
 
 ### Bug Fixes

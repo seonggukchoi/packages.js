@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/opencode-claude-code-provider",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "OpenCode provider backed by Claude Agent SDK",
   "author": "seonggukchoi",
   "license": "MIT",
