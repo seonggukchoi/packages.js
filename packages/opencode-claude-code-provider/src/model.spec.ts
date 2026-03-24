@@ -271,7 +271,11 @@ describe('ClaudeCodeLanguageModel', () => {
         },
         {
           providerExecuted: true,
-          result: { text: 'README.md' },
+          result: {
+            metadata: { blockType: 'text_editor_code_execution_tool_result' },
+            output: 'README.md',
+            title: 'Read',
+          },
           toolCallId: 'server-read',
           toolName: 'Read',
           type: 'tool-result',
@@ -291,7 +295,11 @@ describe('ClaudeCodeLanguageModel', () => {
         },
         {
           providerExecuted: true,
-          result: { return_code: 0, stdout: 'README.md', type: 'bash_code_execution_result' },
+          result: {
+            metadata: { blockType: 'bash_code_execution_tool_result', returnCode: 0 },
+            output: 'README.md',
+            title: 'Bash',
+          },
           toolCallId: 'server-bash',
           toolName: 'Bash',
           type: 'tool-result',
