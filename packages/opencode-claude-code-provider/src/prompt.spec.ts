@@ -245,6 +245,27 @@ describe('prompt helpers', () => {
     expect(output).not.toContain('\\"filePath\\"');
   });
 
+  it('keeps invalid string tool inputs unchanged during prompt serialization', () => {
+    const prompt = [
+      {
+        content: [
+          {
+            input: '{',
+            providerExecuted: true,
+            toolCallId: '1',
+            toolName: 'Read',
+            type: 'tool-call' as const,
+          },
+        ],
+        role: 'assistant' as const,
+      },
+    ];
+
+    const output = buildPrompt(prompt as unknown as LanguageModelV2Prompt);
+
+    expect(output).toContain('[tool-call:Read] "{"');
+  });
+
   it('loads CLAUDE.md content only when enabled', async () => {
     const cwd = await mkdtemp(join(tmpdir(), 'claude-md-'));
     const filePath = join(cwd, 'CLAUDE.md');

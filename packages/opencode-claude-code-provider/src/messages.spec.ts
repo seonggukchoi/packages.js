@@ -1098,6 +1098,76 @@ describe('mapSdkMessage', () => {
     expect(
       mapSdkMessage(
         {
+          message: {
+            content: [
+              { id: 'tool-empty-string', input: '', name: 'question', type: 'server_tool_use' },
+              { id: 'tool-invalid-json', input: '{', name: 'question', type: 'server_tool_use' },
+              {
+                id: 'tool-non-record-json',
+                input: {
+                  toJSON() {
+                    return 'not-a-record';
+                  },
+                },
+                name: 'question',
+                type: 'server_tool_use',
+              },
+            ],
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'assistant',
+          uuid: 'assistant-string-inputs',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([
+      {
+        id: 'tool-empty-string',
+        providerExecuted: true,
+        toolName: 'question',
+        type: 'tool-input-start',
+      },
+      { id: 'tool-empty-string', type: 'tool-input-end' },
+      {
+        input: {},
+        providerExecuted: true,
+        toolCallId: 'tool-empty-string',
+        toolName: 'question',
+        type: 'tool-call',
+      },
+      {
+        id: 'tool-invalid-json',
+        providerExecuted: true,
+        toolName: 'question',
+        type: 'tool-input-start',
+      },
+      { id: 'tool-invalid-json', type: 'tool-input-end' },
+      {
+        input: {},
+        providerExecuted: true,
+        toolCallId: 'tool-invalid-json',
+        toolName: 'question',
+        type: 'tool-call',
+      },
+      {
+        id: 'tool-non-record-json',
+        providerExecuted: true,
+        toolName: 'question',
+        type: 'tool-input-start',
+      },
+      { id: 'tool-non-record-json', type: 'tool-input-end' },
+      {
+        input: {},
+        providerExecuted: true,
+        toolCallId: 'tool-non-record-json',
+        toolName: 'question',
+        type: 'tool-call',
+      },
+    ]);
+    expect(
+      mapSdkMessage(
+        {
           event: {
             delta: { type: 'other_delta' },
             index: 3,
