@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/opencode-claude-code-provider",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "OpenCode provider backed by Claude Agent SDK",
   "author": "seonggukchoi",
   "license": "MIT",
@@ -49,8 +49,8 @@
     "zod": ">=4.0.0"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.2.81",
     "@ai-sdk/provider": "^3.0.8",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.81",
     "zod": "^4.1.8"
   },
   "devDependencies": {

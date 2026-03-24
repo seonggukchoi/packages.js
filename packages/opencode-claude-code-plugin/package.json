@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/opencode-claude-code-plugin",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "OpenCode plugin helpers for the Claude Agent SDK provider",
   "author": "seonggukchoi",
   "license": "MIT",
