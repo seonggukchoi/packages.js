@@ -150,6 +150,8 @@ describe('mapSdkMessage', () => {
         type: 'tool-call',
       },
     ]);
+    expect(String((stopParts[1] as Extract<(typeof stopParts)[number], { type: 'tool-call' }>).input)).toBe('{"questions":[]}');
+    expect((stopParts[1] as Extract<(typeof stopParts)[number], { type: 'tool-call' }>).input.trim()).toBe('{"questions":[]}');
 
     const resultParts = mapSdkMessage(
       {
@@ -1162,6 +1164,82 @@ describe('mapSdkMessage', () => {
         providerExecuted: true,
         toolCallId: 'tool-non-record-json',
         toolName: 'question',
+        type: 'tool-call',
+      },
+    ]);
+    const stringInputParts = mapSdkMessage(
+      {
+        message: {
+          content: [{ id: 'tool-string-compatible', input: { filePath: 'README.md' }, name: 'Read', type: 'server_tool_use' }],
+        },
+        parent_tool_use_id: null,
+        session_id: 'sess_123',
+        type: 'assistant',
+        uuid: 'assistant-string-compatible',
+      } as unknown as SDKMessage,
+      state,
+    );
+    const toolCall = stringInputParts.find((part) => part.type === 'tool-call') as Extract<
+      (typeof stringInputParts)[number],
+      { type: 'tool-call' }
+    >;
+
+    expect(toolCall.input.trim()).toBe('{"filePath":"README.md"}');
+    expect(`${toolCall.input}`).toBe('{"filePath":"README.md"}');
+    expect(JSON.parse(String(toolCall.input))).toEqual({ filePath: 'README.md' });
+    expect(toolCall.input.toString()).toBe('{"filePath":"README.md"}');
+    expect(toolCall.input.valueOf()).toBe('{"filePath":"README.md"}');
+    mapSdkMessage(
+      {
+        event: {
+          content_block: {
+            id: 'tool-invalid-delta-fallback',
+            input: { filePath: 'README.md' },
+            name: 'Read',
+            type: 'tool_use',
+          },
+          index: 9,
+          type: 'content_block_start',
+        },
+        parent_tool_use_id: null,
+        session_id: 'sess_123',
+        type: 'stream_event',
+        uuid: 'evt-tool-invalid-delta-start',
+      } as unknown as SDKMessage,
+      state,
+    );
+    mapSdkMessage(
+      {
+        event: {
+          delta: { partial_json: '{', type: 'input_json_delta' },
+          index: 9,
+          type: 'content_block_delta',
+        },
+        parent_tool_use_id: null,
+        session_id: 'sess_123',
+        type: 'stream_event',
+        uuid: 'evt-tool-invalid-delta',
+      } as unknown as SDKMessage,
+      state,
+    );
+    expect(
+      mapSdkMessage(
+        {
+          event: { index: 9, type: 'content_block_stop' },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'stream_event',
+          uuid: 'evt-tool-invalid-delta-stop',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([
+      { id: 'tool-invalid-delta-fallback', type: 'tool-input-end' },
+      {
+        input: { filePath: 'README.md' },
+        providerExecuted: true,
+        toolCallId: 'tool-invalid-delta-fallback',
+        toolName: 'Read',
         type: 'tool-call',
       },
     ]);
