@@ -37,6 +37,8 @@ type OpenCodeToolCallPart = Omit<Extract<LanguageModelV2StreamPart, { type: 'too
   input: Record<string, unknown>;
 };
 
+const TOOL_INPUT_STRING_COMPAT = Symbol('toolInputStringCompat');
+
 const TOOL_INPUT_BLOCK_TYPES = new Set(['tool_use', 'server_tool_use', 'mcp_tool_use']);
 const TOOL_RESULT_BLOCK_TYPES = new Set([
   'bash_code_execution_tool_result',
@@ -517,14 +519,14 @@ function safeJsonStringify(value: unknown): string {
 
 function getToolInput(value: unknown, fallback: Record<string, unknown> = {}): Record<string, unknown> {
   if (typeof value === 'string') {
-    return parseToolInput(value) ?? fallback;
+    return asToolInputRecord(parseToolInput(value) ?? fallback);
   }
 
   if (!isRecord(value)) {
-    return fallback;
+    return asToolInputRecord(fallback);
   }
 
-  return parseToolInput(safeJsonStringify(value)) ?? fallback;
+  return asToolInputRecord(parseToolInput(safeJsonStringify(value)) ?? fallback);
 }
 
 function parseToolInput(value: string): Record<string, unknown> | undefined {
@@ -553,4 +555,56 @@ function createToolCallPart(part: Omit<OpenCodeToolCallPart, 'type'>): LanguageM
     ...part,
     type: 'tool-call',
   } as unknown as LanguageModelV2StreamPart;
+}
+
+function asToolInputRecord(value: Record<string, unknown>): Record<string, unknown> {
+  const candidate = value as Record<string | symbol, unknown>;
+
+  if (candidate[TOOL_INPUT_STRING_COMPAT] === true) {
+    return value;
+  }
+
+  const serialize = () => safeJsonStringify(value);
+  const toolInput = value as Record<string, unknown> & {
+    [TOOL_INPUT_STRING_COMPAT]?: true;
+    toString?: () => string;
+    trim?: () => string;
+    valueOf?: () => string;
+    [Symbol.toPrimitive]?: () => string;
+  };
+
+  Object.defineProperties(toolInput, {
+    [Symbol.toPrimitive]: {
+      configurable: true,
+      enumerable: false,
+      value: () => serialize(),
+      writable: false,
+    },
+    [TOOL_INPUT_STRING_COMPAT]: {
+      configurable: true,
+      enumerable: false,
+      value: true,
+      writable: false,
+    },
+    toString: {
+      configurable: true,
+      enumerable: false,
+      value: () => serialize(),
+      writable: false,
+    },
+    trim: {
+      configurable: true,
+      enumerable: false,
+      value: () => serialize().trim(),
+      writable: false,
+    },
+    valueOf: {
+      configurable: true,
+      enumerable: false,
+      value: () => serialize(),
+      writable: false,
+    },
+  });
+
+  return toolInput;
 }
