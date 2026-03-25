@@ -213,20 +213,10 @@ function createBridgeToolDefinition(definition: OpenCodeToolLike, context: Bridg
 }
 
 async function executeTool(definition: OpenCodeToolLike, args: unknown, context: BridgeContext) {
-  if (typeof definition.execute !== 'function') {
-    return {
-      content: [
-        {
-          text: `Tool "${definition.name}" is visible to Claude but no provider-side executor was attached.`,
-          type: 'text',
-        },
-      ],
-      isError: true,
-    } as BridgedToolResult;
-  }
+  const execute = definition.execute as NonNullable<OpenCodeToolLike['execute']>;
 
   try {
-    const output = await definition.execute(args, {
+    const output = await execute(args, {
       abortSignal: context.abortSignal,
       messages: context.prompt,
       toolCallId: randomUUID(),

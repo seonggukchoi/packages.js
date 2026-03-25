@@ -158,6 +158,29 @@ describe('ClaudeCodeLanguageModel', () => {
     expect(calls[0].options?.tools).toEqual(['Bash']);
   });
 
+  it('honors an explicit permission mode override', async () => {
+    const calls: Array<{ options?: Record<string, unknown>; prompt: string }> = [];
+    const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6', {
+      queryRunner(input) {
+        calls.push(input as { options?: Record<string, unknown>; prompt: string });
+        return createQuery([{ session_id: 'sess-plan', subtype: 'init', type: 'system', uuid: 'sys-plan' }]);
+      },
+    });
+
+    await model.doStream({
+      prompt: [{ content: [{ text: 'Plan only.', type: 'text' }], role: 'user' }],
+      providerOptions: {
+        'claude-code': {
+          permissionMode: 'plan',
+        },
+      },
+      tools: [],
+    } as unknown as LanguageModelV2CallOptions);
+
+    expect(calls[0].options?.allowDangerouslySkipPermissions).toBeUndefined();
+    expect(calls[0].options?.permissionMode).toBe('plan');
+  });
+
   it('throws when non-streaming generation is requested', async () => {
     const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6');
 
