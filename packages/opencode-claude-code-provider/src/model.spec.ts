@@ -488,7 +488,7 @@ describe('ClaudeCodeLanguageModel', () => {
     );
   });
 
-  it('round-trips native and bridged tool calls through the stream mapper', async () => {
+  it('round-trips provider-executed tool calls without leaving the turn in tool-calls state', async () => {
     const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6', {
       queryRunner() {
         return createQuery([
@@ -631,6 +631,23 @@ describe('ClaudeCodeLanguageModel', () => {
           toolCallId: 'bridge-question',
           toolName: 'question',
           type: 'tool-result',
+        },
+        {
+          finishReason: 'stop',
+          providerMetadata: {
+            'claude-code': {
+              modelId: 'claude-sonnet-4-6',
+              sessionId: 'sess_tools',
+            },
+          },
+          type: 'finish',
+          usage: {
+            cachedInputTokens: 0,
+            inputTokens: 1,
+            outputTokens: 1,
+            reasoningTokens: undefined,
+            totalTokens: 2,
+          },
         },
       ]),
     );

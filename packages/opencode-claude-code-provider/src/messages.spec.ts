@@ -1377,6 +1377,28 @@ describe('mapSdkMessage', () => {
         modelUsage: {},
         num_turns: 1,
         permission_denials: [],
+        result: 'tool use handled by provider',
+        session_id: 'sess_123',
+        stop_reason: 'tool_use',
+        subtype: 'success',
+        total_cost_usd: 0,
+        type: 'result',
+        usage: {},
+        uuid: 'result-tool-use',
+      } as unknown as SDKMessage,
+      state,
+    );
+    expect(state.finishReason).toBe('stop');
+
+    mapSdkMessage(
+      {
+        duration_api_ms: 1,
+        duration_ms: 1,
+        fast_mode_state: 'off',
+        is_error: false,
+        modelUsage: {},
+        num_turns: 1,
+        permission_denials: [],
         result: 'pause',
         session_id: 'sess_123',
         stop_reason: 'pause_turn',

@@ -157,6 +157,7 @@ assert.ok(firstParts.some((part) => part.type === 'text-delta' && part.delta ===
 assert.ok(firstParts.some((part) => part.type === 'tool-result' && part.toolName === 'read'));
 assert.ok(firstParts.some((part) => part.type === 'tool-result' && part.toolName === 'question'));
 assert.ok(!firstParts.some((part) => part.type === 'error'));
+assert.ok(firstParts.some((part) => part.type === 'finish' && part.finishReason === 'stop'));
 
 const second = await model.doStream({
   prompt: [

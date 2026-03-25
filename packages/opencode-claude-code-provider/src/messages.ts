@@ -383,7 +383,7 @@ function mapFinishReason(message: SDKResultMessage): LanguageModelV2FinishReason
   }
 
   if (message.stop_reason === 'tool_use') {
-    return 'tool-calls';
+    return 'stop';
   }
 
   if (message.stop_reason === 'max_tokens') {
