@@ -137,7 +137,7 @@ describe('ClaudeCodeLanguageModel', () => {
       },
     });
 
-    await model.doStream({
+    const result = await model.doStream({
       prompt: [{ content: [{ text: 'List files.', type: 'text' }], role: 'user' }],
       providerOptions: {
         'claude-code': {
@@ -151,11 +151,23 @@ describe('ClaudeCodeLanguageModel', () => {
       ],
     } as unknown as LanguageModelV2CallOptions);
 
+    const parts = await readStream(result.stream);
+
     expect(calls[0].options?.allowDangerouslySkipPermissions).toBeUndefined();
     expect(calls[0].options?.allowedTools).toEqual(['Bash']);
     expect(calls[0].options?.permissionMode).toBe('default');
     expect(calls[0].options?.permissionPromptToolName).toBeUndefined();
     expect(calls[0].options?.tools).toEqual(['Bash']);
+    expect(parts[0]).toEqual({
+      type: 'stream-start',
+      warnings: [
+        {
+          message: 'Skipping OpenCode tool "question" because no provider-side executor was attached.',
+          type: 'other',
+        },
+      ],
+    });
+    expect(parts.some((part) => isErrorPart(part))).toBe(false);
   });
 
   it('honors an explicit permission mode override', async () => {
@@ -624,7 +636,7 @@ describe('ClaudeCodeLanguageModel', () => {
     );
   });
 
-  it('surfaces broken MCP warnings and closes the query on cancellation', async () => {
+  it('emits broken MCP warnings in stream-start and closes the query on cancellation', async () => {
     let closeCount = 0;
     let release: (() => void) | undefined;
     const model = new ClaudeCodeLanguageModel('claude-sonnet-4-6', {
@@ -668,12 +680,14 @@ describe('ClaudeCodeLanguageModel', () => {
 
     const reader = result.stream.getReader();
     const first = await reader.read();
-    expect(first.value).toEqual({ type: 'stream-start', warnings: [] });
-
-    const second = await reader.read();
-    expect(second.value).toEqual({
-      error: expect.any(Error),
-      type: 'error',
+    expect(first.value).toEqual({
+      type: 'stream-start',
+      warnings: [
+        {
+          message: 'MCP server "brokenRemote" is skipped because OAuth bridging is not supported yet.',
+          type: 'other',
+        },
+      ],
     });
 
     await reader.cancel();
@@ -810,4 +824,8 @@ async function readStream(stream: ReadableStream<unknown>) {
   }
 
   return parts;
+}
+
+function isErrorPart(part: unknown): part is { type: 'error' } {
+  return typeof part === 'object' && part !== null && 'type' in part && part.type === 'error';
 }
