@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.11](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.10...@seonggukchoi/opencode-claude-code-provider@0.1.11) (2026-03-25)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** move bridge warnings to stream-start ([374009a](https://github.com/seonggukchoi/packages.js/commit/374009a5e79fa6840e46e6989bb406a8ac4986c8))
+
 ## [0.1.10](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.9...@seonggukchoi/opencode-claude-code-provider@0.1.10) (2026-03-25)
 
 ### Bug Fixes
