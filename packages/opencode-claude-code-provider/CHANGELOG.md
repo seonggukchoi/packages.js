@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.12](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.11...@seonggukchoi/opencode-claude-code-provider@0.1.12) (2026-03-25)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** stop provider-executed tool turns ([5f52b4c](https://github.com/seonggukchoi/packages.js/commit/5f52b4cc7e2994e338c61ba933b5932a6f39040d))
+
 ## [0.1.11](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.10...@seonggukchoi/opencode-claude-code-provider@0.1.11) (2026-03-25)
 
 ### Bug Fixes
