@@ -25,7 +25,9 @@ type BlockState =
 
 export type StreamState = {
   blocks: Map<number, BlockState>;
+  emittedToolCallIds: Set<string>;
   finishReason: LanguageModelV2FinishReason;
+  pendingToolResults: Map<string, ProviderToolResultPart>;
   sessionId?: string;
   toolCallIds: Set<string>;
   toolNames: Map<string, string>;
@@ -35,6 +37,10 @@ export type StreamState = {
 
 type OpenCodeToolCallPart = Omit<Extract<LanguageModelV2StreamPart, { type: 'tool-call' }>, 'input'> & {
   input: Record<string, unknown>;
+};
+
+type ProviderToolResultPart = Extract<LanguageModelV2StreamPart, { type: 'tool-result' }> & {
+  result: unknown;
 };
 
 const TOOL_INPUT_STRING_COMPAT = Symbol('toolInputStringCompat');
@@ -71,7 +77,9 @@ const TOOL_RESULT_BLOCK_TYPES = new Set([
 export function createStreamState(): StreamState {
   return {
     blocks: new Map(),
+    emittedToolCallIds: new Set(),
     finishReason: 'unknown',
+    pendingToolResults: new Map(),
     toolCallIds: new Set(),
     toolNames: new Map(),
     toolResultIds: new Set(),
@@ -168,7 +176,7 @@ function mapAssistantMessage(message: SDKAssistantMessage, state: StreamState): 
       }
 
       parts.push({ id, type: 'tool-input-end' });
-      parts.push(createToolCallPart({ input, providerExecuted: true, toolCallId: id, toolName }));
+      parts.push(...createToolCallSequence({ input, providerExecuted: true, toolCallId: id, toolName }, state));
 
       continue;
     }
@@ -184,14 +192,19 @@ function mapAssistantMessage(message: SDKAssistantMessage, state: StreamState): 
 
       const toolName = normalizeToolName(state.toolNames.get(toolCallId) ?? blockType);
 
-      parts.push({
+      const resultPart = createToolResultPart({
         ...(isAssistantToolResultError(block) ? { isError: true } : {}),
         providerExecuted: true,
         result: getAssistantToolResult(blockType, block, toolName),
         toolCallId,
         toolName,
-        type: 'tool-result',
       });
+
+      if (!state.emittedToolCallIds.has(toolCallId) && state.toolCallIds.has(toolCallId)) {
+        state.pendingToolResults.set(toolCallId, resultPart);
+      } else {
+        parts.push(resultPart as unknown as LanguageModelV2StreamPart);
+      }
     }
   }
 
@@ -325,12 +338,15 @@ function onContentBlockStop(index: number, state: StreamState): LanguageModelV2S
 
   return [
     { id: block.id, type: 'tool-input-end' },
-    createToolCallPart({
-      input: block.inputText.length > 0 ? getToolInput(block.inputText, block.input) : block.input,
-      providerExecuted: true,
-      toolCallId: block.id,
-      toolName: block.toolName,
-    }),
+    ...createToolCallSequence(
+      {
+        input: block.inputText.length > 0 ? getToolInput(block.inputText, block.input) : block.input,
+        providerExecuted: true,
+        toolCallId: block.id,
+        toolName: block.toolName,
+      },
+      state,
+    ),
   ];
 }
 
@@ -346,16 +362,19 @@ function mapToolResultMessage(message: Extract<SDKMessage, { type: 'user' }>, st
   state.toolResultIds.add(message.parent_tool_use_id);
 
   const toolName = normalizeToolName(state.toolNames.get(message.parent_tool_use_id) ?? 'unknown');
+  const resultPart = createToolResultPart({
+    providerExecuted: true,
+    result: message.tool_use_result,
+    toolCallId: message.parent_tool_use_id,
+    toolName,
+  });
 
-  return [
-    {
-      providerExecuted: true,
-      result: message.tool_use_result,
-      toolCallId: message.parent_tool_use_id,
-      toolName,
-      type: 'tool-result',
-    },
-  ];
+  if (!state.emittedToolCallIds.has(message.parent_tool_use_id) && state.toolCallIds.has(message.parent_tool_use_id)) {
+    state.pendingToolResults.set(message.parent_tool_use_id, resultPart);
+    return [];
+  }
+
+  return [resultPart as unknown as LanguageModelV2StreamPart];
 }
 
 function mapFinishReason(message: SDKResultMessage): LanguageModelV2FinishReason {
@@ -575,6 +594,27 @@ function createToolCallPart(part: Omit<OpenCodeToolCallPart, 'type'>): LanguageM
     ...part,
     type: 'tool-call',
   } as unknown as LanguageModelV2StreamPart;
+}
+
+function createToolCallSequence(part: Omit<OpenCodeToolCallPart, 'type'>, state: StreamState): LanguageModelV2StreamPart[] {
+  state.emittedToolCallIds.add(part.toolCallId);
+
+  const parts: LanguageModelV2StreamPart[] = [createToolCallPart(part)];
+  const pendingResult = state.pendingToolResults.get(part.toolCallId);
+
+  if (pendingResult) {
+    state.pendingToolResults.delete(part.toolCallId);
+    parts.push(pendingResult as unknown as LanguageModelV2StreamPart);
+  }
+
+  return parts;
+}
+
+function createToolResultPart(part: Omit<ProviderToolResultPart, 'type'>): ProviderToolResultPart {
+  return {
+    ...part,
+    type: 'tool-result',
+  };
 }
 
 function asToolInputRecord(value: Record<string, unknown>): Record<string, unknown> {

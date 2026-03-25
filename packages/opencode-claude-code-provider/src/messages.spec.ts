@@ -1412,4 +1412,154 @@ describe('mapSdkMessage', () => {
     );
     expect(state.finishReason).toBe('unknown');
   });
+
+  it('defers tool results that arrive before tool-call stop events', () => {
+    const state = createStreamState();
+
+    expect(
+      mapSdkMessage(
+        {
+          event: {
+            content_block: {
+              id: 'server-read',
+              input: { filePath: 'README.md' },
+              name: 'Read',
+              type: 'server_tool_use',
+            },
+            index: 0,
+            type: 'content_block_start',
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'stream_event',
+          uuid: 'evt-read-start',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([
+      {
+        id: 'server-read',
+        providerExecuted: true,
+        toolName: 'read',
+        type: 'tool-input-start',
+      },
+      { delta: '{"filePath":"README.md"}', id: 'server-read', type: 'tool-input-delta' },
+    ]);
+
+    expect(
+      mapSdkMessage(
+        {
+          message: {
+            content: [
+              { id: 'server-read', input: { filePath: 'README.md' }, name: 'Read', type: 'server_tool_use' },
+              { content: { text: 'read ok' }, tool_use_id: 'server-read', type: 'text_editor_code_execution_tool_result' },
+            ],
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'assistant',
+          uuid: 'assistant-early-result',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapSdkMessage(
+        {
+          event: { index: 0, type: 'content_block_stop' },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'stream_event',
+          uuid: 'evt-read-stop',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([
+      { id: 'server-read', type: 'tool-input-end' },
+      {
+        input: { filePath: 'README.md' },
+        providerExecuted: true,
+        toolCallId: 'server-read',
+        toolName: 'read',
+        type: 'tool-call',
+      },
+      {
+        providerExecuted: true,
+        result: {
+          metadata: { blockType: 'text_editor_code_execution_tool_result' },
+          output: 'read ok',
+          title: 'read',
+        },
+        toolCallId: 'server-read',
+        toolName: 'read',
+        type: 'tool-result',
+      },
+    ]);
+
+    const earlyUserState = createStreamState();
+
+    mapSdkMessage(
+      {
+        event: {
+          content_block: {
+            id: 'tool-user-early',
+            input: { questions: [] },
+            name: 'question',
+            type: 'tool_use',
+          },
+          index: 1,
+          type: 'content_block_start',
+        },
+        parent_tool_use_id: null,
+        session_id: 'sess_123',
+        type: 'stream_event',
+        uuid: 'evt-user-early-start',
+      } as unknown as SDKMessage,
+      earlyUserState,
+    );
+
+    expect(
+      mapSdkMessage(
+        {
+          message: { role: 'user' },
+          parent_tool_use_id: 'tool-user-early',
+          session_id: 'sess_123',
+          tool_use_result: { answer: 'yes' },
+          type: 'user',
+          uuid: 'user-early-result',
+        } as unknown as SDKMessage,
+        earlyUserState,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapSdkMessage(
+        {
+          event: { index: 1, type: 'content_block_stop' },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'stream_event',
+          uuid: 'evt-user-early-stop',
+        } as unknown as SDKMessage,
+        earlyUserState,
+      ),
+    ).toEqual([
+      { id: 'tool-user-early', type: 'tool-input-end' },
+      {
+        input: { questions: [] },
+        providerExecuted: true,
+        toolCallId: 'tool-user-early',
+        toolName: 'question',
+        type: 'tool-call',
+      },
+      {
+        providerExecuted: true,
+        result: { answer: 'yes' },
+        toolCallId: 'tool-user-early',
+        toolName: 'question',
+        type: 'tool-result',
+      },
+    ]);
+  });
 });
