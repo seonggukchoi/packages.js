@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.10](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.9...@seonggukchoi/opencode-claude-code-provider@0.1.10) (2026-03-25)
+
+### Bug Fixes
+
+- **packages:** prefer opencode tool routing for claude code ([1fd49ab](https://github.com/seonggukchoi/packages.js/commit/1fd49ab1fc3adf8332b47c824aa4574694231e12))
+
 ## [0.1.9](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.8...@seonggukchoi/opencode-claude-code-provider@0.1.9) (2026-03-25)
 
 ### Bug Fixes
