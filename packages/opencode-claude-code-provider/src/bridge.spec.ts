@@ -3,30 +3,78 @@ import { describe, expect, it } from 'vitest';
 import { buildBridge } from './bridge.js';
 
 describe('buildBridge', () => {
-  it('classifies the native tool set and curated bridge tools', () => {
+  it('prefers OpenCode bridge tools when provider-side executors are attached', () => {
     const bridge = buildBridge({
-      bridgeTools: ['question', 'task', 'todowrite', 'webfetch', 'oc_websearch', 'oc_apply_patch'],
-      nativeTools: ['bash', 'read', 'write', 'edit', 'glob', 'grep'],
+      bridgeTools: ['bash', 'read', 'question'],
+      nativeTools: ['bash', 'read'],
       prompt: [],
+      toolPreference: 'opencode-first',
+      tools: {
+        bash: {
+          execute: async () => 'ok',
+          inputSchema: { properties: { command: { type: 'string' } }, type: 'object' },
+          type: 'function',
+        },
+        question: {
+          execute: async () => 'ok',
+          inputSchema: { type: 'object' },
+          type: 'function',
+        },
+        read: {
+          execute: async () => 'ok',
+          inputSchema: { properties: { filePath: { type: 'string' } }, type: 'object' },
+          type: 'function',
+        },
+      },
+    });
+
+    expect(bridge.nativeTools).toEqual([]);
+    expect(bridge.bridgedToolNames).toEqual(['bash', 'question', 'read']);
+    expect(bridge.allowedTools).toEqual(['mcp__opencode__*']);
+    expect(bridge.permissionPromptToolName).toBe('mcp__opencode__question');
+    expect(bridge.warnings).toEqual([]);
+  });
+
+  it('prefers Claude native tools when tool preference is claude-first', () => {
+    const bridge = buildBridge({
+      bridgeTools: ['bash'],
+      nativeTools: ['bash'],
+      prompt: [],
+      toolPreference: 'claude-first',
+      tools: {
+        bash: {
+          execute: async () => 'ok',
+          inputSchema: { properties: { command: { type: 'string' } }, type: 'object' },
+          type: 'function',
+        },
+      },
+    });
+
+    expect(bridge.nativeTools).toEqual(['Bash']);
+    expect(bridge.bridgedToolNames).toEqual([]);
+    expect(bridge.allowedTools).toEqual(['Bash']);
+  });
+
+  it('falls back to Claude native tools and hides broken OpenCode tools without executors', () => {
+    const bridge = buildBridge({
+      bridgeTools: ['bash', 'question'],
+      nativeTools: ['bash'],
+      prompt: [],
+      toolPreference: 'opencode-first',
       tools: [
         { inputSchema: { type: 'object' }, name: 'bash', type: 'function' as const },
-        { inputSchema: { type: 'object' }, name: 'read', type: 'function' as const },
         { inputSchema: { type: 'object' }, name: 'question', type: 'function' as const },
-        { inputSchema: { type: 'object' }, name: 'task', type: 'function' as const },
-        { inputSchema: { type: 'object' }, name: 'todowrite', type: 'function' as const },
-        { inputSchema: { type: 'object' }, name: 'webfetch', type: 'function' as const },
-        { inputSchema: { type: 'object' }, name: 'oc_websearch', type: 'function' as const },
-        { inputSchema: { type: 'object' }, name: 'oc_apply_patch', type: 'function' as const },
-        { inputSchema: { type: 'object' }, name: 'custom_tool', type: 'function' as const },
       ],
     });
 
-    expect(bridge.nativeTools).toEqual(['Bash', 'Read']);
-    expect(bridge.bridgedToolNames).toEqual(['question', 'task', 'todowrite', 'webfetch', 'oc_websearch', 'oc_apply_patch']);
-    expect(bridge.allowedTools).toContain('mcp__opencode__*');
+    expect(bridge.nativeTools).toEqual(['Bash']);
+    expect(bridge.bridgedToolNames).toEqual([]);
+    expect(bridge.allowedTools).toEqual(['Bash']);
+    expect(bridge.permissionPromptToolName).toBeUndefined();
+    expect(bridge.warnings).toEqual(['Skipping OpenCode tool "question" because no provider-side executor was attached.']);
   });
 
-  it('registers generic tools and executes bridge handlers', async () => {
+  it('registers executable bridge handlers and returns normalized outputs', async () => {
     const bridge = buildBridge({
       bridgeTools: [
         'question',
@@ -38,10 +86,8 @@ describe('buildBridge', () => {
         'apply_patch',
         'codesearch',
         'custom',
-        'missing_execute',
-        'plain_string',
-        'throws_execute',
-        'circular_execute',
+        'circular',
+        'throws',
       ],
       prompt: [],
       tools: {
@@ -50,7 +96,7 @@ describe('buildBridge', () => {
           inputSchema: { type: 'object' },
           type: 'function',
         },
-        circular_execute: {
+        circular: {
           execute: async () => {
             const value: { self?: unknown } = {};
             value.self = value;
@@ -59,40 +105,34 @@ describe('buildBridge', () => {
           inputSchema: { properties: { query: { type: 'string' } }, type: 'object' },
           type: 'function',
         },
+        codesearch: {
+          execute: async () => 'searched',
+          inputSchema: { type: 'object' },
+          type: 'function',
+        },
         custom: {
           description: 'Generic tool',
           execute: async (args: unknown) => ({ content: [{ text: JSON.stringify(args), type: 'text' }] }),
           inputSchema: { properties: { query: { type: 'string' } }, required: ['query'], type: 'object' },
           type: 'function',
         },
-        codesearch: {
-          execute: async () => 'searched',
-          inputSchema: { type: 'object' },
-          type: 'function',
-        },
         invalid: 'bad',
-        missing_execute: {
-          inputSchema: { properties: { query: { type: 'string' } }, type: 'object' },
-          type: 'function',
-        },
         oc_websearch: {
+          execute: async () => 'oc searched',
           inputSchema: { type: 'object' },
-          type: 'function',
-        },
-        plain_string: {
-          execute: async () => 'ok',
-          inputSchema: { properties: { query: { type: 'string' } }, type: 'object' },
           type: 'function',
         },
         question: {
+          execute: async () => 'asked',
           inputSchema: { type: 'object' },
           type: 'function',
         },
         task: {
+          execute: async () => 'tasked',
           inputSchema: { type: 'object' },
           type: 'function',
         },
-        throws_execute: {
+        throws: {
           execute: async () => {
             throw new Error('boom');
           },
@@ -100,14 +140,17 @@ describe('buildBridge', () => {
           type: 'function',
         },
         todowrite: {
+          execute: async () => 'todo saved',
           inputSchema: { type: 'object' },
           type: 'function',
         },
         webfetch: {
+          execute: async () => 'fetched',
           inputSchema: { type: 'object' },
           type: 'function',
         },
         websearch: {
+          execute: async () => 'searched web',
           inputSchema: { type: 'object' },
           type: 'function',
         },
@@ -121,23 +164,18 @@ describe('buildBridge', () => {
 
     expect(Object.keys(registeredTools).sort()).toEqual([
       'apply_patch',
-      'circular_execute',
+      'circular',
       'codesearch',
       'custom',
-      'missing_execute',
       'oc_websearch',
-      'plain_string',
       'question',
       'task',
-      'throws_execute',
+      'throws',
       'todowrite',
       'webfetch',
       'websearch',
     ]);
-    await expect(registeredTools.missing_execute.handler({ a: 1 })).resolves.toEqual({
-      content: [{ text: 'Tool "missing_execute" is visible to Claude but no provider-side executor was attached.', type: 'text' }],
-      isError: true,
-    });
+    expect(bridge.warnings).toEqual([]);
     await expect(registeredTools.custom.handler({ a: 1 })).resolves.toEqual({
       content: [{ text: '{"a":1}', type: 'text' }],
     });
@@ -147,37 +185,28 @@ describe('buildBridge', () => {
     await expect(registeredTools.codesearch.handler({ query: 'q' })).resolves.toEqual({
       content: [{ text: 'searched', type: 'text' }],
     });
-    await expect(registeredTools.plain_string.handler({ a: 1 })).resolves.toEqual({
-      content: [{ text: 'ok', type: 'text' }],
-    });
     await expect(registeredTools.question.handler({ questions: [] })).resolves.toEqual({
-      content: [{ text: 'Tool "question" is visible to Claude but no provider-side executor was attached.', type: 'text' }],
-      isError: true,
+      content: [{ text: 'asked', type: 'text' }],
     });
     await expect(registeredTools.task.handler({ description: 'x', prompt: 'y', subagent_type: 'general' })).resolves.toEqual({
-      content: [{ text: 'Tool "task" is visible to Claude but no provider-side executor was attached.', type: 'text' }],
-      isError: true,
+      content: [{ text: 'tasked', type: 'text' }],
     });
     await expect(registeredTools.todowrite.handler({ todos: [] })).resolves.toEqual({
-      content: [{ text: 'Tool "todowrite" is visible to Claude but no provider-side executor was attached.', type: 'text' }],
-      isError: true,
+      content: [{ text: 'todo saved', type: 'text' }],
     });
     await expect(registeredTools.webfetch.handler({ format: 'markdown', url: 'https://example.com' })).resolves.toEqual({
-      content: [{ text: 'Tool "webfetch" is visible to Claude but no provider-side executor was attached.', type: 'text' }],
-      isError: true,
+      content: [{ text: 'fetched', type: 'text' }],
     });
     await expect(registeredTools.websearch.handler({ query: 'hello' })).resolves.toEqual({
-      content: [{ text: 'Tool "websearch" is visible to Claude but no provider-side executor was attached.', type: 'text' }],
-      isError: true,
+      content: [{ text: 'searched web', type: 'text' }],
     });
     await expect(registeredTools.oc_websearch.handler({ query: 'hello' })).resolves.toEqual({
-      content: [{ text: 'Tool "oc_websearch" is visible to Claude but no provider-side executor was attached.', type: 'text' }],
-      isError: true,
+      content: [{ text: 'oc searched', type: 'text' }],
     });
-    await expect(registeredTools.circular_execute.handler({ a: 1 })).resolves.toEqual({
+    await expect(registeredTools.circular.handler({ query: 'q' })).resolves.toEqual({
       content: [{ text: '[object Object]', type: 'text' }],
     });
-    await expect(registeredTools.throws_execute.handler({ a: 1 })).resolves.toEqual({
+    await expect(registeredTools.throws.handler({ query: 'q' })).resolves.toEqual({
       content: [{ text: 'boom', type: 'text' }],
       isError: true,
     });
@@ -187,24 +216,50 @@ describe('buildBridge', () => {
     const arrayBridge = buildBridge({
       bridgeTools: ['custom'],
       prompt: [],
-      tools: [
-        { inputSchema: { properties: { query: { type: 'string' } }, type: 'object' }, name: 'custom', type: 'function' },
-        { name: 'bad', type: 'provider-defined' } as unknown,
-      ],
+      tools: {
+        custom: {
+          execute: async () => 'ok',
+          inputSchema: { properties: { query: { type: 'string' } }, type: 'object' },
+          type: 'function',
+        },
+      },
     });
     const invalidBridge = buildBridge({
       bridgeTools: ['custom'],
       prompt: [],
-      tools: { custom: { inputSchema: { type: 'null' }, type: 'function' }, invalid: 'bad' },
+      tools: {
+        custom: {
+          execute: async () => 'ok',
+          inputSchema: { type: 'null' },
+          type: 'function',
+        },
+        invalid: 'bad',
+      },
     });
     const unknownBridge = buildBridge({
       prompt: [],
       tools: 'bad',
     });
+    const filteredBridge = buildBridge({
+      bridgeTools: ['question'],
+      prompt: [],
+      tools: {
+        custom: {
+          execute: async () => 'ok',
+          inputSchema: { properties: { query: { type: 'string' } }, type: 'object' },
+          type: 'function',
+        },
+      },
+    });
 
     expect(arrayBridge.bridgedToolNames).toEqual(['custom']);
     expect(invalidBridge.bridgedToolNames).toEqual([]);
     expect(invalidBridge.allowedTools).toEqual([]);
+    expect(invalidBridge.warnings).toEqual([
+      'Skipping OpenCode tool "custom" because its schema could not be converted for the Claude Agent SDK bridge.',
+    ]);
+    expect(filteredBridge.bridgedToolNames).toEqual([]);
+    expect(filteredBridge.allowedTools).toEqual([]);
     expect(unknownBridge.bridgedToolNames).toEqual([]);
   });
 });

@@ -3,7 +3,7 @@ import console from 'node:console';
 import process from 'node:process';
 
 import { createClaudeCode } from '../dist/index.js';
-import ClaudeCodePlugin from '../../opencode-claude-code-plugin/dist/index.js';
+import { ClaudeCodePlugin } from '../../opencode-claude-code-plugin/dist/index.js';
 
 const providerCalls = [];
 const provider = createClaudeCode({
@@ -124,10 +124,17 @@ const first = await model.doStream({
       },
     },
   },
-  tools: [
-    { inputSchema: { type: 'object' }, name: 'read', type: 'function' },
-    { inputSchema: { properties: { questions: { type: 'array' } }, type: 'object' }, name: 'question', type: 'function' },
-  ],
+  tools: {
+    question: {
+      execute: async () => 'ok',
+      inputSchema: { properties: { questions: { type: 'array' } }, type: 'object' },
+      type: 'function',
+    },
+    read: {
+      inputSchema: { type: 'object' },
+      type: 'function',
+    },
+  },
 });
 
 const firstParts = await readStream(first.stream);
@@ -136,8 +143,9 @@ assert.equal(providerCalls[0].options.effort, 'high');
 assert.equal(providerCalls[0].options.maxTurns, 5);
 assert.deepEqual(providerCalls[0].options.tools, ['Read']);
 assert.ok(providerCalls[0].options.allowedTools.includes('mcp__opencode__*'));
+assert.equal(providerCalls[0].options.permissionPromptToolName, 'mcp__opencode__question');
 assert.ok(firstParts.some((part) => part.type === 'text-delta' && part.delta === 'hello'));
-assert.ok(firstParts.some((part) => part.type === 'tool-result' && part.toolName === 'Read'));
+assert.ok(firstParts.some((part) => part.type === 'tool-result' && part.toolName === 'read'));
 assert.ok(firstParts.some((part) => part.type === 'tool-result' && part.toolName === 'question'));
 assert.ok(firstParts.some((part) => part.type === 'error'));
 

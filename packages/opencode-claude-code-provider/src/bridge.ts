@@ -24,6 +24,8 @@ type BuiltBridge = {
   bridgedToolNames: string[];
   mcpServers: Record<string, McpServerConfig>;
   nativeTools: string[];
+  permissionPromptToolName?: string;
+  warnings: string[];
 };
 
 type BridgedToolResult = {
@@ -39,27 +41,41 @@ export function buildBridge(context: BridgeContext): BuiltBridge {
   const nativeTools: string[] = [];
   const bridgeDefinitions = [];
   const bridgedToolNames: string[] = [];
+  const warnings: string[] = [];
 
   for (const definition of toolDefinitions) {
     const nativeName = NATIVE_TOOL_NAME_MAP[definition.name as keyof typeof NATIVE_TOOL_NAME_MAP];
+    const bridgeEnabled = enabledBridge.size === 0 || enabledBridge.has(definition.name);
+    const nativeEnabled = nativeName !== undefined && enabledNative.has(definition.name);
+    const bridgeDefinition = bridgeEnabled ? createBridgeToolDefinition(definition, context) : undefined;
+    const canBridge = bridgeDefinition !== undefined && hasProviderSideExecutor(definition);
 
-    if (nativeName && enabledNative.has(definition.name)) {
+    if (context.toolPreference === 'claude-first' && nativeEnabled) {
       nativeTools.push(nativeName);
       continue;
     }
 
-    if (enabledBridge.size > 0 && !enabledBridge.has(definition.name)) {
+    if (canBridge) {
+      bridgedToolNames.push(definition.name);
+      bridgeDefinitions.push(bridgeDefinition);
       continue;
     }
 
-    const bridgeDefinition = createBridgeToolDefinition(definition, context);
-
-    if (!bridgeDefinition) {
+    if (nativeEnabled) {
+      nativeTools.push(nativeName);
       continue;
     }
 
-    bridgedToolNames.push(definition.name);
-    bridgeDefinitions.push(bridgeDefinition);
+    if (bridgeEnabled) {
+      if (!hasProviderSideExecutor(definition)) {
+        warnings.push(`Skipping OpenCode tool "${definition.name}" because no provider-side executor was attached.`);
+        continue;
+      }
+
+      warnings.push(
+        `Skipping OpenCode tool "${definition.name}" because its schema could not be converted for the Claude Agent SDK bridge.`,
+      );
+    }
   }
 
   const mcpServers: Record<string, McpServerConfig> = {};
@@ -77,6 +93,8 @@ export function buildBridge(context: BridgeContext): BuiltBridge {
     bridgedToolNames,
     mcpServers,
     nativeTools,
+    permissionPromptToolName: bridgedToolNames.includes('question') ? 'mcp__opencode__question' : undefined,
+    warnings,
   };
 }
 
@@ -195,20 +213,10 @@ function createBridgeToolDefinition(definition: OpenCodeToolLike, context: Bridg
 }
 
 async function executeTool(definition: OpenCodeToolLike, args: unknown, context: BridgeContext) {
-  if (typeof definition.execute !== 'function') {
-    return {
-      content: [
-        {
-          text: `Tool "${definition.name}" is visible to Claude but no provider-side executor was attached.`,
-          type: 'text',
-        },
-      ],
-      isError: true,
-    } as BridgedToolResult;
-  }
+  const execute = definition.execute as NonNullable<OpenCodeToolLike['execute']>;
 
   try {
-    const output = await definition.execute(args, {
+    const output = await execute(args, {
       abortSignal: context.abortSignal,
       messages: context.prompt,
       toolCallId: randomUUID(),
@@ -227,6 +235,10 @@ async function executeTool(definition: OpenCodeToolLike, args: unknown, context:
       isError: true,
     } as BridgedToolResult;
   }
+}
+
+function hasProviderSideExecutor(definition: OpenCodeToolLike): boolean {
+  return typeof definition.execute === 'function';
 }
 
 function normalizeTools(input: unknown): OpenCodeToolLike[] {

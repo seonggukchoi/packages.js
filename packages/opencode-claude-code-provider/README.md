@@ -6,8 +6,8 @@ Claude Agent SDK based provider for OpenCode.
 
 - Exposes a custom `LanguageModelV2` provider named `claude-code`
 - Uses `@anthropic-ai/claude-agent-sdk` as the runtime adapter behind OpenCode
-- Maps native tools (`bash`, `read`, `write`, `edit`, `glob`, `grep`) to Claude built-ins
-- Re-exposes OpenCode-hosted tools through an in-process MCP bridge
+- Prefers OpenCode-hosted tools through an in-process MCP bridge when a provider-side executor is attached
+- Falls back to Claude built-ins for overlapping tools (`bash`, `read`, `write`, `edit`, `glob`, `grep`) when no OpenCode executor is available
 - Persists the Claude session id in `providerMetadata["claude-code"].sessionId`
 
 ## Supported bridge tools
@@ -35,7 +35,8 @@ Claude Agent SDK based provider for OpenCode.
 - JSON Schema to Zod conversion is best-effort and currently supports common object, array, string, number, integer, and boolean shapes
 - OpenCode custom providers still need a `models` block in config for model discovery
 - OpenCode 1.3.0 currently breaks direct `file:` package loading by appending `@latest`
-- Claude sessions always run with `permissionMode: "bypassPermissions"` and `allowDangerouslySkipPermissions: true` internally, so OpenCode remains the permission authority
+- OpenCode-first routing requires provider-side executors for bridged tools such as `question`
+- Permission mode defaults to `bypassPermissions` only when no Claude native tools are active; native fallback sessions default to Claude's standard permission flow
 
 ## Configuration examples
 
@@ -61,7 +62,7 @@ Claude Agent SDK based provider for OpenCode.
 
 OpenCode custom providers still require a `models` block for model discovery, so the minimal example keeps only the model ids.
 
-The provider always forces Claude permission bypass mode, so you do not need to configure Claude-side permission behavior separately.
+The provider defaults to `toolPreference: "opencode-first"`. When a bridged `question` executor is available, the provider also routes Claude permission prompts through `mcp__opencode__question`.
 
 For local unpublished testing, replace the package names in those examples with your local install strategy such as a tarball or registry override.
 

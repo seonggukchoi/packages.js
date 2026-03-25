@@ -22,6 +22,7 @@ describe('normalizeChatParams', () => {
 
     expect(output.options).toEqual({
       bridgeOpenCodeMcp: false,
+      bridgeTools: undefined,
       claudeMdPath: undefined,
       cwd: '/workspace',
       effort: 'high',
@@ -29,8 +30,11 @@ describe('normalizeChatParams', () => {
       loadClaudeMd: false,
       maxTurns: 12,
       mcpServers: {},
+      nativeTools: undefined,
       pathToClaudeCodeExecutable: 'claude',
+      permissionMode: undefined,
       settingSources: [],
+      toolPreference: 'opencode-first',
     });
   });
 
@@ -58,6 +62,7 @@ describe('normalizeChatParams', () => {
     const output = {
       options: {
         bridgeOpenCodeMcp: 'bad',
+        bridgeTools: ['question', 123],
         claudeMdPath: '',
         cwd: '',
         effort: 'bad',
@@ -65,8 +70,11 @@ describe('normalizeChatParams', () => {
         loadClaudeMd: 'bad',
         maxTurns: Number.NaN,
         mcpServers: [],
+        nativeTools: ['bash', 123],
         pathToClaudeCodeExecutable: '',
+        permissionMode: 'bad',
         settingSources: ['settings.json', 123],
+        toolPreference: 'bad',
       },
     };
 
@@ -82,6 +90,7 @@ describe('normalizeChatParams', () => {
 
     expect(output.options).toEqual({
       bridgeOpenCodeMcp: false,
+      bridgeTools: ['question'],
       claudeMdPath: undefined,
       cwd: '/workspace',
       effort: undefined,
@@ -89,8 +98,11 @@ describe('normalizeChatParams', () => {
       loadClaudeMd: false,
       maxTurns: 12,
       mcpServers: {},
+      nativeTools: ['bash'],
       pathToClaudeCodeExecutable: 'claude',
+      permissionMode: undefined,
       settingSources: ['settings.json'],
+      toolPreference: 'opencode-first',
     });
   });
 
@@ -98,6 +110,7 @@ describe('normalizeChatParams', () => {
     const output = {
       options: {
         bridgeOpenCodeMcp: true,
+        bridgeTools: ['question'],
         claudeMdPath: '/repo/CLAUDE.md',
         cwd: '/custom',
         effort: 'medium',
@@ -105,8 +118,11 @@ describe('normalizeChatParams', () => {
         loadClaudeMd: true,
         maxTurns: 7,
         mcpServers: { github: { type: 'local' } },
+        nativeTools: ['bash'],
         pathToClaudeCodeExecutable: '/usr/local/bin/claude',
+        permissionMode: 'default',
         settingSources: [],
+        toolPreference: 'claude-first',
       },
     };
 
@@ -122,6 +138,7 @@ describe('normalizeChatParams', () => {
 
     expect(output.options).toEqual({
       bridgeOpenCodeMcp: true,
+      bridgeTools: ['question'],
       claudeMdPath: '/repo/CLAUDE.md',
       cwd: '/custom',
       effort: 'medium',
@@ -129,8 +146,11 @@ describe('normalizeChatParams', () => {
       loadClaudeMd: true,
       maxTurns: 7,
       mcpServers: { github: { type: 'local' } },
+      nativeTools: ['bash'],
       pathToClaudeCodeExecutable: '/usr/local/bin/claude',
+      permissionMode: 'default',
       settingSources: [],
+      toolPreference: 'claude-first',
     });
   });
 });

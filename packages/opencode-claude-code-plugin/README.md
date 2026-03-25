@@ -17,11 +17,14 @@ OpenCode plugin helpers for the Claude Agent SDK based provider.
 - `maxTurns`
 - `permissionMode`
 - `bridgeOpenCodeMcp`
+- `bridgeTools`
 - `mcpServers`
+- `nativeTools`
 - `settingSources`
 - `pathToClaudeCodeExecutable`
 - `loadClaudeMd`
 - `claudeMdPath`
+- `toolPreference`
 
 ## Health checks
 

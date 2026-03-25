@@ -1,5 +1,5 @@
 import type { LanguageModelV2FunctionTool, LanguageModelV2Prompt } from '@ai-sdk/provider';
-import type { McpServerConfig, Options, SDKMessage } from '@anthropic-ai/claude-agent-sdk';
+import type { McpServerConfig, Options, PermissionMode, SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 
 export const DEFAULT_NATIVE_TOOLS = ['bash', 'read', 'write', 'edit', 'glob', 'grep'] as const;
 export const DEFAULT_BRIDGE_TOOLS = [
@@ -14,8 +14,10 @@ export const DEFAULT_BRIDGE_TOOLS = [
 ] as const;
 export const DEFAULT_MAX_TURNS = 12;
 export const DEFAULT_EXECUTABLE_PATH = 'claude';
+export const DEFAULT_TOOL_PREFERENCE = 'opencode-first' as const;
 
 export type ClaudeCodeEffort = 'low' | 'medium' | 'high' | 'max';
+export type ClaudeCodeToolPreference = 'opencode-first' | 'claude-first';
 
 export type OpenCodeLocalMcpConfig = {
   enabled?: boolean;
@@ -69,8 +71,10 @@ export type ClaudeCodeProviderOptions = {
   nativeTools?: string[];
   openCodeMcp?: OpenCodeMcpConfig;
   pathToClaudeCodeExecutable?: string;
+  permissionMode?: PermissionMode;
   queryRunner?: QueryRunner;
   settingSources?: string[];
+  toolPreference?: ClaudeCodeToolPreference;
 };
 
 export type NormalizedClaudeCodeOptions = {
@@ -86,8 +90,10 @@ export type NormalizedClaudeCodeOptions = {
   nativeTools: string[];
   openCodeMcp?: OpenCodeMcpConfig;
   pathToClaudeCodeExecutable: string;
+  permissionMode?: PermissionMode;
   queryRunner: QueryRunner;
   settingSources: string[];
+  toolPreference: ClaudeCodeToolPreference;
 };
 
 export type BridgeContext = {
@@ -95,6 +101,7 @@ export type BridgeContext = {
   bridgeTools?: string[];
   nativeTools?: string[];
   prompt: LanguageModelV2Prompt;
+  toolPreference?: ClaudeCodeToolPreference;
   tools: unknown;
 };
 
@@ -122,8 +129,10 @@ export function normalizeProviderOptions(
     nativeTools: getStringArray(raw.nativeTools) ?? defaults.nativeTools ?? [...DEFAULT_NATIVE_TOOLS],
     openCodeMcp: getRecord<OpenCodeLocalMcpConfig | OpenCodeRemoteMcpConfig>(raw.openCodeMcp) ?? defaults.openCodeMcp,
     pathToClaudeCodeExecutable: getString(raw.pathToClaudeCodeExecutable) ?? defaults.pathToClaudeCodeExecutable ?? DEFAULT_EXECUTABLE_PATH,
+    permissionMode: getPermissionMode(raw.permissionMode) ?? defaults.permissionMode,
     queryRunner: defaults.queryRunner ?? createMissingQueryRunner(),
     settingSources: getStringArray(raw.settingSources) ?? defaults.settingSources ?? [],
+    toolPreference: getToolPreference(raw.toolPreference) ?? defaults.toolPreference ?? DEFAULT_TOOL_PREFERENCE,
   };
 }
 
@@ -183,6 +192,22 @@ function isStringRecord(value: unknown): value is Record<string, string> {
 
 function getEffort(value: unknown): ClaudeCodeEffort | undefined {
   if (value === 'low' || value === 'medium' || value === 'high' || value === 'max') {
+    return value;
+  }
+
+  return undefined;
+}
+
+function getPermissionMode(value: unknown): PermissionMode | undefined {
+  if (value === 'acceptEdits' || value === 'bypassPermissions' || value === 'default' || value === 'dontAsk' || value === 'plan') {
+    return value;
+  }
+
+  return undefined;
+}
+
+function getToolPreference(value: unknown): ClaudeCodeToolPreference | undefined {
+  if (value === 'claude-first' || value === 'opencode-first') {
     return value;
   }
 

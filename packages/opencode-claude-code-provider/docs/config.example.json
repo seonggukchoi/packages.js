@@ -11,7 +11,9 @@
         "cwd": ".",
         "maxTurns": 12,
         "nativeTools": ["read", "write", "edit", "glob", "grep", "bash"],
-        "pathToClaudeCodeExecutable": "claude"
+        "pathToClaudeCodeExecutable": "claude",
+        "permissionMode": "default",
+        "toolPreference": "opencode-first"
       },
       "models": {
         "sonnet": {

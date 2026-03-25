@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_BRIDGE_TOOLS,
   DEFAULT_NATIVE_TOOLS,
+  DEFAULT_TOOL_PREFERENCE,
   getBoolean,
   getNumber,
   getRecord,
@@ -30,7 +31,9 @@ describe('type helpers', () => {
         nativeTools: ['read'],
         openCodeMcp: { github: { command: ['node'], type: 'local' } },
         pathToClaudeCodeExecutable: '/usr/local/bin/claude',
+        permissionMode: 'default',
         settingSources: ['local'],
+        toolPreference: 'claude-first',
       },
       { env: { BASE: '1' } },
     );
@@ -48,7 +51,9 @@ describe('type helpers', () => {
     expect(normalized.nativeTools).toEqual(['read']);
     expect(normalized.openCodeMcp).toEqual({ github: { command: ['node'], type: 'local' } });
     expect(normalized.pathToClaudeCodeExecutable).toBe('/usr/local/bin/claude');
+    expect(normalized.permissionMode).toBe('default');
     expect(normalized.settingSources).toEqual(['local']);
+    expect(normalized.toolPreference).toBe('claude-first');
 
     expect(normalizeProviderOptions(undefined, {} as Parameters<typeof normalizeProviderOptions>[1]).bridgeTools).toEqual([
       ...DEFAULT_BRIDGE_TOOLS,
@@ -56,6 +61,9 @@ describe('type helpers', () => {
     expect(normalizeProviderOptions(undefined, {} as Parameters<typeof normalizeProviderOptions>[1]).nativeTools).toEqual([
       ...DEFAULT_NATIVE_TOOLS,
     ]);
+    expect(normalizeProviderOptions(undefined, {} as Parameters<typeof normalizeProviderOptions>[1]).toolPreference).toBe(
+      DEFAULT_TOOL_PREFERENCE,
+    );
     expect(normalizeProviderOptions({ env: { A: '1' } }, {} as Parameters<typeof normalizeProviderOptions>[1]).env.A).toBe('1');
     expect(() =>
       normalizeProviderOptions(undefined, {} as Parameters<typeof normalizeProviderOptions>[1]).queryRunner({
