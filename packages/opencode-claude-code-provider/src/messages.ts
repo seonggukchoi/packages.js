@@ -29,6 +29,7 @@ export type StreamState = {
   finishReason: LanguageModelV2FinishReason;
   pendingToolResults: Map<string, ProviderToolResultPart>;
   sessionId?: string;
+  stopReason?: string;
   toolCallIds: Set<string>;
   toolNames: Map<string, string>;
   toolResultIds: Set<string>;
@@ -110,7 +111,7 @@ export function mapSdkMessage(message: SDKMessage, state: StreamState): Language
   }
 
   if (message.type === 'result') {
-    state.finishReason = mapFinishReason(message);
+    state.finishReason = mapFinishReason(message, state.stopReason);
     state.usage = mergeUsage(state.usage, mapUsageRecord(getRecord(message.usage)));
   }
 
@@ -225,6 +226,17 @@ function mapStreamEvent(event: unknown, state: StreamState): LanguageModelV2Stre
 
   if (eventType === 'content_block_delta') {
     return onContentBlockDelta(event, index, state);
+  }
+
+  if (eventType === 'message_delta') {
+    const delta = getRecord(event.delta);
+    const stopReason = getString(delta?.stop_reason);
+
+    if (stopReason) {
+      state.stopReason = stopReason;
+    }
+
+    return [];
   }
 
   if (eventType === 'content_block_stop') {
@@ -377,20 +389,22 @@ function mapToolResultMessage(message: Extract<SDKMessage, { type: 'user' }>, st
   return [resultPart as unknown as LanguageModelV2StreamPart];
 }
 
-function mapFinishReason(message: SDKResultMessage): LanguageModelV2FinishReason {
+function mapFinishReason(message: SDKResultMessage, fallbackStopReason?: string): LanguageModelV2FinishReason {
   if (message.subtype !== 'success') {
     return 'error';
   }
 
-  if (message.stop_reason === 'tool_use') {
+  const stopReason = message.stop_reason ?? fallbackStopReason;
+
+  if (stopReason === 'tool_use') {
     return 'stop';
   }
 
-  if (message.stop_reason === 'max_tokens') {
+  if (stopReason === 'max_tokens') {
     return 'length';
   }
 
-  if (message.stop_reason === 'end_turn' || message.stop_reason === 'pause_turn' || message.stop_reason === 'stop_sequence') {
+  if (stopReason === 'end_turn' || stopReason === 'pause_turn' || stopReason === 'stop_sequence') {
     return 'stop';
   }
 

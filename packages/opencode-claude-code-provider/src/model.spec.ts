@@ -124,7 +124,7 @@ describe('ClaudeCodeLanguageModel', () => {
     expect(calls[0].options?.tools).toEqual([]);
     expect(calls[0].options?.allowedTools).toEqual(['mcp__opencode__*']);
     expect(calls[0].options?.permissionMode).toBe('bypassPermissions');
-    expect(calls[0].options?.permissionPromptToolName).toBe('mcp__opencode__question');
+    expect(calls[0].options?.permissionPromptToolName).toBeUndefined();
     expect(calls[0].options?.resume).toBeUndefined();
   });
 
@@ -263,7 +263,7 @@ describe('ClaudeCodeLanguageModel', () => {
     expect(calls[0].prompt).toBe('continue please');
     expect(calls[0].options?.allowDangerouslySkipPermissions).toBe(true);
     expect(calls[0].options?.resume).toBe('sess_resume');
-    expect(calls[0].options?.effort).toBe('high');
+    expect(calls[0].options?.effort).toBeUndefined();
     expect(calls[0].options?.maxTurns).toBe(3);
     expect(calls[0].options?.permissionMode).toBe('bypassPermissions');
   });

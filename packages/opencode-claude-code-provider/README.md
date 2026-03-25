@@ -33,6 +33,7 @@ Claude Agent SDK based provider for OpenCode.
 - Remote OAuth MCP servers are skipped and surfaced as warnings
 - Non-streaming generation is intentionally not supported
 - JSON Schema to Zod conversion is best-effort and currently supports common object, array, string, number, integer, and boolean shapes
+- Claude Code CLI currently rejects Agent SDK `effort` values, so configured effort variants are ignored at runtime for stability
 - OpenCode custom providers still need a `models` block in config for model discovery
 - OpenCode 1.3.0 currently breaks direct `file:` package loading by appending `@latest`
 - OpenCode-first routing requires provider-side executors for bridged tools such as `question`
@@ -62,7 +63,7 @@ Claude Agent SDK based provider for OpenCode.
 
 OpenCode custom providers still require a `models` block for model discovery, so the minimal example keeps only the model ids.
 
-The provider defaults to `toolPreference: "opencode-first"`. When a bridged `question` executor is available, the provider also routes Claude permission prompts through `mcp__opencode__question`.
+The provider defaults to `toolPreference: "opencode-first"`. Bridged OpenCode tools remain available through `mcp__opencode__*`, but Claude permission prompts stay on the default SDK flow for now.
 
 For local unpublished testing, replace the package names in those examples with your local install strategy such as a tarball or registry override.
 

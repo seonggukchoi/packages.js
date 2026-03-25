@@ -1319,6 +1319,20 @@ describe('mapSdkMessage', () => {
 
     mapSdkMessage(
       {
+        event: {
+          delta: { stop_reason: 'end_turn' },
+          type: 'message_delta',
+        },
+        parent_tool_use_id: null,
+        session_id: 'sess_123',
+        type: 'stream_event',
+        uuid: 'evt-message-delta-stop',
+      } as unknown as SDKMessage,
+      state,
+    );
+
+    mapSdkMessage(
+      {
         duration_api_ms: 1,
         duration_ms: 1,
         fast_mode_state: 'off',
@@ -1423,7 +1437,6 @@ describe('mapSdkMessage', () => {
         permission_denials: [],
         result: 'unknown',
         session_id: 'sess_123',
-        stop_reason: 'weird',
         subtype: 'success',
         total_cost_usd: 0,
         type: 'result',
@@ -1432,7 +1445,7 @@ describe('mapSdkMessage', () => {
       } as unknown as SDKMessage,
       state,
     );
-    expect(state.finishReason).toBe('unknown');
+    expect(state.finishReason).toBe('stop');
   });
 
   it('defers tool results that arrive before tool-call stop events', () => {

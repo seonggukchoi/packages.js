@@ -31,7 +31,7 @@ describe('buildBridge', () => {
     expect(bridge.nativeTools).toEqual([]);
     expect(bridge.bridgedToolNames).toEqual(['bash', 'question', 'read']);
     expect(bridge.allowedTools).toEqual(['mcp__opencode__*']);
-    expect(bridge.permissionPromptToolName).toBe('mcp__opencode__question');
+    expect(bridge.permissionPromptToolName).toBeUndefined();
     expect(bridge.warnings).toEqual([]);
   });
 

@@ -68,7 +68,6 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
         abortController,
         allowedTools: bridge.allowedTools,
         cwd: normalizedOptions.cwd,
-        effort: normalizedOptions.effort,
         env: normalizedOptions.env,
         includePartialMessages: true,
         maxTurns: normalizedOptions.maxTurns,

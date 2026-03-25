@@ -139,11 +139,11 @@ const first = await model.doStream({
 
 const firstParts = await readStream(first.stream);
 
-assert.equal(providerCalls[0].options.effort, 'high');
+assert.equal(providerCalls[0].options.effort, undefined);
 assert.equal(providerCalls[0].options.maxTurns, 5);
 assert.deepEqual(providerCalls[0].options.tools, ['Read']);
 assert.ok(providerCalls[0].options.allowedTools.includes('mcp__opencode__*'));
-assert.equal(providerCalls[0].options.permissionPromptToolName, 'mcp__opencode__question');
+assert.equal(providerCalls[0].options.permissionPromptToolName, undefined);
 assert.deepEqual(firstParts[0], {
   type: 'stream-start',
   warnings: [
