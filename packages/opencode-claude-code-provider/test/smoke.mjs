@@ -144,10 +144,19 @@ assert.equal(providerCalls[0].options.maxTurns, 5);
 assert.deepEqual(providerCalls[0].options.tools, ['Read']);
 assert.ok(providerCalls[0].options.allowedTools.includes('mcp__opencode__*'));
 assert.equal(providerCalls[0].options.permissionPromptToolName, 'mcp__opencode__question');
+assert.deepEqual(firstParts[0], {
+  type: 'stream-start',
+  warnings: [
+    {
+      message: 'MCP server "brokenRemote" is skipped because OAuth bridging is not supported yet.',
+      type: 'other',
+    },
+  ],
+});
 assert.ok(firstParts.some((part) => part.type === 'text-delta' && part.delta === 'hello'));
 assert.ok(firstParts.some((part) => part.type === 'tool-result' && part.toolName === 'read'));
 assert.ok(firstParts.some((part) => part.type === 'tool-result' && part.toolName === 'question'));
-assert.ok(firstParts.some((part) => part.type === 'error'));
+assert.ok(!firstParts.some((part) => part.type === 'error'));
 
 const second = await model.doStream({
   prompt: [

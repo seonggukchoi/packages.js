@@ -52,6 +52,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       loadClaudeMd: normalizedOptions.loadClaudeMd,
     });
     const system = [getSystem(options.prompt), claudeMd].filter((value): value is string => Boolean(value)).join('\n\n');
+    const warnings = [...bridge.warnings, ...opencodeMcp.warnings].map((message) => ({ message, type: 'other' as const }));
     const streamState = createStreamState();
     const abortController = new AbortController();
     const currentModelId = this.modelId;
@@ -99,15 +100,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
 
     const stream = new ReadableStream<LanguageModelV2StreamPart>({
       async start(controller) {
-        controller.enqueue({ type: 'stream-start', warnings: [] });
-
-        for (const warning of bridge.warnings) {
-          controller.enqueue({ error: new Error(warning), type: 'error' });
-        }
-
-        for (const warning of opencodeMcp.warnings) {
-          controller.enqueue({ error: new Error(warning), type: 'error' });
-        }
+        controller.enqueue({ type: 'stream-start', warnings });
 
         try {
           for await (const message of run) {

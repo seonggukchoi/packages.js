@@ -83,7 +83,7 @@ For local unpublished testing, replace the package names in those examples with 
 - Missing CLI executable: expect a process spawn failure such as `ENOENT`
 - Unsupported auth status command on older CLI builds: use `claude auth status || claude doctor`
 - Unsupported tool schema: the provider skips bridging unless a curated or generic Zod shape can be built
-- Unbridgeable MCP server: the provider emits an `error` stream part with a diagnostic warning and continues
+- Unbridgeable MCP server: the provider includes a diagnostic warning in the `stream-start` part and continues
 
 ## Release checklist
 
