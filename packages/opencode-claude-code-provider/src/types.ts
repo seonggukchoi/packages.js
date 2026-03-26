@@ -17,7 +17,7 @@ export const DEFAULT_EXECUTABLE_PATH = 'claude';
 export const DEFAULT_TOOL_PREFERENCE = 'opencode-first' as const;
 
 export type ClaudeCodeEffort = 'low' | 'medium' | 'high' | 'max';
-export type ClaudeCodeToolPreference = 'opencode-first' | 'claude-first';
+export type ClaudeCodeToolPreference = 'opencode-only' | 'opencode-first' | 'claude-first';
 
 export type OpenCodeLocalMcpConfig = {
   enabled?: boolean;
@@ -207,7 +207,7 @@ function getPermissionMode(value: unknown): PermissionMode | undefined {
 }
 
 function getToolPreference(value: unknown): ClaudeCodeToolPreference | undefined {
-  if (value === 'claude-first' || value === 'opencode-first') {
+  if (value === 'claude-first' || value === 'opencode-first' || value === 'opencode-only') {
     return value;
   }
 

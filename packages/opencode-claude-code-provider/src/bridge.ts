@@ -43,10 +43,12 @@ export function buildBridge(context: BridgeContext): BuiltBridge {
   const bridgedToolNames: string[] = [];
   const warnings: string[] = [];
 
+  const isOpencodeOnly = context.toolPreference === 'opencode-only';
+
   for (const definition of toolDefinitions) {
     const nativeName = NATIVE_TOOL_NAME_MAP[definition.name as keyof typeof NATIVE_TOOL_NAME_MAP];
-    const bridgeEnabled = enabledBridge.size === 0 || enabledBridge.has(definition.name);
-    const nativeEnabled = nativeName !== undefined && enabledNative.has(definition.name);
+    const bridgeEnabled = isOpencodeOnly || enabledBridge.size === 0 || enabledBridge.has(definition.name);
+    const nativeEnabled = !isOpencodeOnly && nativeName !== undefined && enabledNative.has(definition.name);
     const bridgeDefinition = bridgeEnabled ? createBridgeToolDefinition(definition, context) : undefined;
     const canBridge = bridgeDefinition !== undefined && hasProviderSideExecutor(definition);
 

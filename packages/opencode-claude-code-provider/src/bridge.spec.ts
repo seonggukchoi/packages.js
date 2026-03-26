@@ -212,6 +212,57 @@ describe('buildBridge', () => {
     });
   });
 
+  it('routes all tools through the bridge and blocks native fallback when tool preference is opencode-only', () => {
+    const bridge = buildBridge({
+      bridgeTools: ['question'],
+      nativeTools: ['bash', 'read'],
+      prompt: [],
+      toolPreference: 'opencode-only',
+      tools: {
+        bash: {
+          execute: async () => 'ok',
+          inputSchema: { properties: { command: { type: 'string' } }, type: 'object' },
+          type: 'function',
+        },
+        question: {
+          execute: async () => 'ok',
+          inputSchema: { type: 'object' },
+          type: 'function',
+        },
+        read: {
+          execute: async () => 'ok',
+          inputSchema: { properties: { filePath: { type: 'string' } }, type: 'object' },
+          type: 'function',
+        },
+      },
+    });
+
+    expect(bridge.nativeTools).toEqual([]);
+    expect(bridge.bridgedToolNames).toEqual(['bash', 'question', 'read']);
+    expect(bridge.allowedTools).toEqual(['mcp__opencode__*']);
+    expect(bridge.warnings).toEqual([]);
+  });
+
+  it('skips tools without executors in opencode-only mode instead of falling back to native', () => {
+    const bridge = buildBridge({
+      nativeTools: ['bash'],
+      prompt: [],
+      toolPreference: 'opencode-only',
+      tools: [
+        { inputSchema: { type: 'object' }, name: 'bash', type: 'function' as const },
+        { inputSchema: { type: 'object' }, name: 'question', type: 'function' as const },
+      ],
+    });
+
+    expect(bridge.nativeTools).toEqual([]);
+    expect(bridge.bridgedToolNames).toEqual([]);
+    expect(bridge.allowedTools).toEqual([]);
+    expect(bridge.warnings).toEqual([
+      'Skipping OpenCode tool "bash" because no provider-side executor was attached.',
+      'Skipping OpenCode tool "question" because no provider-side executor was attached.',
+    ]);
+  });
+
   it('supports array tool inputs and skips unbridgeable schemas', () => {
     const arrayBridge = buildBridge({
       bridgeTools: ['custom'],
