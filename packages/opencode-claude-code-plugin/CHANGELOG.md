@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.2.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-plugin@0.1.3...@seonggukchoi/opencode-claude-code-plugin@0.2.0) (2026-03-26)
+
+### Features
+
+- **opencode-claude-code-plugin:** support opencode-only tool preference in params normalization ([b8ccf6f](https://github.com/seonggukchoi/packages.js/commit/b8ccf6f7b7fa01aa3cb153f2e930125d5cc1bc62))
+
 ## [0.1.3](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-plugin@0.1.2...@seonggukchoi/opencode-claude-code-plugin@0.1.3) (2026-03-25)
 
 ### Bug Fixes

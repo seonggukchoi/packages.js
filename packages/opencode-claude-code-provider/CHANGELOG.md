@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.2.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.13...@seonggukchoi/opencode-claude-code-provider@0.2.0) (2026-03-26)
+
+### Features
+
+- **opencode-claude-code-provider:** add opencode-only tool preference to bypass native tools ([f1db42c](https://github.com/seonggukchoi/packages.js/commit/f1db42ca35bc6ab53ec03ead4a314b56933cc077))
+
 ## [0.1.13](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.12...@seonggukchoi/opencode-claude-code-provider@0.1.13) (2026-03-26)
 
 ### Bug Fixes
