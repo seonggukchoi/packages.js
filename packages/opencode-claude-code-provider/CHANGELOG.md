@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.13](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.12...@seonggukchoi/opencode-claude-code-provider@0.1.13) (2026-03-26)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** avoid claude cli runtime exits ([ac9fa38](https://github.com/seonggukchoi/packages.js/commit/ac9fa385cbf5241a2a028f79c13f09b6cd1926fe))
+- **opencode-claude-code-provider:** normalize native tool session flow ([3a52102](https://github.com/seonggukchoi/packages.js/commit/3a52102e2647f46a589cca8ea24df68941f14690))
+
 ## [0.1.12](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.1.11...@seonggukchoi/opencode-claude-code-provider@0.1.12) (2026-03-25)
 
 ### Bug Fixes
