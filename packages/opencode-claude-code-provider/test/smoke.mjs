@@ -141,6 +141,7 @@ const firstParts = await readStream(first.stream);
 
 assert.equal(providerCalls[0].options.effort, undefined);
 assert.equal(providerCalls[0].options.maxTurns, 5);
+assert.equal(providerCalls[0].options.continue, false);
 assert.deepEqual(providerCalls[0].options.tools, ['Read']);
 assert.ok(providerCalls[0].options.allowedTools.includes('mcp__opencode__*'));
 assert.equal(providerCalls[0].options.permissionPromptToolName, undefined);
@@ -181,6 +182,7 @@ const second = await model.doStream({
 
 await readStream(second.stream);
 assert.equal(providerCalls[1].prompt, 'continue');
+assert.equal(providerCalls[1].options.continue, undefined);
 assert.equal(providerCalls[1].options.resume, 'sess_resume');
 
 console.log('Smoke test passed');

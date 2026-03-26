@@ -123,6 +123,7 @@ describe('ClaudeCodeLanguageModel', () => {
     expect(calls[0].options?.allowDangerouslySkipPermissions).toBe(true);
     expect(calls[0].options?.tools).toEqual([]);
     expect(calls[0].options?.allowedTools).toEqual(['mcp__opencode__*']);
+    expect(calls[0].options?.continue).toBe(false);
     expect(calls[0].options?.permissionMode).toBe('bypassPermissions');
     expect(calls[0].options?.permissionPromptToolName).toBeUndefined();
     expect(calls[0].options?.resume).toBeUndefined();
@@ -155,6 +156,7 @@ describe('ClaudeCodeLanguageModel', () => {
 
     expect(calls[0].options?.allowDangerouslySkipPermissions).toBeUndefined();
     expect(calls[0].options?.allowedTools).toEqual(['Bash']);
+    expect(calls[0].options?.continue).toBe(false);
     expect(calls[0].options?.permissionMode).toBe('default');
     expect(calls[0].options?.permissionPromptToolName).toBeUndefined();
     expect(calls[0].options?.tools).toEqual(['Bash']);
@@ -190,6 +192,7 @@ describe('ClaudeCodeLanguageModel', () => {
     } as unknown as LanguageModelV2CallOptions);
 
     expect(calls[0].options?.allowDangerouslySkipPermissions).toBeUndefined();
+    expect(calls[0].options?.continue).toBe(false);
     expect(calls[0].options?.permissionMode).toBe('plan');
   });
 
@@ -262,6 +265,7 @@ describe('ClaudeCodeLanguageModel', () => {
 
     expect(calls[0].prompt).toBe('continue please');
     expect(calls[0].options?.allowDangerouslySkipPermissions).toBe(true);
+    expect(calls[0].options?.continue).toBeUndefined();
     expect(calls[0].options?.resume).toBe('sess_resume');
     expect(calls[0].options?.effort).toBeUndefined();
     expect(calls[0].options?.maxTurns).toBe(3);
@@ -613,7 +617,11 @@ describe('ClaudeCodeLanguageModel', () => {
         },
         {
           providerExecuted: true,
-          result: { content: 'native read result' },
+          result: {
+            metadata: { blockType: 'tool_result' },
+            output: '{"content":"native read result"}',
+            title: 'read',
+          },
           toolCallId: 'native-read',
           toolName: 'read',
           type: 'tool-result',
@@ -627,7 +635,11 @@ describe('ClaudeCodeLanguageModel', () => {
         },
         {
           providerExecuted: true,
-          result: { content: 'bridge question result' },
+          result: {
+            metadata: { blockType: 'tool_result' },
+            output: '{"content":"bridge question result"}',
+            title: 'question',
+          },
           toolCallId: 'bridge-question',
           toolName: 'question',
           type: 'tool-result',
@@ -810,6 +822,7 @@ describe('ClaudeCodeLanguageModel', () => {
     } as unknown as LanguageModelV2CallOptions);
 
     expect(calls[0]?.options?.model).toBe('claude-sonnet-4-6');
+    expect(calls[0]?.options?.continue).toBe(false);
   });
 });
 

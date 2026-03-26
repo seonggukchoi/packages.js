@@ -363,30 +363,56 @@ function onContentBlockStop(index: number, state: StreamState): LanguageModelV2S
 }
 
 function mapToolResultMessage(message: Extract<SDKMessage, { type: 'user' }>, state: StreamState): LanguageModelV2StreamPart[] {
-  if (!message.parent_tool_use_id || message.tool_use_result === undefined) {
+  const toolCallId = getString(message.parent_tool_use_id) ?? getUserToolResultId(message);
+
+  if (!toolCallId || message.tool_use_result === undefined) {
     return [];
   }
 
-  if (state.toolResultIds.has(message.parent_tool_use_id)) {
+  if (state.toolResultIds.has(toolCallId)) {
     return [];
   }
 
-  state.toolResultIds.add(message.parent_tool_use_id);
+  state.toolResultIds.add(toolCallId);
 
-  const toolName = normalizeToolName(state.toolNames.get(message.parent_tool_use_id) ?? 'unknown');
+  const toolName = normalizeToolName(state.toolNames.get(toolCallId) ?? 'unknown');
   const resultPart = createToolResultPart({
     providerExecuted: true,
-    result: message.tool_use_result,
-    toolCallId: message.parent_tool_use_id,
+    result: toToolResultEnvelope('tool_result', message.tool_use_result, toolName),
+    toolCallId,
     toolName,
   });
 
-  if (!state.emittedToolCallIds.has(message.parent_tool_use_id) && state.toolCallIds.has(message.parent_tool_use_id)) {
-    state.pendingToolResults.set(message.parent_tool_use_id, resultPart);
+  if (!state.emittedToolCallIds.has(toolCallId) && state.toolCallIds.has(toolCallId)) {
+    state.pendingToolResults.set(toolCallId, resultPart);
     return [];
   }
 
   return [resultPart as unknown as LanguageModelV2StreamPart];
+}
+
+function getUserToolResultId(message: Extract<SDKMessage, { type: 'user' }>): string | undefined {
+  const payload = getRecord(message.message);
+
+  if (!payload || !Array.isArray(payload.content)) {
+    return undefined;
+  }
+
+  for (const item of payload.content) {
+    const block = getRecord(item);
+
+    if (!block) {
+      continue;
+    }
+
+    const toolCallId = getToolLinkId(block);
+
+    if (toolCallId) {
+      return toolCallId;
+    }
+  }
+
+  return undefined;
 }
 
 function mapFinishReason(message: SDKResultMessage, fallbackStopReason?: string): LanguageModelV2FinishReason {
@@ -475,6 +501,10 @@ function normalizeToolName(toolName: string): string {
 function getAssistantToolResult(blockType: string, block: Record<string, unknown>, toolName: string): unknown {
   const rawResult = getAssistantToolRawResult(block);
 
+  return toToolResultEnvelope(blockType, rawResult, toolName);
+}
+
+function toToolResultEnvelope(blockType: string, rawResult: unknown, toolName: string) {
   return {
     metadata: getAssistantToolMetadata(blockType, rawResult),
     output: getAssistantToolOutput(blockType, rawResult),
@@ -553,6 +583,7 @@ function getAssistantToolOutput(blockType: string, rawResult: unknown): string {
     getString(rawResult) ??
     getString(record?.text) ??
     getString(record?.output) ??
+    getString(getRecord(record?.file)?.content) ??
     getString(record?.stdout) ??
     getString(record?.stderr) ??
     getString(record?.message) ??
