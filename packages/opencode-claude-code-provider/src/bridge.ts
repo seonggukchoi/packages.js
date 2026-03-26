@@ -93,7 +93,7 @@ export function buildBridge(context: BridgeContext): BuiltBridge {
     bridgedToolNames,
     mcpServers,
     nativeTools,
-    permissionPromptToolName: bridgedToolNames.includes('question') ? 'mcp__opencode__question' : undefined,
+    permissionPromptToolName: undefined,
     warnings,
   };
 }

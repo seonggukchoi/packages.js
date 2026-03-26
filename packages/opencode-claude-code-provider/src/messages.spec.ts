@@ -168,12 +168,88 @@ describe('mapSdkMessage', () => {
     expect(resultParts).toEqual([
       {
         providerExecuted: true,
-        result: { answer: 'yes' },
+        result: {
+          metadata: { blockType: 'tool_result' },
+          output: '{"answer":"yes"}',
+          title: 'question',
+        },
         toolCallId: 'tool-1',
         toolName: 'question',
         type: 'tool-result',
       },
     ]);
+
+    const stateFromMessageContent = createStreamState();
+    mapSdkMessage(
+      {
+        event: {
+          content_block: { id: 'tool-2', input: { questions: [] }, name: 'question', type: 'tool_use' },
+          index: 0,
+          type: 'content_block_start',
+        },
+        parent_tool_use_id: null,
+        session_id: 'sess_123',
+        type: 'stream_event',
+        uuid: 'evt-tool-2-start',
+      } as unknown as SDKMessage,
+      stateFromMessageContent,
+    );
+    mapSdkMessage(
+      {
+        event: { index: 0, type: 'content_block_stop' },
+        parent_tool_use_id: null,
+        session_id: 'sess_123',
+        type: 'stream_event',
+        uuid: 'evt-tool-2-stop',
+      } as unknown as SDKMessage,
+      stateFromMessageContent,
+    );
+
+    expect(
+      mapSdkMessage(
+        {
+          message: {
+            content: [{ tool_use_id: 'tool-2', type: 'tool_result' }],
+            role: 'user',
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          tool_use_result: { answer: 'from message content' },
+          type: 'user',
+          uuid: 'user-from-message-content',
+        } as unknown as SDKMessage,
+        stateFromMessageContent,
+      ),
+    ).toEqual([
+      {
+        providerExecuted: true,
+        result: {
+          metadata: { blockType: 'tool_result' },
+          output: '{"answer":"from message content"}',
+          title: 'question',
+        },
+        toolCallId: 'tool-2',
+        toolName: 'question',
+        type: 'tool-result',
+      },
+    ]);
+
+    expect(
+      mapSdkMessage(
+        {
+          message: {
+            content: [null, { type: 'tool_result' }],
+            role: 'user',
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          tool_use_result: { answer: 'missing id' },
+          type: 'user',
+          uuid: 'user-missing-message-content-id',
+        } as unknown as SDKMessage,
+        stateFromMessageContent,
+      ),
+    ).toEqual([]);
 
     expect(
       mapSdkMessage(
@@ -892,7 +968,11 @@ describe('mapSdkMessage', () => {
     ).toEqual([
       {
         providerExecuted: true,
-        result: { answer: 'unknown' },
+        result: {
+          metadata: { blockType: 'tool_result' },
+          output: '{"answer":"unknown"}',
+          title: 'unknown',
+        },
         toolCallId: 'missing-tool',
         toolName: 'unknown',
         type: 'tool-result',
@@ -1319,6 +1399,35 @@ describe('mapSdkMessage', () => {
 
     mapSdkMessage(
       {
+        event: {
+          delta: { stop_reason: 'end_turn' },
+          type: 'message_delta',
+        },
+        parent_tool_use_id: null,
+        session_id: 'sess_123',
+        type: 'stream_event',
+        uuid: 'evt-message-delta-stop',
+      } as unknown as SDKMessage,
+      state,
+    );
+    expect(
+      mapSdkMessage(
+        {
+          event: {
+            delta: {},
+            type: 'message_delta',
+          },
+          parent_tool_use_id: null,
+          session_id: 'sess_123',
+          type: 'stream_event',
+          uuid: 'evt-message-delta-empty',
+        } as unknown as SDKMessage,
+        state,
+      ),
+    ).toEqual([]);
+
+    mapSdkMessage(
+      {
         duration_api_ms: 1,
         duration_ms: 1,
         fast_mode_state: 'off',
@@ -1423,7 +1532,6 @@ describe('mapSdkMessage', () => {
         permission_denials: [],
         result: 'unknown',
         session_id: 'sess_123',
-        stop_reason: 'weird',
         subtype: 'success',
         total_cost_usd: 0,
         type: 'result',
@@ -1432,7 +1540,31 @@ describe('mapSdkMessage', () => {
       } as unknown as SDKMessage,
       state,
     );
-    expect(state.finishReason).toBe('unknown');
+    expect(state.finishReason).toBe('stop');
+
+    const unknownState = createStreamState();
+
+    mapSdkMessage(
+      {
+        duration_api_ms: 1,
+        duration_ms: 1,
+        fast_mode_state: 'off',
+        is_error: false,
+        modelUsage: {},
+        num_turns: 1,
+        permission_denials: [],
+        result: 'unknown',
+        session_id: 'sess_unknown',
+        stop_reason: 'weird',
+        subtype: 'success',
+        total_cost_usd: 0,
+        type: 'result',
+        usage: {},
+        uuid: 'result-unknown-stop-reason',
+      } as unknown as SDKMessage,
+      unknownState,
+    );
+    expect(unknownState.finishReason).toBe('unknown');
   });
 
   it('defers tool results that arrive before tool-call stop events', () => {
@@ -1577,7 +1709,11 @@ describe('mapSdkMessage', () => {
       },
       {
         providerExecuted: true,
-        result: { answer: 'yes' },
+        result: {
+          metadata: { blockType: 'tool_result' },
+          output: '{"answer":"yes"}',
+          title: 'question',
+        },
         toolCallId: 'tool-user-early',
         toolName: 'question',
         type: 'tool-result',

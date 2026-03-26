@@ -29,6 +29,7 @@ export type StreamState = {
   finishReason: LanguageModelV2FinishReason;
   pendingToolResults: Map<string, ProviderToolResultPart>;
   sessionId?: string;
+  stopReason?: string;
   toolCallIds: Set<string>;
   toolNames: Map<string, string>;
   toolResultIds: Set<string>;
@@ -110,7 +111,7 @@ export function mapSdkMessage(message: SDKMessage, state: StreamState): Language
   }
 
   if (message.type === 'result') {
-    state.finishReason = mapFinishReason(message);
+    state.finishReason = mapFinishReason(message, state.stopReason);
     state.usage = mergeUsage(state.usage, mapUsageRecord(getRecord(message.usage)));
   }
 
@@ -225,6 +226,17 @@ function mapStreamEvent(event: unknown, state: StreamState): LanguageModelV2Stre
 
   if (eventType === 'content_block_delta') {
     return onContentBlockDelta(event, index, state);
+  }
+
+  if (eventType === 'message_delta') {
+    const delta = getRecord(event.delta);
+    const stopReason = getString(delta?.stop_reason);
+
+    if (stopReason) {
+      state.stopReason = stopReason;
+    }
+
+    return [];
   }
 
   if (eventType === 'content_block_stop') {
@@ -351,46 +363,74 @@ function onContentBlockStop(index: number, state: StreamState): LanguageModelV2S
 }
 
 function mapToolResultMessage(message: Extract<SDKMessage, { type: 'user' }>, state: StreamState): LanguageModelV2StreamPart[] {
-  if (!message.parent_tool_use_id || message.tool_use_result === undefined) {
+  const toolCallId = getString(message.parent_tool_use_id) ?? getUserToolResultId(message);
+
+  if (!toolCallId || message.tool_use_result === undefined) {
     return [];
   }
 
-  if (state.toolResultIds.has(message.parent_tool_use_id)) {
+  if (state.toolResultIds.has(toolCallId)) {
     return [];
   }
 
-  state.toolResultIds.add(message.parent_tool_use_id);
+  state.toolResultIds.add(toolCallId);
 
-  const toolName = normalizeToolName(state.toolNames.get(message.parent_tool_use_id) ?? 'unknown');
+  const toolName = normalizeToolName(state.toolNames.get(toolCallId) ?? 'unknown');
   const resultPart = createToolResultPart({
     providerExecuted: true,
-    result: message.tool_use_result,
-    toolCallId: message.parent_tool_use_id,
+    result: toToolResultEnvelope('tool_result', message.tool_use_result, toolName),
+    toolCallId,
     toolName,
   });
 
-  if (!state.emittedToolCallIds.has(message.parent_tool_use_id) && state.toolCallIds.has(message.parent_tool_use_id)) {
-    state.pendingToolResults.set(message.parent_tool_use_id, resultPart);
+  if (!state.emittedToolCallIds.has(toolCallId) && state.toolCallIds.has(toolCallId)) {
+    state.pendingToolResults.set(toolCallId, resultPart);
     return [];
   }
 
   return [resultPart as unknown as LanguageModelV2StreamPart];
 }
 
-function mapFinishReason(message: SDKResultMessage): LanguageModelV2FinishReason {
+function getUserToolResultId(message: Extract<SDKMessage, { type: 'user' }>): string | undefined {
+  const payload = getRecord(message.message);
+
+  if (!payload || !Array.isArray(payload.content)) {
+    return undefined;
+  }
+
+  for (const item of payload.content) {
+    const block = getRecord(item);
+
+    if (!block) {
+      continue;
+    }
+
+    const toolCallId = getToolLinkId(block);
+
+    if (toolCallId) {
+      return toolCallId;
+    }
+  }
+
+  return undefined;
+}
+
+function mapFinishReason(message: SDKResultMessage, fallbackStopReason?: string): LanguageModelV2FinishReason {
   if (message.subtype !== 'success') {
     return 'error';
   }
 
-  if (message.stop_reason === 'tool_use') {
+  const stopReason = message.stop_reason ?? fallbackStopReason;
+
+  if (stopReason === 'tool_use') {
     return 'stop';
   }
 
-  if (message.stop_reason === 'max_tokens') {
+  if (stopReason === 'max_tokens') {
     return 'length';
   }
 
-  if (message.stop_reason === 'end_turn' || message.stop_reason === 'pause_turn' || message.stop_reason === 'stop_sequence') {
+  if (stopReason === 'end_turn' || stopReason === 'pause_turn' || stopReason === 'stop_sequence') {
     return 'stop';
   }
 
@@ -461,6 +501,10 @@ function normalizeToolName(toolName: string): string {
 function getAssistantToolResult(blockType: string, block: Record<string, unknown>, toolName: string): unknown {
   const rawResult = getAssistantToolRawResult(block);
 
+  return toToolResultEnvelope(blockType, rawResult, toolName);
+}
+
+function toToolResultEnvelope(blockType: string, rawResult: unknown, toolName: string) {
   return {
     metadata: getAssistantToolMetadata(blockType, rawResult),
     output: getAssistantToolOutput(blockType, rawResult),
@@ -539,6 +583,7 @@ function getAssistantToolOutput(blockType: string, rawResult: unknown): string {
     getString(rawResult) ??
     getString(record?.text) ??
     getString(record?.output) ??
+    getString(getRecord(record?.file)?.content) ??
     getString(record?.stdout) ??
     getString(record?.stderr) ??
     getString(record?.message) ??
