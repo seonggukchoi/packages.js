@@ -106,6 +106,26 @@ describe('normalizeChatParams', () => {
     });
   });
 
+  it('accepts opencode-only as a valid tool preference', () => {
+    const output = {
+      options: {
+        toolPreference: 'opencode-only',
+      },
+    };
+
+    normalizeChatParams(
+      {
+        model: {
+          providerID: 'claude-code',
+        },
+      },
+      output,
+      { cwd: '/workspace' },
+    );
+
+    expect(output.options.toolPreference).toBe('opencode-only');
+  });
+
   it('preserves valid booleans, numbers, and non-empty strings', () => {
     const output = {
       options: {

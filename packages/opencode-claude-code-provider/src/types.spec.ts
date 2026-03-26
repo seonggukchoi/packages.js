@@ -64,6 +64,9 @@ describe('type helpers', () => {
     expect(normalizeProviderOptions(undefined, {} as Parameters<typeof normalizeProviderOptions>[1]).toolPreference).toBe(
       DEFAULT_TOOL_PREFERENCE,
     );
+    expect(
+      normalizeProviderOptions({ toolPreference: 'opencode-only' }, {} as Parameters<typeof normalizeProviderOptions>[1]).toolPreference,
+    ).toBe('opencode-only');
     expect(normalizeProviderOptions({ env: { A: '1' } }, {} as Parameters<typeof normalizeProviderOptions>[1]).env.A).toBe('1');
     expect(() =>
       normalizeProviderOptions(undefined, {} as Parameters<typeof normalizeProviderOptions>[1]).queryRunner({
