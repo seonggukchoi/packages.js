@@ -76,5 +76,5 @@ function normalizePermissionMode(value: unknown): string | undefined {
 }
 
 function normalizeToolPreference(value: unknown): string | undefined {
-  return value === 'claude-first' || value === 'opencode-first' ? value : undefined;
+  return value === 'claude-first' || value === 'opencode-first' || value === 'opencode-only' ? value : undefined;
 }
