@@ -254,6 +254,7 @@ async function streamCliProcess(options: {
   textState: ToolCallTextState;
 }): Promise<void> {
   const { child, controller, streamState, textState } = options;
+  const pendingParts: LanguageModelV2StreamPart[] = [];
   const stderrChunks: string[] = [];
 
   child.stderr?.on('data', (chunk) => {
@@ -293,15 +294,26 @@ async function streamCliProcess(options: {
 
       for (const part of parts) {
         for (const processedPart of processTextBuffer(part, streamState, textState)) {
-          controller.enqueue(processedPart);
+          pendingParts.push(processedPart);
         }
       }
     }
 
     await exitPromise;
+    for (const part of finalizeStreamParts(pendingParts)) {
+      controller.enqueue(part);
+    }
   } finally {
     reader.close();
   }
+}
+
+function finalizeStreamParts(parts: LanguageModelV2StreamPart[]): LanguageModelV2StreamPart[] {
+  if (!parts.some((part) => part.type === 'tool-call')) {
+    return parts;
+  }
+
+  return parts.filter((part) => part.type !== 'text-start' && part.type !== 'text-delta' && part.type !== 'text-end');
 }
 
 function consumeTextBuffer(
