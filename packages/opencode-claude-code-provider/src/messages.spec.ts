@@ -102,6 +102,19 @@ describe('mapCliMessage', () => {
       reasoningTokens: undefined,
       totalTokens: 14,
     });
+
+    mapCliMessage(
+      {
+        event: {
+          delta: {},
+          type: 'message_delta',
+        },
+        type: 'stream_event',
+      },
+      state,
+    );
+
+    expect(state.stopReason).toBe('end_turn');
   });
 
   it('maps result messages into finish metadata', () => {
@@ -131,5 +144,245 @@ describe('mapCliMessage', () => {
       reasoningTokens: undefined,
       totalTokens: 7,
     });
+  });
+
+  it('covers reasoning, message_start, and fallback branches', () => {
+    const state = createStreamState();
+
+    expect(mapCliMessage({ type: 'unknown' }, state)).toEqual([]);
+    expect(mapCliMessage({ event: null, type: 'stream_event' }, state)).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            index: 2,
+            type: 'unknown_event',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            message: {
+              usage: {
+                input_tokens: 2,
+                total_tokens: 2,
+              },
+            },
+            type: 'message_start',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            block: { type: 'thinking' },
+            index: 1,
+            type: 'content_block_start',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([{ id: 'reasoning-1', type: 'reasoning-start' }]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            delta: { text: 'reasoning', type: 'text_delta' },
+            index: 1,
+            type: 'content_block_delta',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([{ delta: 'reasoning', id: 'reasoning-1', type: 'reasoning-delta' }]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            index: 1,
+            type: 'content_block_stop',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([{ id: 'reasoning-1', type: 'reasoning-end' }]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            content_block: { type: 'tool_use' },
+            index: 5,
+            type: 'content_block_start',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            content_block: { type: 'text' },
+            index: 3,
+            type: 'content_block_start',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([{ id: 'text-3', type: 'text-start' }]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            delta: { text: '', type: 'text_delta' },
+            index: 3,
+            type: 'content_block_delta',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            delta: { text: 1, type: 'text_delta' },
+            index: 3,
+            type: 'content_block_delta',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            delta: { type: 'text_delta' },
+            index: 99,
+            type: 'content_block_delta',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            block: { type: 'thinking' },
+            index: 4,
+            type: 'content_block_start',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([{ id: 'reasoning-4', type: 'reasoning-start' }]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            delta: { text: '', type: 'text_delta' },
+            index: 4,
+            type: 'content_block_delta',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            delta: { thinking: 1, type: 'thinking_delta' },
+            index: 4,
+            type: 'content_block_delta',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            delta: { type: 'unknown_delta' },
+            index: 3,
+            type: 'content_block_delta',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            index: 999,
+            type: 'content_block_stop',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+  });
+
+  it('maps all finish-reason branches', () => {
+    const errorState = createStreamState();
+    mapCliMessage({ is_error: true, subtype: 'success', type: 'result' }, errorState);
+    expect(errorState.finishReason).toBe('error');
+
+    const lengthState = createStreamState();
+    mapCliMessage({ stop_reason: 'max_tokens', subtype: 'success', type: 'result' }, lengthState);
+    expect(lengthState.finishReason).toBe('length');
+
+    const stopState = createStreamState();
+    mapCliMessage({ stop_reason: 'stop_sequence', subtype: 'success', type: 'result' }, stopState);
+    expect(stopState.finishReason).toBe('stop');
+
+    const otherState = createStreamState();
+    mapCliMessage({ stop_reason: 'weird_reason', subtype: 'success', type: 'result' }, otherState);
+    expect(otherState.finishReason).toBe('other');
+
+    const unknownState = createStreamState();
+    mapCliMessage({ subtype: 'success', type: 'result' }, unknownState);
+    expect(unknownState.finishReason).toBe('unknown');
   });
 });

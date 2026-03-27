@@ -85,6 +85,7 @@ describe('prompt helpers', () => {
     ];
 
     expect(buildPrompt(prompt, { resumeSessionId: 'sess_123' })).toContain('Assistant:');
+    expect(buildPrompt([{ content: 'System only', role: 'system' as const }], { resumeSessionId: 'sess_123' })).toBe('');
   });
 
   it('serializes files, reasoning, tool calls, and tool results', () => {
@@ -163,6 +164,15 @@ describe('prompt helpers', () => {
 
     expect(output).toContain('"filePath": "README.md"');
     expect(output).not.toContain('\\"filePath\\"');
+
+    const invalidJsonOutput = buildPrompt([
+      {
+        content: [{ input: '{', toolCallId: '2', toolName: 'Read', type: 'tool-call' as const }],
+        role: 'assistant' as const,
+      },
+    ] as unknown as LanguageModelV2Prompt);
+
+    expect(invalidJsonOutput).toContain('[tool-call:Read] "{"');
   });
 
   it('loads CLAUDE.md content only when enabled', async () => {
