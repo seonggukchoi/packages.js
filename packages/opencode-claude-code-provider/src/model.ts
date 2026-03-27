@@ -17,6 +17,8 @@ type ToolPromptDefinition = {
 
 export type ToolCallTextState = {
   buffers: Map<string, string>;
+  emittedTextStart: Set<string>;
+  foundToolCall: boolean;
 };
 
 export class ClaudeCodeLanguageModel implements LanguageModelV2 {
@@ -161,8 +163,13 @@ export function buildToolSystemPrompt(tools: unknown): string | undefined {
 export function createToolCallTextState(): ToolCallTextState {
   return {
     buffers: new Map(),
+    emittedTextStart: new Set(),
+    foundToolCall: false,
   };
 }
+
+const TAG_OPENERS = ['<tool_call', '<tool_use', '<function_call'] as const;
+const MAX_PARTIAL_TAG_LENGTH = '<function_call'.length;
 
 export function processTextBuffer(
   part: LanguageModelV2StreamPart,
@@ -175,33 +182,157 @@ export function processTextBuffer(
   }
 
   if (part.type === 'text-delta') {
+    if (textState.foundToolCall) {
+      const current = textState.buffers.get(part.id) ?? '';
+      textState.buffers.set(part.id, current + part.delta);
+      return [];
+    }
+
     const current = textState.buffers.get(part.id) ?? '';
-    textState.buffers.set(part.id, current + part.delta);
-    return [];
+    const combined = current + part.delta;
+
+    const tagIndex = findTagOpenerIndex(combined);
+
+    if (tagIndex >= 0) {
+      textState.foundToolCall = true;
+      textState.buffers.set(part.id, combined.slice(tagIndex));
+
+      const safeText = combined.slice(0, tagIndex);
+      const result: LanguageModelV2StreamPart[] = [];
+      const hadTextStart = textState.emittedTextStart.has(part.id);
+
+      if (safeText.length > 0) {
+        if (!hadTextStart) {
+          textState.emittedTextStart.add(part.id);
+          result.push({ id: part.id, type: 'text-start' });
+        }
+
+        result.push({ delta: safeText, id: part.id, type: 'text-delta' });
+      }
+
+      if (hadTextStart || safeText.length > 0) {
+        result.push({ id: part.id, type: 'text-end' });
+      }
+
+      return result;
+    }
+
+    const partialSuffix = findPartialTagSuffix(combined);
+
+    if (partialSuffix > 0) {
+      const safeText = combined.slice(0, combined.length - partialSuffix);
+      textState.buffers.set(part.id, combined.slice(combined.length - partialSuffix));
+
+      if (safeText.length === 0) {
+        return [];
+      }
+
+      const result: LanguageModelV2StreamPart[] = [];
+
+      if (!textState.emittedTextStart.has(part.id)) {
+        textState.emittedTextStart.add(part.id);
+        result.push({ id: part.id, type: 'text-start' });
+      }
+
+      result.push({ delta: safeText, id: part.id, type: 'text-delta' });
+      return result;
+    }
+
+    textState.buffers.set(part.id, '');
+
+    if (combined.length === 0) {
+      return [];
+    }
+
+    const result: LanguageModelV2StreamPart[] = [];
+
+    if (!textState.emittedTextStart.has(part.id)) {
+      textState.emittedTextStart.add(part.id);
+      result.push({ id: part.id, type: 'text-start' });
+    }
+
+    result.push({ delta: combined, id: part.id, type: 'text-delta' });
+    return result;
   }
 
   if (part.type === 'text-end') {
     const current = textState.buffers.get(part.id) ?? '';
-    const next = consumeTextBuffer(current, streamState);
-
     textState.buffers.delete(part.id);
 
-    if (next.hasToolCalls) {
-      return next.parts;
+    const hadTextStart = textState.emittedTextStart.has(part.id);
+    textState.emittedTextStart.delete(part.id);
+
+    if (textState.foundToolCall) {
+      textState.foundToolCall = false;
+      const toolCallResult = consumeTextBuffer(current, streamState);
+
+      if (toolCallResult.hasToolCalls) {
+        return toolCallResult.parts;
+      }
+
+      if (current.length === 0) {
+        return hadTextStart ? [{ id: part.id, type: 'text-end' }] : [];
+      }
+
+      const result: LanguageModelV2StreamPart[] = [];
+
+      if (!hadTextStart) {
+        result.push({ id: part.id, type: 'text-start' });
+      }
+
+      result.push({ delta: current, id: part.id, type: 'text-delta' });
+      result.push({ id: part.id, type: 'text-end' });
+      return result;
     }
 
-    if (next.text.length === 0) {
-      return [];
+    textState.foundToolCall = false;
+
+    if (current.length > 0) {
+      const result: LanguageModelV2StreamPart[] = [];
+
+      if (!hadTextStart) {
+        result.push({ id: part.id, type: 'text-start' });
+      }
+
+      result.push({ delta: current, id: part.id, type: 'text-delta' });
+      result.push({ id: part.id, type: 'text-end' });
+      return result;
     }
 
-    return [
-      { id: part.id, type: 'text-start' },
-      { delta: next.text, id: part.id, type: 'text-delta' },
-      { id: part.id, type: 'text-end' },
-    ];
+    return hadTextStart ? [{ id: part.id, type: 'text-end' }] : [];
   }
 
   return [part];
+}
+
+function findTagOpenerIndex(text: string): number {
+  let earliest = -1;
+
+  for (const tag of TAG_OPENERS) {
+    const index = text.indexOf(tag);
+
+    if (index >= 0 && (earliest < 0 || index < earliest)) {
+      earliest = index;
+    }
+  }
+
+  return earliest;
+}
+
+function findPartialTagSuffix(text: string): number {
+  const tailLength = Math.min(text.length, MAX_PARTIAL_TAG_LENGTH);
+
+  for (let length = tailLength; length >= 1; length--) {
+    const suffix = text.slice(text.length - length);
+
+    for (const tag of TAG_OPENERS) {
+      if (tag.startsWith(suffix)) {
+        return length;
+      }
+    }
+  }
+
+  return 0;
 }
 
 function buildCliArgs(options: { maxTurns: number; model: string; resumeSessionId?: string; system?: string }): string[] {
@@ -254,7 +385,6 @@ async function streamCliProcess(options: {
   textState: ToolCallTextState;
 }): Promise<void> {
   const { child, controller, streamState, textState } = options;
-  const pendingParts: LanguageModelV2StreamPart[] = [];
   const stderrChunks: string[] = [];
 
   child.stderr?.on('data', (chunk) => {
@@ -294,26 +424,15 @@ async function streamCliProcess(options: {
 
       for (const part of parts) {
         for (const processedPart of processTextBuffer(part, streamState, textState)) {
-          pendingParts.push(processedPart);
+          controller.enqueue(processedPart);
         }
       }
     }
 
     await exitPromise;
-    for (const part of finalizeStreamParts(pendingParts)) {
-      controller.enqueue(part);
-    }
   } finally {
     reader.close();
   }
-}
-
-function finalizeStreamParts(parts: LanguageModelV2StreamPart[]): LanguageModelV2StreamPart[] {
-  if (!parts.some((part) => part.type === 'tool-call')) {
-    return parts;
-  }
-
-  return parts.filter((part) => part.type !== 'text-start' && part.type !== 'text-delta' && part.type !== 'text-end');
 }
 
 function consumeTextBuffer(
