@@ -387,6 +387,7 @@ async function streamCliProcess(options: {
 }): Promise<void> {
   const { child, controller, streamState, textState } = options;
   const stderrChunks: string[] = [];
+  let allowEarlyExit = false;
 
   child.stderr?.on('data', (chunk) => {
     stderrChunks.push(chunk.toString());
@@ -395,7 +396,7 @@ async function streamCliProcess(options: {
   const exitPromise = new Promise<void>((resolve, reject) => {
     child.once('error', reject);
     child.once('close', (code, signal) => {
-      if (code === 0) {
+      if (code === 0 || allowEarlyExit) {
         resolve();
         return;
       }
@@ -426,6 +427,13 @@ async function streamCliProcess(options: {
       for (const part of parts) {
         for (const processedPart of processTextBuffer(part, streamState, textState)) {
           controller.enqueue(processedPart);
+
+          if (processedPart.type === 'tool-call') {
+            streamState.finishReason = 'tool-calls';
+            allowEarlyExit = true;
+            child.kill();
+            return;
+          }
         }
       }
     }
