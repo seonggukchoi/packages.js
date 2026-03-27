@@ -90,24 +90,26 @@ export async function loadClaudeMd(options: { cwd: string; explicitPath?: string
 
 function serializeConversation(prompt: LanguageModelV2Prompt): string {
   return prompt
-    .map((message) => {
-      if (message.role === 'system') {
-        return '';
-      }
-
-      if (message.role === 'user') {
-        return ['User:', ...message.content.map((part) => serializeUserPart(part)).filter(Boolean)].join('\n');
-      }
-
-      if (message.role === 'assistant') {
-        return ['Assistant:', ...message.content.map((part) => serializeAssistantPart(part)).filter(Boolean)].join('\n');
-      }
-
-      return ['External tool results:', ...message.content.map((part) => serializeToolResultPart(part)).filter(Boolean)].join('\n');
-    })
+    .map((message) => serializeMessage(message))
     .filter((section) => section.length > 0)
     .join('\n\n')
     .trim();
+}
+
+function serializeMessage(message: LanguageModelV2Prompt[number]): string {
+  if (message.role === 'system') {
+    return '';
+  }
+
+  if (message.role === 'user') {
+    return ['User:', ...message.content.map((part) => serializeUserPart(part)).filter(Boolean)].join('\n');
+  }
+
+  if (message.role === 'assistant') {
+    return ['Assistant:', ...message.content.map((part) => serializeAssistantPart(part)).filter(Boolean)].join('\n');
+  }
+
+  return ['External tool results:', ...message.content.map((part) => serializeToolResultPart(part)).filter(Boolean)].join('\n');
 }
 
 function serializeUserPart(part: LanguageModelV2TextPart | LanguageModelV2FilePart): string {

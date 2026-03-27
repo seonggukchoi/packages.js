@@ -78,8 +78,16 @@ describe('ClaudeCodeLanguageModel runtime', () => {
       model: 'claude-haiku-4-5',
       resume: 'sess_resume',
     });
+    expect(result.request.body.args).toContain('--verbose');
+    expect(result.request.body.args).toContain('--input-format');
+    expect(result.request.body.args).toContain('text');
     expect(result.request.body.args).toContain('--resume');
     expect(result.request.body.args).toContain('sess_resume');
+    expect(spawnMock).toHaveBeenCalledWith(
+      expect.any(String),
+      result.request.body.args,
+      expect.objectContaining({ stdio: ['pipe', 'pipe', 'pipe'] }),
+    );
     expect(parts).toEqual([
       { type: 'stream-start', warnings: [] },
       { id: 'text-0', type: 'text-start' },
@@ -105,6 +113,11 @@ describe('ClaudeCodeLanguageModel runtime', () => {
       },
     ]);
     expect(child.kill).toHaveBeenCalled();
+    if (!child.stdin) {
+      throw new Error('Expected stdin to be available in the mock child process.');
+    }
+
+    expect(child.stdin.end).toHaveBeenCalledWith('continue');
     expect(createInterfaceMock).toHaveBeenCalledWith({ input: child.stdout });
   });
 
@@ -200,6 +213,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     const parts = await readAllParts(result.stream);
 
     expect(result.request.body.args).not.toContain('--resume');
+    expect(result.request.body.args).toContain('--verbose');
     expect(result.request.body.system).toContain('When a tool is required');
     expect(parts).toEqual([
       { type: 'stream-start', warnings: [] },
@@ -262,9 +276,8 @@ describe('ClaudeCodeLanguageModel runtime', () => {
   });
 
   it('emits an error finish when stdout is unavailable', async () => {
-    const child = new EventEmitter() as MockChild;
-    child.kill = vi.fn();
-    child.stderr = new EventEmitter();
+    const { child } = createMockChild({ lines: [] });
+    delete child.stdout;
     spawnMock.mockReturnValue(child);
 
     const { ClaudeCodeLanguageModel } = await import('./model.js');
@@ -274,6 +287,72 @@ describe('ClaudeCodeLanguageModel runtime', () => {
 
     expect(parts[1]).toMatchObject({ type: 'error' });
     expect(parts[2]).toMatchObject({ finishReason: 'error', type: 'finish' });
+  });
+
+  it('emits an error finish when stdin is unavailable', async () => {
+    const { child, interfaceHandle } = createMockChild({ lines: [] });
+    delete child.stdin;
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({ prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }], tools: [] });
+    const parts = await readAllParts(result.stream);
+
+    expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('stdin is not available'))).toBe(true);
+    expect(parts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+  });
+
+  it('emits an error finish when stdin emits an error while writing the prompt', async () => {
+    const { child, interfaceHandle } = createMockChild({ lines: [] });
+
+    if (!child.stdin) {
+      throw new Error('Expected stdin to be available in the mock child process.');
+    }
+
+    child.stdin.end = vi.fn((chunk?: string) => {
+      if (typeof chunk === 'string') {
+        child.stdin?.writes.push(chunk);
+      }
+
+      child.stdin?.emit('error', new Error('stdin write failed'));
+      return child.stdin;
+    });
+
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({ prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }], tools: [] });
+    const parts = await readAllParts(result.stream);
+
+    expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('stdin write failed'))).toBe(true);
+    expect(parts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+  });
+
+  it('emits an error finish when stdin.end throws synchronously', async () => {
+    const { child, interfaceHandle } = createMockChild({ lines: [] });
+
+    if (!child.stdin) {
+      throw new Error('Expected stdin to be available in the mock child process.');
+    }
+
+    child.stdin.end = vi.fn(() => {
+      throw new Error('stdin end threw');
+    });
+
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({ prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }], tools: [] });
+    const parts = await readAllParts(result.stream);
+
+    expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('stdin end threw'))).toBe(true);
+    expect(parts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
   });
 
   it('cancels the stream by killing the child process', async () => {
@@ -350,6 +429,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
 type MockChild = EventEmitter & {
   kill: ReturnType<typeof vi.fn>;
   stderr: EventEmitter;
+  stdin?: MockStdin;
   stdout?: object;
 };
 
@@ -360,6 +440,7 @@ function createMockChild(options: { exitCode?: number; lines: string[]; signal?:
   const child = new EventEmitter() as MockChild;
   child.kill = vi.fn();
   child.stderr = new EventEmitter();
+  child.stdin = createMockStdin();
   child.stdout = {};
 
   const interfaceHandle: MockInterface = {
@@ -384,6 +465,7 @@ function createErrorMockChild(message: string): { child: MockChild; interfaceHan
   const child = new EventEmitter() as MockChild;
   child.kill = vi.fn();
   child.stderr = new EventEmitter();
+  child.stdin = createMockStdin();
   child.stdout = {};
 
   const interfaceHandle: MockInterface = {
@@ -412,6 +494,26 @@ type MockInterface = {
   [Symbol.asyncIterator]: () => AsyncIterator<string>;
   close: ReturnType<typeof vi.fn>;
 };
+
+type MockStdin = EventEmitter & {
+  end: ReturnType<typeof vi.fn>;
+  writes: string[];
+};
+
+function createMockStdin(): MockStdin {
+  const stdin = new EventEmitter() as MockStdin;
+  stdin.writes = [];
+  stdin.end = vi.fn((chunk?: string) => {
+    if (typeof chunk === 'string') {
+      stdin.writes.push(chunk);
+    }
+
+    stdin.emit('finish');
+    return stdin;
+  });
+
+  return stdin;
+}
 
 async function readAllParts(stream: ReadableStream<unknown>): Promise<unknown[]> {
   const reader = stream.getReader();

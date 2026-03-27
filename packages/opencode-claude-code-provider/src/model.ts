@@ -67,17 +67,17 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
         controller.enqueue({ type: 'stream-start', warnings: [] });
 
         try {
-          child = spawn(normalizedOptions.pathToClaudeCodeExecutable, [...cliArgs, prompt], {
+          child = spawn(normalizedOptions.pathToClaudeCodeExecutable, cliArgs, {
             cwd: normalizedOptions.cwd,
             env: normalizedOptions.env,
-            stdio: ['ignore', 'pipe', 'pipe'],
+            stdio: ['pipe', 'pipe', 'pipe'],
           });
 
           options.abortSignal?.addEventListener('abort', () => {
             child?.kill();
           });
 
-          await streamCliProcess({ child, controller, streamState, textState });
+          await Promise.all([streamCliProcess({ child, controller, streamState, textState }), writePromptToCliProcess(child, prompt)]);
 
           controller.enqueue({
             finishReason: streamState.finishReason,
@@ -329,8 +329,11 @@ function isEligibleToolCallPrefix(prefix: string): boolean {
 function buildCliArgs(options: { maxTurns: number; model: string; resumeSessionId?: string; system?: string }): string[] {
   return [
     '-p',
+    '--verbose',
     '--tools',
     '',
+    '--input-format',
+    'text',
     '--output-format',
     'stream-json',
     '--include-partial-messages',
@@ -431,6 +434,36 @@ async function streamCliProcess(options: {
   } finally {
     reader.close();
   }
+}
+
+async function writePromptToCliProcess(child: ReturnType<typeof spawn>, prompt: string): Promise<void> {
+  if (!child.stdin) {
+    throw new Error('Claude CLI stdin is not available.');
+  }
+
+  const stdin = child.stdin;
+
+  await new Promise<void>((resolve, reject) => {
+    const handleError = (error: Error) => {
+      stdin.off('finish', handleFinish);
+      reject(error);
+    };
+    const handleFinish = () => {
+      stdin.off('error', handleError);
+      resolve();
+    };
+
+    stdin.once('error', handleError);
+    stdin.once('finish', handleFinish);
+
+    try {
+      stdin.end(prompt);
+    } catch (error) {
+      stdin.off('error', handleError);
+      stdin.off('finish', handleFinish);
+      reject(error);
+    }
+  });
 }
 
 function consumeTextBuffer(
