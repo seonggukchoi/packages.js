@@ -289,6 +289,72 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     expect(parts[2]).toMatchObject({ finishReason: 'error', type: 'finish' });
   });
 
+  it('emits an error finish when stdin is unavailable', async () => {
+    const { child, interfaceHandle } = createMockChild({ lines: [] });
+    delete child.stdin;
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({ prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }], tools: [] });
+    const parts = await readAllParts(result.stream);
+
+    expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('stdin is not available'))).toBe(true);
+    expect(parts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+  });
+
+  it('emits an error finish when stdin emits an error while writing the prompt', async () => {
+    const { child, interfaceHandle } = createMockChild({ lines: [] });
+
+    if (!child.stdin) {
+      throw new Error('Expected stdin to be available in the mock child process.');
+    }
+
+    child.stdin.end = vi.fn((chunk?: string) => {
+      if (typeof chunk === 'string') {
+        child.stdin?.writes.push(chunk);
+      }
+
+      child.stdin?.emit('error', new Error('stdin write failed'));
+      return child.stdin;
+    });
+
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({ prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }], tools: [] });
+    const parts = await readAllParts(result.stream);
+
+    expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('stdin write failed'))).toBe(true);
+    expect(parts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+  });
+
+  it('emits an error finish when stdin.end throws synchronously', async () => {
+    const { child, interfaceHandle } = createMockChild({ lines: [] });
+
+    if (!child.stdin) {
+      throw new Error('Expected stdin to be available in the mock child process.');
+    }
+
+    child.stdin.end = vi.fn(() => {
+      throw new Error('stdin end threw');
+    });
+
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({ prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }], tools: [] });
+    const parts = await readAllParts(result.stream);
+
+    expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('stdin end threw'))).toBe(true);
+    expect(parts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+  });
+
   it('cancels the stream by killing the child process', async () => {
     const { child, interfaceHandle } = createMockChild({ lines: [] });
     spawnMock.mockReturnValue(child);
