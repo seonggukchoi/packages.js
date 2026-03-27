@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.7](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.6...@seonggukchoi/opencode-claude-code-provider@0.2.7) (2026-03-27)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** handle native tool-use streams ([e050dd7](https://github.com/seonggukchoi/packages.js/commit/e050dd75f7f37f42aac3b6d785f16c3f70912a54))
+
 ## [0.2.6](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.5...@seonggukchoi/opencode-claude-code-provider@0.2.6) (2026-03-27)
 
 ### Bug Fixes
