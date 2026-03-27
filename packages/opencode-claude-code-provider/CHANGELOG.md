@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.4](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.3...@seonggukchoi/opencode-claude-code-provider@0.2.4) (2026-03-27)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** stream text before buffering tool calls ([d205168](https://github.com/seonggukchoi/packages.js/commit/d205168abed6d6ff0e57b6767cc0132bcaf4de2c))
+
 ## [0.2.3](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.2...@seonggukchoi/opencode-claude-code-provider@0.2.3) (2026-03-27)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-claude-code-provider
