@@ -5,10 +5,11 @@ Claude Code CLI based provider for OpenCode.
 ## What it does
 
 - Exposes a custom `LanguageModelV2` provider named `claude-code`
-- Runs `claude -p --tools "" --output-format stream-json` as a pure LLM client
+- Runs `claude -p --verbose --input-format text --tools "" --output-format stream-json` as a pure LLM client
 - Injects OpenCode tool schemas into the Claude system prompt and converts `<tool_call>` text blocks into AI SDK tool-call parts
 - Keeps all tool execution inside OpenCode, including OpenCode-only tools such as `todowrite` and `task`
 - Persists the Claude session id in `providerMetadata["claude-code"].sessionId`
+- Sends prompt text over stdin so long transcript bootstrap does not hit argv size limits
 
 ## Tool behavior
 
