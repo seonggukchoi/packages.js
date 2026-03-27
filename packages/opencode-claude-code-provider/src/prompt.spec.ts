@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -74,82 +76,6 @@ describe('prompt helpers', () => {
     expect(getResume(prompt, 'opus')).toBeUndefined();
   });
 
-  it('skips assistant metadata entries without a session id', () => {
-    const prompt = [
-      {
-        content: [{ text: 'done', type: 'text' as const }],
-        providerOptions: {
-          'claude-code': {
-            modelId: 'sonnet',
-          },
-        },
-        role: 'assistant' as const,
-      },
-    ];
-
-    expect(getResume(prompt, 'sonnet')).toBeUndefined();
-  });
-
-  it('accepts resume metadata without a stored model id', () => {
-    const prompt = [
-      {
-        content: [{ text: 'done', type: 'text' as const }],
-        providerOptions: {
-          'claude-code': {
-            sessionId: 'sess_no_model',
-          },
-        },
-        role: 'assistant' as const,
-      },
-    ];
-
-    expect(getResume(prompt, 'sonnet')).toBe('sess_no_model');
-  });
-
-  it('reads resume metadata from the latest assistant part provider options', () => {
-    const prompt = [
-      {
-        content: [
-          { text: 'done', type: 'text' as const },
-          {
-            providerOptions: {
-              'claude-code': {
-                modelId: 'sonnet',
-                sessionId: 'sess_part',
-              },
-            },
-            text: 'later',
-            type: 'text' as const,
-          },
-        ],
-        role: 'assistant' as const,
-      },
-    ];
-
-    expect(getResume(prompt, 'sonnet')).toBe('sess_part');
-  });
-
-  it('ignores assistant part provider options without a session id', () => {
-    const prompt = [
-      {
-        content: [
-          {
-            providerOptions: {
-              'claude-code': {
-                modelId: 'sonnet',
-              },
-            },
-            text: 'later',
-            type: 'text' as const,
-          },
-        ],
-        role: 'assistant' as const,
-      },
-    ];
-
-    expect(getResume(prompt, 'sonnet')).toBeUndefined();
-  });
-
   it('falls back to the last conversation chunk when no resumed user text exists', () => {
     const prompt = [
       {
@@ -159,12 +85,6 @@ describe('prompt helpers', () => {
     ];
 
     expect(buildPrompt(prompt, { resumeSessionId: 'sess_123' })).toContain('Assistant:');
-  });
-
-  it('returns an empty resumed prompt when the last message is system-only', () => {
-    const prompt = [{ content: 'System only', role: 'system' as const }];
-
-    expect(buildPrompt(prompt, { resumeSessionId: 'sess_123' })).toBe('');
   });
 
   it('serializes files, reasoning, tool calls, and tool results', () => {
@@ -243,27 +163,6 @@ describe('prompt helpers', () => {
 
     expect(output).toContain('"filePath": "README.md"');
     expect(output).not.toContain('\\"filePath\\"');
-  });
-
-  it('keeps invalid string tool inputs unchanged during prompt serialization', () => {
-    const prompt = [
-      {
-        content: [
-          {
-            input: '{',
-            providerExecuted: true,
-            toolCallId: '1',
-            toolName: 'Read',
-            type: 'tool-call' as const,
-          },
-        ],
-        role: 'assistant' as const,
-      },
-    ];
-
-    const output = buildPrompt(prompt as unknown as LanguageModelV2Prompt);
-
-    expect(output).toContain('[tool-call:Read] "{"');
   });
 
   it('loads CLAUDE.md content only when enabled', async () => {

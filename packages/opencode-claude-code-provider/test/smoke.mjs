@@ -1,97 +1,78 @@
 import assert from 'node:assert/strict';
 import console from 'node:console';
+import { mkdtemp, writeFile, chmod } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import process from 'node:process';
 
 import { createClaudeCode } from '../dist/index.js';
 import { ClaudeCodePlugin } from '../../opencode-claude-code-plugin/dist/index.js';
 
-const providerCalls = [];
+const fixtureDir = await mkdtemp(join(tmpdir(), 'claude-code-smoke-'));
+const fakeClaudePath = join(fixtureDir, 'fake-claude.mjs');
+
+await writeFile(
+  fakeClaudePath,
+  `#!/usr/bin/env node
+const args = process.argv.slice(2);
+const prompt = args.at(-1) ?? '';
+const resumeIndex = args.indexOf('--resume');
+const resumeSessionId = resumeIndex >= 0 ? args[resumeIndex + 1] : undefined;
+const sessionId = resumeSessionId ?? 'sess_first';
+
+const emit = (message) => process.stdout.write(JSON.stringify(message) + '\\n');
+
+emit({ session_id: sessionId, subtype: 'init', type: 'system' });
+emit({
+  type: 'stream_event',
+  event: { type: 'content_block_start', index: 0, content_block: { type: 'text' } },
+  session_id: sessionId,
+});
+
+if (resumeSessionId) {
+  emit({
+    type: 'stream_event',
+    event: { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'continued' } },
+    session_id: sessionId,
+  });
+  emit({ type: 'assistant', message: { usage: { input_tokens: 2, output_tokens: 1 } }, session_id: sessionId });
+  emit({ type: 'stream_event', event: { type: 'content_block_stop', index: 0 }, session_id: sessionId });
+  emit({
+    type: 'stream_event',
+    event: { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { input_tokens: 2, output_tokens: 1 } },
+    session_id: sessionId,
+  });
+  emit({ type: 'result', subtype: 'success', is_error: false, stop_reason: 'end_turn', usage: { input_tokens: 2, output_tokens: 1 }, session_id: sessionId });
+  process.exit(0);
+}
+
+const text = prompt.includes('use read')
+  ? '<tool_call>{"name":"read","arguments":{"filePath":"README.md"}}</tool_call>'
+  : 'hello';
+
+emit({
+  type: 'stream_event',
+  event: { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } },
+  session_id: sessionId,
+});
+emit({ type: 'assistant', message: { usage: { input_tokens: 3, output_tokens: 2 } }, session_id: sessionId });
+emit({ type: 'stream_event', event: { type: 'content_block_stop', index: 0 }, session_id: sessionId });
+emit({
+  type: 'stream_event',
+  event: { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { input_tokens: 3, output_tokens: 2 } },
+  session_id: sessionId,
+});
+emit({ type: 'result', subtype: 'success', is_error: false, stop_reason: 'end_turn', usage: { input_tokens: 3, output_tokens: 2 }, session_id: sessionId });
+`,
+);
+await chmod(fakeClaudePath, 0o755);
+
 const provider = createClaudeCode({
-  queryRunner(input) {
-    providerCalls.push(input);
-
-    if (input.options?.resume) {
-      return createQuery([
-        { session_id: 'sess_resume', subtype: 'init', type: 'system', uuid: 'sys-resume' },
-        resultMessage('sess_resume', 'end_turn', 2, 2),
-      ]);
-    }
-
-    return createQuery([
-      { session_id: 'sess_first', subtype: 'init', type: 'system', uuid: 'sys-first' },
-      {
-        event: { content_block: { type: 'text' }, index: 0, type: 'content_block_start' },
-        parent_tool_use_id: null,
-        session_id: 'sess_first',
-        type: 'stream_event',
-        uuid: 'evt-1',
-      },
-      {
-        event: { delta: { text: 'hello', type: 'text_delta' }, index: 0, type: 'content_block_delta' },
-        parent_tool_use_id: null,
-        session_id: 'sess_first',
-        type: 'stream_event',
-        uuid: 'evt-2',
-      },
-      {
-        event: {
-          content_block: { id: 'native-read', input: { filePath: 'README.md' }, name: 'Read', type: 'tool_use' },
-          index: 1,
-          type: 'content_block_start',
-        },
-        parent_tool_use_id: null,
-        session_id: 'sess_first',
-        type: 'stream_event',
-        uuid: 'evt-3',
-      },
-      {
-        event: { index: 1, type: 'content_block_stop' },
-        parent_tool_use_id: null,
-        session_id: 'sess_first',
-        type: 'stream_event',
-        uuid: 'evt-4',
-      },
-      {
-        message: { role: 'user' },
-        parent_tool_use_id: 'native-read',
-        session_id: 'sess_first',
-        tool_use_result: { content: 'read ok' },
-        type: 'user',
-        uuid: 'user-1',
-      },
-      {
-        event: {
-          content_block: { id: 'bridge-question', input: { questions: [] }, name: 'question', type: 'tool_use' },
-          index: 2,
-          type: 'content_block_start',
-        },
-        parent_tool_use_id: null,
-        session_id: 'sess_first',
-        type: 'stream_event',
-        uuid: 'evt-5',
-      },
-      {
-        event: { index: 2, type: 'content_block_stop' },
-        parent_tool_use_id: null,
-        session_id: 'sess_first',
-        type: 'stream_event',
-        uuid: 'evt-6',
-      },
-      {
-        message: { role: 'user' },
-        parent_tool_use_id: 'bridge-question',
-        session_id: 'sess_first',
-        tool_use_result: { content: 'question ok' },
-        type: 'user',
-        uuid: 'user-2',
-      },
-      resultMessage('sess_first', 'tool_use', 10, 7),
-    ]);
-  },
+  pathToClaudeCodeExecutable: fakeClaudePath,
 });
 
 const plugin = await ClaudeCodePlugin({ worktree: process.cwd() });
-const normalized = { options: { bridgeOpenCodeMcp: true, effort: 'high', maxTurns: 5 } };
+const normalized = { options: { effort: 'high', maxTurns: 5 } };
 
 await plugin['chat.params']?.(
   {
@@ -99,6 +80,9 @@ await plugin['chat.params']?.(
   },
   normalized,
 );
+
+assert.equal(normalized.options.maxTurns, 5);
+assert.equal(normalized.options.permissionMode, undefined);
 
 const model = provider.languageModel('claude-sonnet-4-6');
 const first = await model.doStream({
@@ -109,58 +93,42 @@ const first = await model.doStream({
   providerOptions: {
     'claude-code': {
       ...normalized.options,
-      bridgeTools: ['question', 'task', 'todowrite', 'webfetch', 'oc_apply_patch', 'oc_codesearch', 'oc_websearch'],
-      nativeTools: ['read', 'write', 'edit', 'glob', 'grep', 'bash'],
-      openCodeMcp: {
-        brokenRemote: {
-          oauth: { issuer: 'https://issuer.example' },
-          type: 'remote',
-          url: 'https://mcp.example',
-        },
-        github: {
-          command: ['npx', '-y', '@modelcontextprotocol/server-github'],
-          type: 'local',
-        },
-      },
+      cwd: fixtureDir,
     },
   },
-  tools: {
-    question: {
-      execute: async () => 'ok',
-      inputSchema: { properties: { questions: { type: 'array' } }, type: 'object' },
-      type: 'function',
-    },
-    read: {
-      inputSchema: { type: 'object' },
-      type: 'function',
-    },
-  },
+  tools: [],
 });
 
 const firstParts = await readStream(first.stream);
 
-assert.equal(providerCalls[0].options.effort, undefined);
-assert.equal(providerCalls[0].options.maxTurns, 5);
-assert.equal(providerCalls[0].options.continue, false);
-assert.deepEqual(providerCalls[0].options.tools, ['Read']);
-assert.ok(providerCalls[0].options.allowedTools.includes('mcp__opencode__*'));
-assert.equal(providerCalls[0].options.permissionPromptToolName, undefined);
-assert.deepEqual(firstParts[0], {
-  type: 'stream-start',
-  warnings: [
+assert.deepEqual(firstParts[0], { type: 'stream-start', warnings: [] });
+assert.ok(firstParts.some((part) => part.type === 'text-delta' && part.delta === 'hello'));
+assert.ok(firstParts.some((part) => part.type === 'finish' && part.finishReason === 'stop'));
+
+const toolCall = await model.doStream({
+  prompt: [{ content: [{ text: 'please use read', type: 'text' }], role: 'user' }],
+  providerOptions: {
+    'claude-code': {
+      cwd: fixtureDir,
+      pathToClaudeCodeExecutable: fakeClaudePath,
+    },
+  },
+  tools: [
     {
-      message: 'MCP server "brokenRemote" is skipped because OAuth bridging is not supported yet.',
-      type: 'other',
+      description: 'Read a file.',
+      inputSchema: { properties: { filePath: { type: 'string' } }, required: ['filePath'], type: 'object' },
+      name: 'read',
+      type: 'function',
     },
   ],
 });
-assert.ok(firstParts.some((part) => part.type === 'text-delta' && part.delta === 'hello'));
-assert.ok(firstParts.some((part) => part.type === 'tool-result' && part.toolName === 'read'));
-assert.ok(firstParts.some((part) => part.type === 'tool-result' && part.toolName === 'question'));
-assert.ok(!firstParts.some((part) => part.type === 'error'));
-assert.ok(firstParts.some((part) => part.type === 'finish' && part.finishReason === 'stop'));
 
-const second = await model.doStream({
+const toolParts = await readStream(toolCall.stream);
+
+assert.ok(toolParts.some((part) => part.type === 'tool-call' && part.toolName === 'read' && part.input === '{"filePath":"README.md"}'));
+assert.ok(toolParts.some((part) => part.type === 'finish' && part.finishReason === 'tool-calls'));
+
+const resumed = await model.doStream({
   prompt: [
     {
       content: [{ text: 'done', type: 'text' }],
@@ -175,55 +143,19 @@ const second = await model.doStream({
     { content: [{ text: 'continue', type: 'text' }], role: 'user' },
   ],
   providerOptions: {
-    'claude-code': normalized.options,
+    'claude-code': {
+      cwd: fixtureDir,
+      pathToClaudeCodeExecutable: fakeClaudePath,
+    },
   },
   tools: [],
 });
 
-await readStream(second.stream);
-assert.equal(providerCalls[1].prompt, 'continue');
-assert.equal(providerCalls[1].options.continue, undefined);
-assert.equal(providerCalls[1].options.resume, 'sess_resume');
+const resumedParts = await readStream(resumed.stream);
+
+assert.ok(resumedParts.some((part) => part.type === 'text-delta' && part.delta === 'continued'));
 
 console.log('Smoke test passed');
-
-function createQuery(messages) {
-  return {
-    close() {},
-    async *[Symbol.asyncIterator]() {
-      for (const message of messages) {
-        yield message;
-      }
-    },
-  };
-}
-
-function resultMessage(sessionId, stopReason, inputTokens, outputTokens) {
-  return {
-    duration_api_ms: 1,
-    duration_ms: 1,
-    fast_mode_state: 'off',
-    is_error: false,
-    modelUsage: {},
-    num_turns: 1,
-    permission_denials: [],
-    result: 'ok',
-    session_id: sessionId,
-    stop_reason: stopReason,
-    subtype: 'success',
-    total_cost_usd: 0,
-    type: 'result',
-    usage: {
-      cache_creation_input_tokens: 0,
-      cache_read_input_tokens: 0,
-      input_tokens: inputTokens,
-      output_tokens: outputTokens,
-      server_tool_use: null,
-      service_tier: 'standard',
-    },
-    uuid: `${sessionId}-${stopReason}`,
-  };
-}
 
 async function readStream(stream) {
   const reader = stream.getReader();
@@ -231,6 +163,7 @@ async function readStream(stream) {
 
   while (true) {
     const chunk = await reader.read();
+
     if (chunk.done) {
       break;
     }
