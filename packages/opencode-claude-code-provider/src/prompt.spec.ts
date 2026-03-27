@@ -19,7 +19,18 @@ describe('prompt helpers', () => {
     ] as unknown as LanguageModelV2Prompt;
 
     expect(getSystem(prompt)).toBe('System A\n\nSystem B');
-    expect(buildPrompt(prompt)).toBe('System instructions:\nSystem A\n\nSystem B');
+    expect(buildPrompt(prompt)).toBe(
+      [
+        'System instructions:',
+        'System A',
+        '',
+        'System B',
+        '',
+        'Response instructions:',
+        "Respond with the assistant's next message only.",
+        'Do not repeat transcript headers, tool narration, or tool results unless the user explicitly asks for the raw transcript.',
+      ].join('\n'),
+    );
   });
 
   it('extracts the latest user text for resumed sessions', () => {
@@ -54,8 +65,9 @@ describe('prompt helpers', () => {
     ];
 
     expect(buildPrompt(prompt)).toContain('System instructions:');
-    expect(buildPrompt(prompt)).toContain('Conversation:');
+    expect(buildPrompt(prompt)).toContain('Conversation transcript (context only - do not repeat or continue it):');
     expect(buildPrompt(prompt)).toContain('Please inspect the workspace.');
+    expect(buildPrompt(prompt)).toContain("Respond with the assistant's next message only.");
   });
 
   it('reads the latest matching resume session id', () => {
@@ -139,8 +151,9 @@ describe('prompt helpers', () => {
     expect(output).toContain('url=https://example.com/file.txt');
     expect(output).toContain('stringLength=11');
     expect(output).not.toContain('[reasoning]');
-    expect(output).toContain('[tool-call:question] [object Object]');
-    expect(output).toContain('[tool-result:question]');
+    expect(output).toContain('Assistant used the question tool with input: [object Object]');
+    expect(output).toContain('The question tool returned:');
+    expect(output).toContain('External tool results:');
     expect(output).toContain('[file mediaType=application/json]');
   });
 
@@ -172,7 +185,7 @@ describe('prompt helpers', () => {
       },
     ] as unknown as LanguageModelV2Prompt);
 
-    expect(invalidJsonOutput).toContain('[tool-call:Read] "{"');
+    expect(invalidJsonOutput).toContain('Assistant used the Read tool with input: "{"');
   });
 
   it('loads CLAUDE.md content only when enabled', async () => {

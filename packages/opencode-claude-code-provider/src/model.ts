@@ -148,8 +148,11 @@ export function buildToolSystemPrompt(tools: unknown): string | undefined {
     'You may use tools provided by the client.',
     'When a tool is required, output exactly one tool call wrapped in <tool_call> and </tool_call>.',
     'Inside the tag, output strict JSON with the shape {"name":"tool_name","arguments":{}}.',
+    'If you decide to call a tool, the first non-whitespace character of your response must be < and the response must end immediately after </tool_call>.',
     'Do not include any prose before or after the tool call.',
+    'Do not say that you will inspect, check, search, analyze, or look first before the tool call.',
     'Do not use <function_calls>, <function_call>, <tool_use>, XML parameters, markdown fences, or natural-language explanations.',
+    'Transcript markers such as User:, Assistant:, Tool:, [tool-call:*], and [tool-result:*] are internal context. Never echo them unless the user explicitly asks for the raw transcript.',
     'After emitting a tool call, stop immediately.',
     'Never hallucinate tool execution or tool results.',
     'Call at most one tool per response.',
@@ -190,27 +193,17 @@ export function processTextBuffer(
 
     const current = textState.buffers.get(part.id) ?? '';
     const combined = current + part.delta;
-
     const tagIndex = findTagOpenerIndex(combined);
 
-    if (tagIndex >= 0) {
+    if (tagIndex >= 0 && isEligibleToolCallPrefix(combined.slice(0, tagIndex))) {
       textState.foundToolCall = true;
       textState.buffers.set(part.id, combined.slice(tagIndex));
 
       const safeText = combined.slice(0, tagIndex);
-      const result: LanguageModelV2StreamPart[] = [];
-      const hadTextStart = textState.emittedTextStart.has(part.id);
+      const result = createTextDeltaParts(part.id, safeText, textState);
 
-      if (safeText.length > 0) {
-        if (!hadTextStart) {
-          textState.emittedTextStart.add(part.id);
-          result.push({ id: part.id, type: 'text-start' });
-        }
-
-        result.push({ delta: safeText, id: part.id, type: 'text-delta' });
-      }
-
-      if (hadTextStart || safeText.length > 0) {
+      if (textState.emittedTextStart.has(part.id)) {
+        textState.emittedTextStart.delete(part.id);
         result.push({ id: part.id, type: 'text-end' });
       }
 
@@ -219,51 +212,25 @@ export function processTextBuffer(
 
     const partialSuffix = findPartialTagSuffix(combined);
 
-    if (partialSuffix > 0) {
+    if (partialSuffix > 0 && isEligibleToolCallPrefix(combined.slice(0, combined.length - partialSuffix))) {
       const safeText = combined.slice(0, combined.length - partialSuffix);
       textState.buffers.set(part.id, combined.slice(combined.length - partialSuffix));
-
-      if (safeText.length === 0) {
-        return [];
-      }
-
-      const result: LanguageModelV2StreamPart[] = [];
-
-      if (!textState.emittedTextStart.has(part.id)) {
-        textState.emittedTextStart.add(part.id);
-        result.push({ id: part.id, type: 'text-start' });
-      }
-
-      result.push({ delta: safeText, id: part.id, type: 'text-delta' });
-      return result;
+      return createTextDeltaParts(part.id, safeText, textState);
     }
 
     textState.buffers.set(part.id, '');
-
-    if (combined.length === 0) {
-      return [];
-    }
-
-    const result: LanguageModelV2StreamPart[] = [];
-
-    if (!textState.emittedTextStart.has(part.id)) {
-      textState.emittedTextStart.add(part.id);
-      result.push({ id: part.id, type: 'text-start' });
-    }
-
-    result.push({ delta: combined, id: part.id, type: 'text-delta' });
-    return result;
+    return createTextDeltaParts(part.id, combined, textState);
   }
 
   if (part.type === 'text-end') {
     const current = textState.buffers.get(part.id) ?? '';
     textState.buffers.delete(part.id);
-
     const hadTextStart = textState.emittedTextStart.has(part.id);
     textState.emittedTextStart.delete(part.id);
 
     if (textState.foundToolCall) {
       textState.foundToolCall = false;
+
       const toolCallResult = consumeTextBuffer(current, streamState);
 
       if (toolCallResult.hasToolCalls) {
@@ -305,6 +272,22 @@ export function processTextBuffer(
   return [part];
 }
 
+function createTextDeltaParts(partId: string, text: string, textState: ToolCallTextState): LanguageModelV2StreamPart[] {
+  if (text.length === 0) {
+    return [];
+  }
+
+  const result: LanguageModelV2StreamPart[] = [];
+
+  if (!textState.emittedTextStart.has(partId)) {
+    textState.emittedTextStart.add(partId);
+    result.push({ id: partId, type: 'text-start' });
+  }
+
+  result.push({ delta: text, id: partId, type: 'text-delta' });
+  return result;
+}
+
 function findTagOpenerIndex(text: string): number {
   let earliest = -1;
 
@@ -333,6 +316,14 @@ function findPartialTagSuffix(text: string): number {
   }
 
   return 0;
+}
+
+function isEligibleToolCallPrefix(prefix: string): boolean {
+  if (prefix.trim().length === 0) {
+    return true;
+  }
+
+  return prefix.replace(/[\t ]+$/u, '').endsWith('\n');
 }
 
 function buildCliArgs(options: { maxTurns: number; model: string; resumeSessionId?: string; system?: string }): string[] {
@@ -489,31 +480,52 @@ function parseToolCallPayload(rawToolCall: string): { arguments: Record<string, 
 }
 
 function extractToolCallParts(text: string, streamState: ReturnType<typeof createStreamState>): LanguageModelV2StreamPart[] {
-  const matches = [
+  const matches = collectAllToolCallMatches(text);
+
+  if (matches.length === 0) {
+    return [];
+  }
+
+  const firstMatch = matches[0];
+  const leadingText = text.slice(0, firstMatch.index);
+  const trailingText = text.slice(matches.at(-1)?.end ?? 0);
+  const hasLeadingContext = leadingText.trim().length > 0;
+  const hasInlineLeadingContext = hasLeadingContext && !leadingText.includes('\n');
+
+  if (trailingText.trim().length > 0 || hasInlineLeadingContext) {
+    return [];
+  }
+
+  return createToolCallSequenceFromPayload(firstMatch.payload, streamState);
+}
+
+function collectAllToolCallMatches(
+  text: string,
+): Array<{ end: number; index: number; payload: { arguments: Record<string, unknown>; name: string } }> {
+  return [
     ...collectToolCallMatches(text, /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g, (content) => parseToolCallPayload(content)),
     ...collectToolCallMatches(text, /<tool_use>\s*([\s\S]*?)\s*<\/tool_use>/g, (content) => parseToolUsePayload(content)),
     ...collectToolCallMatches(text, /<function_call>\s*([\s\S]*?)(?:<\/function_call>|<\/function_calls>|<\/invoke>)/g, (content) =>
       parseFunctionCallPayload(content),
     ),
   ].sort((left, right) => left.index - right.index);
-
-  return matches.flatMap((match) => createToolCallSequenceFromPayload(match.payload, streamState));
 }
 
 function collectToolCallMatches(
   text: string,
   pattern: RegExp,
   parse: (content: string) => { arguments: Record<string, unknown>; name: string } | undefined,
-): Array<{ index: number; payload: { arguments: Record<string, unknown>; name: string } }> {
-  const matches: Array<{ index: number; payload: { arguments: Record<string, unknown>; name: string } }> = [];
+): Array<{ end: number; index: number; payload: { arguments: Record<string, unknown>; name: string } }> {
+  const matches: Array<{ end: number; index: number; payload: { arguments: Record<string, unknown>; name: string } }> = [];
 
   for (const match of text.matchAll(pattern)) {
     const content = match[1];
     const index = /* v8 ignore next */ match.index ?? 0;
+    const fullMatch = match[0] ?? '';
     const payload = parse(content);
 
     if (payload) {
-      matches.push({ index, payload });
+      matches.push({ end: index + fullMatch.length, index, payload });
     }
   }
 
@@ -673,6 +685,7 @@ function buildToolSelectionRules(definitions: ToolPromptDefinition[]): string[] 
   rules.push('- If the user explicitly asks for a TODO list or task checklist, use `todowrite` instead of `task`.');
   rules.push('- If the user explicitly asks to run a shell command such as `ls`, use `bash`.');
   rules.push('- If the user explicitly asks to read a local file, use `read`.');
+  rules.push('- Never call `todowrite` unless the user explicitly asks for a TODO list, checklist, or task tracking.');
 
   if (names.has('todowrite')) {
     rules.push('- `todowrite` is for creating, updating, or managing the conversation task list. Prefer it for TODO/checklist requests.');
@@ -681,6 +694,9 @@ function buildToolSelectionRules(definitions: ToolPromptDefinition[]): string[] 
   if (names.has('task')) {
     rules.push(
       '- `task` is only for delegating complex multistep work to a subagent. Do not use `task` for TODO lists, simple reads, or basic shell commands.',
+    );
+    rules.push(
+      '- For codebase exploration, repository analysis, or broad code search, prefer `task` with an exploration-focused subagent when available.',
     );
   }
 
