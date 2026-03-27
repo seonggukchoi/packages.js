@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.5](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.4...@seonggukchoi/opencode-claude-code-provider@0.2.5) (2026-03-27)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** preserve context token totals ([7d280f3](https://github.com/seonggukchoi/packages.js/commit/7d280f3505221e8de6725970d3e7a6d5776ed9f3))
+- **opencode-claude-code-provider:** restore streamed text around tool calls ([be1e8be](https://github.com/seonggukchoi/packages.js/commit/be1e8be2900be56a89978f7c6f75808578b7790b))
+
 ## [0.2.4](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.3...@seonggukchoi/opencode-claude-code-provider@0.2.4) (2026-03-27)
 
 ### Bug Fixes
