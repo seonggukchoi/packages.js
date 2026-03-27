@@ -17,18 +17,12 @@ describe('normalizeChatParams', () => {
         },
       },
       output,
-      { cwd: '/workspace' },
     );
 
     expect(output.options).toEqual({
-      claudeMdPath: undefined,
-      cwd: '/workspace',
       effort: 'high',
       env: {},
-      loadClaudeMd: false,
-      maxTurns: 1,
       pathToClaudeCodeExecutable: 'claude',
-      permissionMode: undefined,
     });
   });
 
@@ -46,7 +40,6 @@ describe('normalizeChatParams', () => {
         },
       },
       output,
-      { cwd: '/workspace' },
     );
 
     expect(output.options).toEqual({ cwd: '/tmp' });
@@ -55,14 +48,9 @@ describe('normalizeChatParams', () => {
   it('normalizes invalid values to safe defaults', () => {
     const output = {
       options: {
-        claudeMdPath: '',
-        cwd: '',
         effort: 'bad',
         env: { A: '1', B: 2 },
-        loadClaudeMd: 'bad',
-        maxTurns: Number.NaN,
         pathToClaudeCodeExecutable: '',
-        permissionMode: 'bad',
       },
     };
 
@@ -73,32 +61,21 @@ describe('normalizeChatParams', () => {
         },
       },
       output,
-      { cwd: '/workspace' },
     );
 
     expect(output.options).toEqual({
-      claudeMdPath: undefined,
-      cwd: '/workspace',
       effort: undefined,
       env: { A: '1' },
-      loadClaudeMd: false,
-      maxTurns: 1,
       pathToClaudeCodeExecutable: 'claude',
-      permissionMode: undefined,
     });
   });
 
-  it('preserves valid booleans, numbers, and non-empty strings', () => {
+  it('preserves valid values', () => {
     const output = {
       options: {
-        claudeMdPath: '/repo/CLAUDE.md',
-        cwd: '/custom',
         effort: 'medium',
         env: { A: '1' },
-        loadClaudeMd: true,
-        maxTurns: 7,
         pathToClaudeCodeExecutable: '/usr/local/bin/claude',
-        permissionMode: 'default',
       },
     };
 
@@ -109,18 +86,12 @@ describe('normalizeChatParams', () => {
         },
       },
       output,
-      { cwd: '/workspace' },
     );
 
     expect(output.options).toEqual({
-      claudeMdPath: '/repo/CLAUDE.md',
-      cwd: '/custom',
       effort: 'medium',
       env: { A: '1' },
-      loadClaudeMd: true,
-      maxTurns: 7,
       pathToClaudeCodeExecutable: '/usr/local/bin/claude',
-      permissionMode: 'default',
     });
   });
 });

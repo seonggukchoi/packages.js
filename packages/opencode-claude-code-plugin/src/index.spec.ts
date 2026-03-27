@@ -26,7 +26,7 @@ describe('ClaudeCodePlugin', () => {
     await chatParamsHook?.(createChatParamsInput() as Parameters<ChatParamsHook>[0], paramsOutput);
     await systemTransformHook?.(createChatParamsInput() as Parameters<SystemTransformHook>[0], systemOutput);
 
-    expect(paramsOutput.options.cwd).toBe('/repo');
+    expect(paramsOutput.options.pathToClaudeCodeExecutable).toBe('claude');
     expect(systemOutput.system).toHaveLength(1);
   });
 
