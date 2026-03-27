@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.6](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.5...@seonggukchoi/opencode-claude-code-provider@0.2.6) (2026-03-27)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** fix provider test typings ([fcd7dbb](https://github.com/seonggukchoi/packages.js/commit/fcd7dbb2624165b576295d8f41634cd02425d68f))
+- **opencode-claude-code-provider:** send prompts over stdin ([1d983ff](https://github.com/seonggukchoi/packages.js/commit/1d983ff212ecd4c3d47be7113c4eec77cf6a06b3))
+
 ## [0.2.5](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.4...@seonggukchoi/opencode-claude-code-provider@0.2.5) (2026-03-27)
 
 ### Bug Fixes
