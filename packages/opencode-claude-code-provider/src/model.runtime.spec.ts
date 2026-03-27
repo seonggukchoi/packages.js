@@ -88,6 +88,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
       {
         finishReason: 'unknown',
         providerMetadata: {
+          anthropic: {},
           'claude-code': {
             modelId: 'claude-haiku-4-5',
             sessionId: 'sess_plain',
@@ -105,6 +106,56 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     ]);
     expect(child.kill).toHaveBeenCalled();
     expect(createInterfaceMock).toHaveBeenCalledWith({ input: child.stdout });
+  });
+
+  it('preserves anthropic cache metadata in finish parts', async () => {
+    const { child, interfaceHandle } = createMockChild({
+      lines: [
+        JSON.stringify({ session_id: 'sess_cache', subtype: 'init', type: 'system' }),
+        JSON.stringify({
+          event: {
+            message: {
+              usage: {
+                cache_creation_input_tokens: 11,
+                cache_read_input_tokens: 7,
+                input_tokens: 5,
+              },
+            },
+            type: 'message_start',
+          },
+          type: 'stream_event',
+        }),
+        JSON.stringify({ subtype: 'success', type: 'result', usage: { output_tokens: 3 } }),
+      ],
+    });
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({ prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }], tools: [] });
+    const parts = await readAllParts(result.stream);
+
+    expect(parts[parts.length - 1]).toEqual({
+      finishReason: 'unknown',
+      providerMetadata: {
+        anthropic: {
+          cacheCreationInputTokens: 11,
+        },
+        'claude-code': {
+          modelId: 'claude-haiku-4-5',
+          sessionId: 'sess_cache',
+        },
+      },
+      type: 'finish',
+      usage: {
+        cachedInputTokens: 7,
+        inputTokens: 5,
+        outputTokens: 3,
+        reasoningTokens: undefined,
+        totalTokens: 26,
+      },
+    });
   });
 
   it('omits resume for prompts with tool results and emits tool stream parts', async () => {
@@ -159,6 +210,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
       {
         finishReason: 'tool-calls',
         providerMetadata: {
+          anthropic: {},
           'claude-code': {
             modelId: 'claude-haiku-4-5',
             sessionId: 'sess_tool',
@@ -174,6 +226,39 @@ describe('ClaudeCodeLanguageModel runtime', () => {
         },
       },
     ]);
+  });
+
+  it('omits resume for assistant messages that include tool results', async () => {
+    const { child, interfaceHandle } = createMockChild({ lines: [] });
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({
+      prompt: [
+        {
+          content: [
+            { text: 'done', type: 'text' },
+            { output: { ok: true }, toolCallId: 'tool-1', toolName: 'bash', type: 'tool-result' },
+          ],
+          providerMetadata: {
+            'claude-code': {
+              modelId: 'claude-haiku-4-5',
+              sessionId: 'sess_assistant_tool_result',
+            },
+          },
+          role: 'assistant',
+        },
+        { content: [{ text: 'continue', type: 'text' }], role: 'user' },
+      ] as never,
+      tools: [],
+    });
+
+    await readAllParts(result.stream);
+
+    expect(result.request.body.args).not.toContain('--resume');
+    expect(result.request.body).not.toHaveProperty('resume');
   });
 
   it('emits an error finish when stdout is unavailable', async () => {
@@ -246,6 +331,20 @@ describe('ClaudeCodeLanguageModel runtime', () => {
 
     expect(unknownParts.some((part) => isErrorPart(part) && String(part.error).includes('code unknown'))).toBe(true);
   });
+
+  it('emits an error finish when the child process errors before close', async () => {
+    const { child, interfaceHandle } = createErrorMockChild('spawn failed');
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({ prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }], tools: [] });
+    const parts = await readAllParts(result.stream);
+
+    expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('spawn failed'))).toBe(true);
+    expect(parts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+  });
 });
 
 type MockChild = EventEmitter & {
@@ -274,6 +373,34 @@ function createMockChild(options: { exitCode?: number; lines: string[]; signal?:
       }
 
       child.emit('close', 'exitCode' in options ? options.exitCode : 0, options.signal ?? null);
+    },
+    close: vi.fn(),
+  };
+
+  return { child, interfaceHandle };
+}
+
+function createErrorMockChild(message: string): { child: MockChild; interfaceHandle: MockInterface } {
+  const child = new EventEmitter() as MockChild;
+  child.kill = vi.fn();
+  child.stderr = new EventEmitter();
+  child.stdout = {};
+
+  const interfaceHandle: MockInterface = {
+    [Symbol.asyncIterator]() {
+      let done = false;
+
+      return {
+        async next() {
+          if (!done) {
+            done = true;
+            await Promise.resolve();
+            child.emit('error', new Error(message));
+          }
+
+          return { done: true, value: undefined };
+        },
+      };
     },
     close: vi.fn(),
   };

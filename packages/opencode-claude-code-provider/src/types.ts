@@ -8,6 +8,7 @@ export type ClaudeCodeEffort = 'low' | 'medium' | 'high' | 'max';
 export type ClaudeCodePermissionMode = 'acceptEdits' | 'bypassPermissions' | 'default' | 'dontAsk' | 'plan';
 
 export type ProviderMetadataValue = {
+  cacheCreationInputTokens?: number;
   modelId?: string;
   sessionId?: string;
 };

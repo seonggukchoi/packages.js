@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 
-import { createStreamState, mapCliMessage } from './messages.js';
+import { createStreamState, mapCliMessage, toLanguageModelUsage } from './messages.js';
 import { buildPrompt, getSystem, loadClaudeMd } from './prompt.js';
 import { getResume } from './resume.js';
 import { isRecord, normalizeProviderOptions } from './types.js';
@@ -81,17 +81,17 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
 
           controller.enqueue({
             finishReason: streamState.finishReason,
-            providerMetadata: buildProviderMetadata(currentModelId, streamState.sessionId),
+            providerMetadata: buildProviderMetadata(currentModelId, streamState.sessionId, streamState.usage.cacheCreationInputTokens),
             type: 'finish',
-            usage: streamState.usage,
+            usage: toLanguageModelUsage(streamState.usage),
           });
         } catch (error) {
           controller.enqueue({ error, type: 'error' });
           controller.enqueue({
             finishReason: 'error',
-            providerMetadata: buildProviderMetadata(currentModelId, streamState.sessionId),
+            providerMetadata: buildProviderMetadata(currentModelId, streamState.sessionId, streamState.usage.cacheCreationInputTokens),
             type: 'finish',
-            usage: streamState.usage,
+            usage: toLanguageModelUsage(streamState.usage),
           });
         } finally {
           child?.kill();
@@ -358,10 +358,17 @@ function shouldResumeSession(prompt: LanguageModelV2CallOptions['prompt']): bool
   });
 }
 
-function buildProviderMetadata(modelId: string, sessionId: string | undefined) {
+function buildProviderMetadata(modelId: string, sessionId: string | undefined, cacheCreationInputTokens: number | undefined) {
   const providerName = 'claude-code';
 
   return {
+    anthropic: {
+      ...(typeof cacheCreationInputTokens === 'number'
+        ? {
+            cacheCreationInputTokens,
+          }
+        : {}),
+    },
     [providerName]: {
       modelId,
       ...(sessionId ? ({ sessionId } satisfies ProviderMetadataValue) : {}),
@@ -488,11 +495,15 @@ function extractToolCallParts(text: string, streamState: ReturnType<typeof creat
 
   const firstMatch = matches[0];
   const leadingText = text.slice(0, firstMatch.index);
-  const trailingText = text.slice(matches.at(-1)?.end ?? 0);
+  const lastMatch = matches[matches.length - 1] as (typeof matches)[number];
+  const trailingText = text.slice(lastMatch.end);
   const hasLeadingContext = leadingText.trim().length > 0;
-  const hasInlineLeadingContext = hasLeadingContext && !leadingText.includes('\n');
 
-  if (trailingText.trim().length > 0 || hasInlineLeadingContext) {
+  if (trailingText.trim().length > 0) {
+    return [];
+  }
+
+  if (hasLeadingContext && !leadingText.includes('\n')) {
     return [];
   }
 
@@ -521,7 +532,7 @@ function collectToolCallMatches(
   for (const match of text.matchAll(pattern)) {
     const content = match[1];
     const index = /* v8 ignore next */ match.index ?? 0;
-    const fullMatch = match[0] ?? '';
+    const fullMatch = match[0];
     const payload = parse(content);
 
     if (payload) {

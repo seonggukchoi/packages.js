@@ -97,10 +97,11 @@ describe('mapCliMessage', () => {
     expect(state.stopReason).toBe('end_turn');
     expect(state.usage).toEqual({
       cachedInputTokens: 2,
+      cacheCreationInputTokens: undefined,
       inputTokens: 5,
       outputTokens: 9,
       reasoningTokens: undefined,
-      totalTokens: 14,
+      totalTokens: 16,
     });
 
     mapCliMessage(
@@ -139,10 +140,53 @@ describe('mapCliMessage', () => {
     expect(state.finishReason).toBe('tool-calls');
     expect(state.usage).toEqual({
       cachedInputTokens: undefined,
+      cacheCreationInputTokens: undefined,
       inputTokens: 3,
       outputTokens: 4,
       reasoningTokens: undefined,
       totalTokens: 7,
+    });
+  });
+
+  it('tracks cache creation tokens in total usage', () => {
+    const state = createStreamState();
+
+    mapCliMessage(
+      {
+        event: {
+          message: {
+            usage: {
+              cache_creation_input_tokens: 11,
+              cache_read_input_tokens: 7,
+              input_tokens: 5,
+            },
+          },
+          type: 'message_start',
+        },
+        type: 'stream_event',
+      },
+      state,
+    );
+
+    mapCliMessage(
+      {
+        is_error: false,
+        subtype: 'success',
+        type: 'result',
+        usage: {
+          output_tokens: 3,
+        },
+      },
+      state,
+    );
+
+    expect(state.usage).toEqual({
+      cachedInputTokens: 7,
+      cacheCreationInputTokens: 11,
+      inputTokens: 5,
+      outputTokens: 3,
+      reasoningTokens: undefined,
+      totalTokens: 26,
     });
   });
 
