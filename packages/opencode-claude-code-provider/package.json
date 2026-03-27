@@ -1,7 +1,7 @@
 {
   "name": "@seonggukchoi/opencode-claude-code-provider",
   "version": "0.2.0",
-  "description": "OpenCode provider backed by Claude Agent SDK",
+  "description": "OpenCode provider backed by Claude Code CLI",
   "author": "seonggukchoi",
   "license": "MIT",
   "type": "module",
@@ -21,7 +21,6 @@
     "opencode",
     "claude",
     "provider",
-    "anthropic",
     "ai-sdk"
   ],
   "main": "dist/index.js",
@@ -45,13 +44,10 @@
     "typecheck": "pnpm run test:typecheck"
   },
   "peerDependencies": {
-    "@ai-sdk/provider": ">=3.0.0",
-    "zod": ">=4.0.0"
+    "@ai-sdk/provider": ">=3.0.0"
   },
   "dependencies": {
-    "@ai-sdk/provider": "^3.0.8",
-    "@anthropic-ai/claude-agent-sdk": "^0.2.81",
-    "zod": "^4.1.8"
+    "@ai-sdk/provider": "^3.0.8"
   },
   "devDependencies": {
     "@types/node": "^24.9.1"

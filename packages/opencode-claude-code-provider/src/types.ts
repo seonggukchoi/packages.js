@@ -1,41 +1,11 @@
 import type { LanguageModelV2FunctionTool, LanguageModelV2Prompt } from '@ai-sdk/provider';
-import type { McpServerConfig, Options, PermissionMode, SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 
-export const DEFAULT_NATIVE_TOOLS = ['bash', 'read', 'write', 'edit', 'glob', 'grep'] as const;
-export const DEFAULT_BRIDGE_TOOLS = [
-  'question',
-  'task',
-  'todowrite',
-  'webfetch',
-  'websearch',
-  'oc_websearch',
-  'oc_apply_patch',
-  'oc_codesearch',
-] as const;
-export const DEFAULT_MAX_TURNS = 12;
+export const DEFAULT_MAX_TURNS = 1;
 export const DEFAULT_EXECUTABLE_PATH = 'claude';
-export const DEFAULT_TOOL_PREFERENCE = 'opencode-first' as const;
+export const DEFAULT_PERMISSION_MODE = 'bypassPermissions' as const;
 
 export type ClaudeCodeEffort = 'low' | 'medium' | 'high' | 'max';
-export type ClaudeCodeToolPreference = 'opencode-only' | 'opencode-first' | 'claude-first';
-
-export type OpenCodeLocalMcpConfig = {
-  enabled?: boolean;
-  type: 'local';
-  command: string[];
-  environment?: Record<string, string>;
-};
-
-export type OpenCodeRemoteMcpConfig = {
-  enabled?: boolean;
-  type: 'remote';
-  url: string;
-  headers?: Record<string, string>;
-  oauth?: Record<string, string> | boolean;
-  transport?: 'http' | 'sse';
-};
-
-export type OpenCodeMcpConfig = Record<string, OpenCodeLocalMcpConfig | OpenCodeRemoteMcpConfig>;
+export type ClaudeCodePermissionMode = 'acceptEdits' | 'bypassPermissions' | 'default' | 'dontAsk' | 'plan';
 
 export type ProviderMetadataValue = {
   modelId?: string;
@@ -52,57 +22,26 @@ export type OpenCodeToolLike = LanguageModelV2FunctionTool & {
   execute?: (args: unknown, context: ToolExecuteContext) => Promise<unknown>;
 };
 
-export type QueryLike = AsyncIterable<SDKMessage> & {
-  close(): void;
-};
-
-export type QueryRunner = (input: { options?: Options; prompt: string }) => QueryLike;
-
 export type ClaudeCodeProviderOptions = {
-  bridgeOpenCodeMcp?: boolean;
-  bridgeTools?: string[];
   claudeMdPath?: string;
   cwd?: string;
   env?: Record<string, string>;
   effort?: ClaudeCodeEffort;
   loadClaudeMd?: boolean;
   maxTurns?: number;
-  mcpServers?: Record<string, McpServerConfig>;
-  nativeTools?: string[];
-  openCodeMcp?: OpenCodeMcpConfig;
   pathToClaudeCodeExecutable?: string;
-  permissionMode?: PermissionMode;
-  queryRunner?: QueryRunner;
-  settingSources?: string[];
-  toolPreference?: ClaudeCodeToolPreference;
+  permissionMode?: ClaudeCodePermissionMode;
 };
 
 export type NormalizedClaudeCodeOptions = {
-  bridgeOpenCodeMcp: boolean;
-  bridgeTools: string[];
   claudeMdPath?: string;
   cwd: string;
   env: Record<string, string>;
   effort?: ClaudeCodeEffort;
   loadClaudeMd: boolean;
   maxTurns: number;
-  mcpServers: Record<string, McpServerConfig>;
-  nativeTools: string[];
-  openCodeMcp?: OpenCodeMcpConfig;
   pathToClaudeCodeExecutable: string;
-  permissionMode?: PermissionMode;
-  queryRunner: QueryRunner;
-  settingSources: string[];
-  toolPreference: ClaudeCodeToolPreference;
-};
-
-export type BridgeContext = {
-  abortSignal?: AbortSignal;
-  bridgeTools?: string[];
-  nativeTools?: string[];
-  prompt: LanguageModelV2Prompt;
-  toolPreference?: ClaudeCodeToolPreference;
-  tools: unknown;
+  permissionMode: ClaudeCodePermissionMode;
 };
 
 export function normalizeProviderOptions(
@@ -110,11 +49,9 @@ export function normalizeProviderOptions(
   defaults: ClaudeCodeProviderOptions,
 ): NormalizedClaudeCodeOptions {
   const raw = rawOptions ?? {};
-  const rawEnv = isStringRecord(raw.env) ? raw.env : undefined;
+  const rawEnv = getStringRecord(raw.env);
 
   return {
-    bridgeOpenCodeMcp: getBoolean(raw.bridgeOpenCodeMcp) ?? defaults.bridgeOpenCodeMcp ?? false,
-    bridgeTools: getStringArray(raw.bridgeTools) ?? defaults.bridgeTools ?? [...DEFAULT_BRIDGE_TOOLS],
     claudeMdPath: getString(raw.claudeMdPath) ?? defaults.claudeMdPath,
     cwd: getString(raw.cwd) ?? defaults.cwd ?? process.cwd(),
     env: {
@@ -125,14 +62,8 @@ export function normalizeProviderOptions(
     effort: getEffort(raw.effort) ?? defaults.effort,
     loadClaudeMd: getBoolean(raw.loadClaudeMd) ?? defaults.loadClaudeMd ?? false,
     maxTurns: getNumber(raw.maxTurns) ?? defaults.maxTurns ?? DEFAULT_MAX_TURNS,
-    mcpServers: getRecord<McpServerConfig>(raw.mcpServers) ?? defaults.mcpServers ?? {},
-    nativeTools: getStringArray(raw.nativeTools) ?? defaults.nativeTools ?? [...DEFAULT_NATIVE_TOOLS],
-    openCodeMcp: getRecord<OpenCodeLocalMcpConfig | OpenCodeRemoteMcpConfig>(raw.openCodeMcp) ?? defaults.openCodeMcp,
     pathToClaudeCodeExecutable: getString(raw.pathToClaudeCodeExecutable) ?? defaults.pathToClaudeCodeExecutable ?? DEFAULT_EXECUTABLE_PATH,
-    permissionMode: getPermissionMode(raw.permissionMode) ?? defaults.permissionMode,
-    queryRunner: defaults.queryRunner ?? createMissingQueryRunner(),
-    settingSources: getStringArray(raw.settingSources) ?? defaults.settingSources ?? [],
-    toolPreference: getToolPreference(raw.toolPreference) ?? defaults.toolPreference ?? DEFAULT_TOOL_PREFERENCE,
+    permissionMode: getPermissionMode(raw.permissionMode) ?? defaults.permissionMode ?? DEFAULT_PERMISSION_MODE,
   };
 }
 
@@ -190,6 +121,14 @@ function isStringRecord(value: unknown): value is Record<string, string> {
   return Object.values(value).every((item) => typeof item === 'string');
 }
 
+function getStringRecord(value: unknown): Record<string, string> | undefined {
+  if (!isStringRecord(value)) {
+    return undefined;
+  }
+
+  return value;
+}
+
 function getEffort(value: unknown): ClaudeCodeEffort | undefined {
   if (value === 'low' || value === 'medium' || value === 'high' || value === 'max') {
     return value;
@@ -198,16 +137,8 @@ function getEffort(value: unknown): ClaudeCodeEffort | undefined {
   return undefined;
 }
 
-function getPermissionMode(value: unknown): PermissionMode | undefined {
+function getPermissionMode(value: unknown): ClaudeCodePermissionMode | undefined {
   if (value === 'acceptEdits' || value === 'bypassPermissions' || value === 'default' || value === 'dontAsk' || value === 'plan') {
-    return value;
-  }
-
-  return undefined;
-}
-
-function getToolPreference(value: unknown): ClaudeCodeToolPreference | undefined {
-  if (value === 'claude-first' || value === 'opencode-first' || value === 'opencode-only') {
     return value;
   }
 
@@ -216,10 +147,4 @@ function getToolPreference(value: unknown): ClaudeCodeToolPreference | undefined
 
 function getProcessEnv(): Record<string, string> {
   return Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
-}
-
-function createMissingQueryRunner(): QueryRunner {
-  return () => {
-    throw new Error('Query runner is not configured.');
-  };
 }

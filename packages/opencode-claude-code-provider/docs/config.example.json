@@ -6,14 +6,11 @@
       "name": "Claude Code",
       "npm": "@seonggukchoi/opencode-claude-code-provider",
       "options": {
-        "bridgeOpenCodeMcp": true,
-        "bridgeTools": ["question", "task", "todowrite", "webfetch", "oc_apply_patch", "oc_codesearch", "oc_websearch"],
         "cwd": ".",
-        "maxTurns": 12,
-        "nativeTools": ["read", "write", "edit", "glob", "grep", "bash"],
+        "loadClaudeMd": true,
+        "maxTurns": 1,
         "pathToClaudeCodeExecutable": "claude",
-        "permissionMode": "default",
-        "toolPreference": "opencode-first"
+        "permissionMode": "bypassPermissions"
       },
       "models": {
         "sonnet": {
