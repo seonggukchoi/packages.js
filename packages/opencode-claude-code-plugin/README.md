@@ -1,12 +1,12 @@
 # @seonggukchoi/opencode-claude-code-plugin
 
-OpenCode plugin helpers for the Claude Agent SDK based provider.
+OpenCode plugin helpers for the Claude Code CLI based provider.
 
 ## What it does
 
 - Normalizes `chat.params` output for the `claude-code` provider
 - Keeps provider options flat so OpenCode can namespace them under `providerOptions["claude-code"]`
-- Adds a short Agent SDK system note through `experimental.chat.system.transform`
+- Adds a short Claude Code system note through `experimental.chat.system.transform`
 - Exposes CLI health-check command suggestions
 
 ## Normalized options
@@ -16,15 +16,9 @@ OpenCode plugin helpers for the Claude Agent SDK based provider.
 - `effort`
 - `maxTurns`
 - `permissionMode`
-- `bridgeOpenCodeMcp`
-- `bridgeTools`
-- `mcpServers`
-- `nativeTools`
-- `settingSources`
 - `pathToClaudeCodeExecutable`
 - `loadClaudeMd`
 - `claudeMdPath`
-- `toolPreference`
 
 ## Health checks
 

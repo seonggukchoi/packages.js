@@ -1,43 +1,28 @@
 # @seonggukchoi/opencode-claude-code-provider
 
-Claude Agent SDK based provider for OpenCode.
+Claude Code CLI based provider for OpenCode.
 
 ## What it does
 
 - Exposes a custom `LanguageModelV2` provider named `claude-code`
-- Uses `@anthropic-ai/claude-agent-sdk` as the runtime adapter behind OpenCode
-- Prefers OpenCode-hosted tools through an in-process MCP bridge when a provider-side executor is attached
-- Falls back to Claude built-ins for overlapping tools (`bash`, `read`, `write`, `edit`, `glob`, `grep`) when no OpenCode executor is available
+- Runs `claude -p --tools "" --output-format stream-json` as a pure LLM client
+- Injects OpenCode tool schemas into the Claude system prompt and converts `<tool_call>` text blocks into AI SDK tool-call parts
+- Keeps all tool execution inside OpenCode, including OpenCode-only tools such as `todowrite` and `task`
 - Persists the Claude session id in `providerMetadata["claude-code"].sessionId`
 
-## Supported bridge tools
+## Tool behavior
 
-- `question`
-- `task`
-- `todowrite`
-- `webfetch`
-- `websearch`
-- `oc_websearch`
-- `oc_apply_patch`
-- `oc_codesearch`
-- JSON Schema based custom tools when the schema is a basic object shape
-
-## Fallback rules
-
-- Prefer `websearch` when OpenCode exposes it directly
-- Use `oc_websearch` when the default `websearch` name is hidden by tool gating
-- Keep `webfetch` bridged through OpenCode so the host-side formatting and fallback behavior stay consistent
+- Claude native tools are disabled for every request
+- Claude must emit exactly one `<tool_call>{"name":"...","arguments":{...}}</tool_call>` block when a tool is needed
+- OpenCode executes the tool and feeds the result back through its normal tool loop
 
 ## Known limits
 
-- Remote OAuth MCP servers are skipped and surfaced as warnings
 - Non-streaming generation is intentionally not supported
-- JSON Schema to Zod conversion is best-effort and currently supports common object, array, string, number, integer, and boolean shapes
-- Claude Code CLI currently rejects Agent SDK `effort` values, so configured effort variants are ignored at runtime for stability
+- `effort` is retained for config compatibility but is not sent to the CLI yet
+- `maxTurns` defaults to `1` because Claude does not execute tools directly in this mode
 - OpenCode custom providers still need a `models` block in config for model discovery
 - OpenCode 1.3.0 currently breaks direct `file:` package loading by appending `@latest`
-- OpenCode-first routing requires provider-side executors for bridged tools such as `question`
-- Permission mode defaults to `bypassPermissions` only when no Claude native tools are active; native fallback sessions default to Claude's standard permission flow
 
 ## Configuration examples
 
@@ -63,8 +48,6 @@ Claude Agent SDK based provider for OpenCode.
 
 OpenCode custom providers still require a `models` block for model discovery, so the minimal example keeps only the model ids.
 
-The provider defaults to `toolPreference: "opencode-first"`. Bridged OpenCode tools remain available through `mcp__opencode__*`, but Claude permission prompts stay on the default SDK flow for now.
-
 For local unpublished testing, replace the package names in those examples with your local install strategy such as a tarball or registry override.
 
 ## Local testing
@@ -83,8 +66,8 @@ For local unpublished testing, replace the package names in those examples with 
 
 - Missing CLI executable: expect a process spawn failure such as `ENOENT`
 - Unsupported auth status command on older CLI builds: use `claude auth status || claude doctor`
-- Unsupported tool schema: the provider skips bridging unless a curated or generic Zod shape can be built
-- Unbridgeable MCP server: the provider includes a diagnostic warning in the `stream-start` part and continues
+- Invalid CLI JSONL output: the provider fails the stream with a parsing error
+- Invalid `<tool_call>` payloads are surfaced back as plain text instead of being executed
 
 ## Release checklist
 
