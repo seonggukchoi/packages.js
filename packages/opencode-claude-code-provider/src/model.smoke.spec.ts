@@ -35,10 +35,11 @@ describe('ClaudeCodeLanguageModel smoke', () => {
     });
 
     const parts = await readAllParts(result.stream);
+    const requestBody = getRequestBody(result);
 
-    expect(result.request.body.args).toContain('--input-format');
-    expect(result.request.body.args).toContain('text');
-    expect(result.request.body.args.join(' ')).not.toContain('fresh smoke');
+    expect(requestBody.args).toContain('--input-format');
+    expect(requestBody.args).toContain('text');
+    expect(requestBody.args.join(' ')).not.toContain('fresh smoke');
     expect(parts).toContainEqual({ delta: 'fresh-ok', id: 'text-0', type: 'text-delta' });
   });
 
@@ -65,14 +66,15 @@ describe('ClaudeCodeLanguageModel smoke', () => {
     });
 
     const parts = await readAllParts(result.stream);
+    const requestBody = getRequestBody(result);
     const receivedPart = parts.find(
       (part): part is { delta: string; type: 'text-delta' } =>
         typeof part === 'object' && part !== null && 'type' in part && part.type === 'text-delta' && 'delta' in part,
     );
 
-    expect(result.request.body).not.toHaveProperty('resume');
-    expect(result.request.body.prompt.length).toBeGreaterThan(2_000_000);
-    expect(result.request.body.args.join(' ')).not.toContain('switch-context-');
+    expect(requestBody).not.toHaveProperty('resume');
+    expect(requestBody.prompt.length).toBeGreaterThan(2_000_000);
+    expect(requestBody.args.join(' ')).not.toContain('switch-context-');
     expect(receivedPart?.delta).toMatch(/^received:\d+$/);
     expect(Number(receivedPart?.delta.split(':')[1])).toBeGreaterThan(2_000_000);
   });
@@ -128,4 +130,26 @@ async function readAllParts(stream: ReadableStream<unknown>): Promise<unknown[]>
 
     parts.push(chunk.value);
   }
+}
+
+function getRequestBody(result: { request?: { body?: unknown } }): { args: string[]; prompt: string; resume?: string } {
+  if (!result.request || !isRequestBody(result.request.body)) {
+    throw new Error('Expected provider response to include a typed request body.');
+  }
+
+  return result.request.body;
+}
+
+function isRequestBody(value: unknown): value is { args: string[]; prompt: string; resume?: string } {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  return (
+    'args' in value &&
+    Array.isArray(value.args) &&
+    value.args.every((entry) => typeof entry === 'string') &&
+    'prompt' in value &&
+    typeof value.prompt === 'string'
+  );
 }

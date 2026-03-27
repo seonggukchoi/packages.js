@@ -113,6 +113,10 @@ describe('ClaudeCodeLanguageModel runtime', () => {
       },
     ]);
     expect(child.kill).toHaveBeenCalled();
+    if (!child.stdin) {
+      throw new Error('Expected stdin to be available in the mock child process.');
+    }
+
     expect(child.stdin.end).toHaveBeenCalledWith('continue');
     expect(createInterfaceMock).toHaveBeenCalledWith({ input: child.stdout });
   });
