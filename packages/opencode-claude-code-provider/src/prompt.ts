@@ -34,8 +34,16 @@ export function buildPrompt(prompt: LanguageModelV2Prompt, options: { resumeSess
   const conversation = serializeConversation(prompt.filter((message) => message.role !== 'system'));
 
   if (conversation) {
-    sections.push(['Conversation:', conversation].join('\n'));
+    sections.push(['Conversation transcript (context only - do not repeat or continue it):', conversation].join('\n'));
   }
+
+  sections.push(
+    [
+      'Response instructions:',
+      "Respond with the assistant's next message only.",
+      'Do not repeat transcript headers, tool narration, or tool results unless the user explicitly asks for the raw transcript.',
+    ].join('\n'),
+  );
 
   return sections.join('\n\n').trim();
 }
@@ -95,7 +103,7 @@ function serializeConversation(prompt: LanguageModelV2Prompt): string {
         return ['Assistant:', ...message.content.map((part) => serializeAssistantPart(part)).filter(Boolean)].join('\n');
       }
 
-      return ['Tool:', ...message.content.map((part) => serializeToolResultPart(part)).filter(Boolean)].join('\n');
+      return ['External tool results:', ...message.content.map((part) => serializeToolResultPart(part)).filter(Boolean)].join('\n');
     })
     .filter((section) => section.length > 0)
     .join('\n\n')
@@ -127,7 +135,7 @@ function serializeAssistantPart(
   }
 
   if (part.type === 'tool-call') {
-    return `[tool-call:${part.toolName}] ${safeJsonStringify(normalizeToolInput(part.input))}`;
+    return `Assistant used the ${part.toolName} tool with input: ${safeJsonStringify(normalizeToolInput(part.input))}`;
   }
 
   if (part.type === 'tool-result') {
@@ -138,7 +146,7 @@ function serializeAssistantPart(
 }
 
 function serializeToolResultPart(part: LanguageModelV2ToolResultPart): string {
-  return `[tool-result:${part.toolName}] ${safeJsonStringify(part.output)}`;
+  return `The ${part.toolName} tool returned: ${safeJsonStringify(part.output)}`;
 }
 
 function safeJsonStringify(value: unknown): string {

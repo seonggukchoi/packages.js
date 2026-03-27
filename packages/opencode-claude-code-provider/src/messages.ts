@@ -2,6 +2,10 @@ import { isRecord } from './types.js';
 
 import type { LanguageModelV2FinishReason, LanguageModelV2StreamPart, LanguageModelV2Usage } from '@ai-sdk/provider';
 
+type StreamUsage = LanguageModelV2Usage & {
+  cacheCreationInputTokens?: number;
+};
+
 type BlockState =
   | {
       id: string;
@@ -20,7 +24,7 @@ export type StreamState = {
   sessionId?: string;
   stopReason?: string;
   toolCallCounter: number;
-  usage: LanguageModelV2Usage;
+  usage: StreamUsage;
 };
 
 export function createStreamState(): StreamState {
@@ -29,10 +33,21 @@ export function createStreamState(): StreamState {
     finishReason: 'unknown',
     toolCallCounter: 0,
     usage: {
+      cacheCreationInputTokens: undefined,
       inputTokens: undefined,
       outputTokens: undefined,
       totalTokens: undefined,
     },
+  };
+}
+
+export function toLanguageModelUsage(usage: StreamUsage): LanguageModelV2Usage {
+  return {
+    cachedInputTokens: usage.cachedInputTokens,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    reasoningTokens: usage.reasoningTokens,
+    totalTokens: usage.totalTokens,
   };
 }
 
@@ -198,12 +213,13 @@ function mapFinishReason(
   return 'unknown';
 }
 
-function mapUsageRecord(usage: Record<string, unknown> | undefined): LanguageModelV2Usage {
+function mapUsageRecord(usage: Record<string, unknown> | undefined): StreamUsage {
   const inputTokens = getNumber(usage?.input_tokens);
   const outputTokens = getNumber(usage?.output_tokens);
 
   return {
     cachedInputTokens: getNumber(usage?.cache_read_input_tokens),
+    cacheCreationInputTokens: getNumber(usage?.cache_creation_input_tokens),
     inputTokens,
     outputTokens,
     reasoningTokens: getNumber(usage?.thinking_tokens),
@@ -211,16 +227,20 @@ function mapUsageRecord(usage: Record<string, unknown> | undefined): LanguageMod
   };
 }
 
-function mergeUsage(current: LanguageModelV2Usage, next: LanguageModelV2Usage): LanguageModelV2Usage {
+function mergeUsage(current: StreamUsage, next: StreamUsage): StreamUsage {
+  const cachedInputTokens = next.cachedInputTokens ?? current.cachedInputTokens;
+  const cacheCreationInputTokens = next.cacheCreationInputTokens ?? current.cacheCreationInputTokens;
   const inputTokens = next.inputTokens ?? current.inputTokens;
   const outputTokens = next.outputTokens ?? current.outputTokens;
 
   return {
-    cachedInputTokens: next.cachedInputTokens ?? current.cachedInputTokens,
+    cachedInputTokens,
+    cacheCreationInputTokens,
     inputTokens,
     outputTokens,
     reasoningTokens: next.reasoningTokens ?? current.reasoningTokens,
-    totalTokens: next.totalTokens ?? sumNumbers(inputTokens, outputTokens) ?? current.totalTokens,
+    totalTokens:
+      sumNumbers(inputTokens, outputTokens, cachedInputTokens, cacheCreationInputTokens) ?? next.totalTokens ?? current.totalTokens,
   };
 }
 
