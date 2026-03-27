@@ -1,7 +1,7 @@
 {
   "name": "@seonggukchoi/opencode-claude-code-plugin",
   "version": "0.2.0",
-  "description": "OpenCode plugin helpers for the Claude Agent SDK provider",
+  "description": "OpenCode plugin helpers for the Claude Code CLI provider",
   "author": "seonggukchoi",
   "license": "MIT",
   "type": "module",
@@ -20,8 +20,7 @@
   "keywords": [
     "opencode",
     "claude",
-    "plugin",
-    "anthropic"
+    "plugin"
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

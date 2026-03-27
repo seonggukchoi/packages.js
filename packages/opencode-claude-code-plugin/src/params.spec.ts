@@ -21,20 +21,14 @@ describe('normalizeChatParams', () => {
     );
 
     expect(output.options).toEqual({
-      bridgeOpenCodeMcp: false,
-      bridgeTools: undefined,
       claudeMdPath: undefined,
       cwd: '/workspace',
       effort: 'high',
       env: {},
       loadClaudeMd: false,
-      maxTurns: 12,
-      mcpServers: {},
-      nativeTools: undefined,
+      maxTurns: 1,
       pathToClaudeCodeExecutable: 'claude',
       permissionMode: undefined,
-      settingSources: [],
-      toolPreference: 'opencode-first',
     });
   });
 
@@ -61,20 +55,14 @@ describe('normalizeChatParams', () => {
   it('normalizes invalid values to safe defaults', () => {
     const output = {
       options: {
-        bridgeOpenCodeMcp: 'bad',
-        bridgeTools: ['question', 123],
         claudeMdPath: '',
         cwd: '',
         effort: 'bad',
         env: { A: '1', B: 2 },
         loadClaudeMd: 'bad',
         maxTurns: Number.NaN,
-        mcpServers: [],
-        nativeTools: ['bash', 123],
         pathToClaudeCodeExecutable: '',
         permissionMode: 'bad',
-        settingSources: ['settings.json', 123],
-        toolPreference: 'bad',
       },
     };
 
@@ -89,60 +77,28 @@ describe('normalizeChatParams', () => {
     );
 
     expect(output.options).toEqual({
-      bridgeOpenCodeMcp: false,
-      bridgeTools: ['question'],
       claudeMdPath: undefined,
       cwd: '/workspace',
       effort: undefined,
       env: { A: '1' },
       loadClaudeMd: false,
-      maxTurns: 12,
-      mcpServers: {},
-      nativeTools: ['bash'],
+      maxTurns: 1,
       pathToClaudeCodeExecutable: 'claude',
       permissionMode: undefined,
-      settingSources: ['settings.json'],
-      toolPreference: 'opencode-first',
     });
-  });
-
-  it('accepts opencode-only as a valid tool preference', () => {
-    const output = {
-      options: {
-        toolPreference: 'opencode-only',
-      },
-    };
-
-    normalizeChatParams(
-      {
-        model: {
-          providerID: 'claude-code',
-        },
-      },
-      output,
-      { cwd: '/workspace' },
-    );
-
-    expect(output.options.toolPreference).toBe('opencode-only');
   });
 
   it('preserves valid booleans, numbers, and non-empty strings', () => {
     const output = {
       options: {
-        bridgeOpenCodeMcp: true,
-        bridgeTools: ['question'],
         claudeMdPath: '/repo/CLAUDE.md',
         cwd: '/custom',
         effort: 'medium',
         env: { A: '1' },
         loadClaudeMd: true,
         maxTurns: 7,
-        mcpServers: { github: { type: 'local' } },
-        nativeTools: ['bash'],
         pathToClaudeCodeExecutable: '/usr/local/bin/claude',
         permissionMode: 'default',
-        settingSources: [],
-        toolPreference: 'claude-first',
       },
     };
 
@@ -157,20 +113,14 @@ describe('normalizeChatParams', () => {
     );
 
     expect(output.options).toEqual({
-      bridgeOpenCodeMcp: true,
-      bridgeTools: ['question'],
       claudeMdPath: '/repo/CLAUDE.md',
       cwd: '/custom',
       effort: 'medium',
       env: { A: '1' },
       loadClaudeMd: true,
       maxTurns: 7,
-      mcpServers: { github: { type: 'local' } },
-      nativeTools: ['bash'],
       pathToClaudeCodeExecutable: '/usr/local/bin/claude',
       permissionMode: 'default',
-      settingSources: [],
-      toolPreference: 'claude-first',
     });
   });
 });
