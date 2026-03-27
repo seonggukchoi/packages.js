@@ -14,6 +14,12 @@ type BlockState =
   | {
       id: string;
       kind: 'text';
+    }
+  | {
+      id: string;
+      input: string;
+      kind: 'tool';
+      name: string;
     };
 
 export type CliMessage = Record<string, unknown>;
@@ -67,7 +73,7 @@ export function mapCliMessage(message: CliMessage, state: StreamState): Language
   if (messageType === 'assistant') {
     const assistantMessage = getRecord(message.message);
     state.usage = mergeUsage(state.usage, mapUsageRecord(getRecord(assistantMessage?.usage)));
-    return [];
+    return mapAssistantToolUse(assistantMessage, state);
   }
 
   if (messageType === 'result') {
@@ -142,6 +148,19 @@ function onContentBlockStart(event: Record<string, unknown>, index: number, stat
     return [{ id, type: 'reasoning-start' }];
   }
 
+  if (blockType === 'tool_use') {
+    const name = getString(block?.name);
+
+    if (!name) {
+      return [];
+    }
+
+    state.toolCallCounter += 1;
+    const id = `tool-call-${state.toolCallCounter}`;
+    state.blocks.set(index, { id, input: '', kind: 'tool', name });
+    return [{ id, toolName: name, type: 'tool-input-start' }];
+  }
+
   return [];
 }
 
@@ -164,6 +183,12 @@ function onContentBlockDelta(event: Record<string, unknown>, index: number, stat
     return text.length > 0 ? [{ delta: text, id: block.id, type: 'reasoning-delta' }] : [];
   }
 
+  if (block.kind === 'tool' && deltaType === 'input_json_delta') {
+    const text = getString(delta.partial_json) ?? '';
+    block.input += text;
+    return text.length > 0 ? [{ delta: text, id: block.id, type: 'tool-input-delta' }] : [];
+  }
+
   return [];
 }
 
@@ -180,7 +205,51 @@ function onContentBlockStop(index: number, state: StreamState): LanguageModelV2S
     return [{ id: block.id, type: 'text-end' }];
   }
 
+  if (block.kind === 'tool') {
+    return [
+      { id: block.id, type: 'tool-input-end' },
+      {
+        input: block.input.length > 0 ? block.input : '{}',
+        toolCallId: block.id,
+        toolName: block.name,
+        type: 'tool-call',
+      },
+    ];
+  }
+
   return [{ id: block.id, type: 'reasoning-end' }];
+}
+
+function mapAssistantToolUse(message: Record<string, unknown> | undefined, state: StreamState): LanguageModelV2StreamPart[] {
+  const content = Array.isArray(message?.content) ? message.content : [];
+  const toolUse = content.find((part) => isRecord(part) && part.type === 'tool_use');
+
+  if (!isRecord(toolUse) || typeof toolUse.name !== 'string' || toolUse.name.length === 0) {
+    return [];
+  }
+
+  const input = isRecord(toolUse.input) ? safeJsonStringify(toolUse.input) : '{}';
+  const existing = [...state.blocks.values()].find((block) => block.kind === 'tool' && block.name === toolUse.name);
+
+  if (existing && existing.kind === 'tool') {
+    existing.input = input;
+    return [];
+  }
+
+  state.toolCallCounter += 1;
+  const toolCallId = `tool-call-${state.toolCallCounter}`;
+
+  return [
+    { id: toolCallId, toolName: toolUse.name, type: 'tool-input-start' },
+    { delta: input, id: toolCallId, type: 'tool-input-delta' },
+    { id: toolCallId, type: 'tool-input-end' },
+    {
+      input,
+      toolCallId,
+      toolName: toolUse.name,
+      type: 'tool-call',
+    },
+  ];
 }
 
 function mapFinishReason(
@@ -264,6 +333,14 @@ function sumNumbers(...values: Array<number | undefined>): number | undefined {
   }
 
   return next.reduce((total, value) => total + value, 0);
+}
+
+function safeJsonStringify(value: Record<string, unknown>): string {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '{}';
+  }
 }
 
 function getNumber(value: unknown): number | undefined {

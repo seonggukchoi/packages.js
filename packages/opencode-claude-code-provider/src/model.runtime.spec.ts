@@ -242,6 +242,88 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     ]);
   });
 
+  it('converts native Claude tool_use blocks into OpenCode tool calls and stops the CLI stream', async () => {
+    const { child, interfaceHandle } = createMockChild({
+      lines: [
+        JSON.stringify({ session_id: 'sess_native_tool', subtype: 'init', type: 'system' }),
+        JSON.stringify({ event: { content_block: { type: 'thinking' }, index: 0, type: 'content_block_start' }, type: 'stream_event' }),
+        JSON.stringify({
+          event: { delta: { thinking: 'using tool', type: 'thinking_delta' }, index: 0, type: 'content_block_delta' },
+          type: 'stream_event',
+        }),
+        JSON.stringify({ event: { index: 0, type: 'content_block_stop' }, type: 'stream_event' }),
+        JSON.stringify({
+          event: {
+            content_block: { id: 'toolu_1', input: {}, name: 'read', type: 'tool_use' },
+            index: 1,
+            type: 'content_block_start',
+          },
+          type: 'stream_event',
+        }),
+        JSON.stringify({
+          event: { delta: { partial_json: '{"filePath":"README.md"}', type: 'input_json_delta' }, index: 1, type: 'content_block_delta' },
+          type: 'stream_event',
+        }),
+        JSON.stringify({ event: { index: 1, type: 'content_block_stop' }, type: 'stream_event' }),
+        JSON.stringify({
+          event: { content_block: { type: 'text' }, index: 2, type: 'content_block_start' },
+          type: 'stream_event',
+        }),
+        JSON.stringify({
+          event: { delta: { text: 'should not be emitted', type: 'text_delta' }, index: 2, type: 'content_block_delta' },
+          type: 'stream_event',
+        }),
+      ],
+    });
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({
+      prompt: [{ content: [{ text: 'use read', type: 'text' }], role: 'user' }] as never,
+      tools: [
+        {
+          description: 'Read a file.',
+          inputSchema: { properties: { filePath: { type: 'string' } }, required: ['filePath'], type: 'object' },
+          name: 'read',
+          type: 'function',
+        },
+      ],
+    });
+
+    const parts = await readAllParts(result.stream);
+
+    expect(parts).toEqual([
+      { type: 'stream-start', warnings: [] },
+      { id: 'reasoning-0', type: 'reasoning-start' },
+      { delta: 'using tool', id: 'reasoning-0', type: 'reasoning-delta' },
+      { id: 'reasoning-0', type: 'reasoning-end' },
+      { id: 'tool-call-1', toolName: 'read', type: 'tool-input-start' },
+      { delta: '{"filePath":"README.md"}', id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: '{"filePath":"README.md"}', toolCallId: 'tool-call-1', toolName: 'read', type: 'tool-call' },
+      {
+        finishReason: 'tool-calls',
+        providerMetadata: {
+          anthropic: {},
+          'claude-code': {
+            modelId: 'claude-haiku-4-5',
+            sessionId: 'sess_native_tool',
+          },
+        },
+        type: 'finish',
+        usage: {
+          cachedInputTokens: undefined,
+          inputTokens: undefined,
+          outputTokens: undefined,
+          reasoningTokens: undefined,
+          totalTokens: undefined,
+        },
+      },
+    ]);
+  });
+
   it('omits resume for assistant messages that include tool results', async () => {
     const { child, interfaceHandle } = createMockChild({ lines: [] });
     spawnMock.mockReturnValue(child);

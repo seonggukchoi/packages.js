@@ -118,6 +118,205 @@ describe('mapCliMessage', () => {
     expect(state.stopReason).toBe('end_turn');
   });
 
+  it('maps native Claude tool_use assistant content into OpenCode tool parts', () => {
+    const state = createStreamState();
+
+    const parts = mapCliMessage(
+      {
+        message: {
+          content: [
+            {
+              input: { filePath: 'README.md' },
+              name: 'read',
+              type: 'tool_use',
+            },
+          ],
+        },
+        type: 'assistant',
+      },
+      state,
+    );
+
+    expect(parts).toEqual([
+      { id: 'tool-call-1', toolName: 'read', type: 'tool-input-start' },
+      { delta: '{"filePath":"README.md"}', id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: '{"filePath":"README.md"}', toolCallId: 'tool-call-1', toolName: 'read', type: 'tool-call' },
+    ]);
+  });
+
+  it('updates pending native tool_use blocks from assistant messages and emits tool-call parts on stop', () => {
+    const state = createStreamState();
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            content_block: { id: 'toolu_1', input: {}, name: 'read', type: 'tool_use' },
+            index: 1,
+            type: 'content_block_start',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([{ id: 'tool-call-1', toolName: 'read', type: 'tool-input-start' }]);
+
+    expect(
+      mapCliMessage(
+        {
+          message: {
+            content: [
+              {
+                input: { filePath: 'README.md' },
+                name: 'read',
+                type: 'tool_use',
+              },
+            ],
+          },
+          type: 'assistant',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            index: 1,
+            type: 'content_block_stop',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: '{"filePath":"README.md"}', toolCallId: 'tool-call-1', toolName: 'read', type: 'tool-call' },
+    ]);
+  });
+
+  it('falls back safely for malformed native tool_use payloads', () => {
+    const state = createStreamState();
+
+    expect(
+      mapCliMessage(
+        {
+          message: {
+            content: [
+              {
+                input: {
+                  toJSON: () => {
+                    throw new Error('boom');
+                  },
+                },
+                name: 'read',
+                type: 'tool_use',
+              },
+            ],
+          },
+          type: 'assistant',
+        },
+        state,
+      ),
+    ).toEqual([
+      { id: 'tool-call-1', toolName: 'read', type: 'tool-input-start' },
+      { delta: '{}', id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: '{}', toolCallId: 'tool-call-1', toolName: 'read', type: 'tool-call' },
+    ]);
+  });
+
+  it('handles empty native tool_use deltas and empty inputs', () => {
+    const state = createStreamState();
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            content_block: { id: 'toolu_2', input: {}, name: 'read', type: 'tool_use' },
+            index: 2,
+            type: 'content_block_start',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([{ id: 'tool-call-1', toolName: 'read', type: 'tool-input-start' }]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            delta: { partial_json: '', type: 'input_json_delta' },
+            index: 2,
+            type: 'content_block_delta',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            delta: { type: 'input_json_delta' },
+            index: 2,
+            type: 'content_block_delta',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            index: 2,
+            type: 'content_block_stop',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: '{}', toolCallId: 'tool-call-1', toolName: 'read', type: 'tool-call' },
+    ]);
+  });
+
+  it('falls back to empty JSON when native tool_use input is not an object', () => {
+    const state = createStreamState();
+
+    expect(
+      mapCliMessage(
+        {
+          message: {
+            content: [
+              {
+                input: 'not-an-object',
+                name: 'read',
+                type: 'tool_use',
+              },
+            ],
+          },
+          type: 'assistant',
+        },
+        state,
+      ),
+    ).toEqual([
+      { id: 'tool-call-1', toolName: 'read', type: 'tool-input-start' },
+      { delta: '{}', id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: '{}', toolCallId: 'tool-call-1', toolName: 'read', type: 'tool-call' },
+    ]);
+  });
+
   it('maps result messages into finish metadata', () => {
     const state = createStreamState();
     state.toolCallCounter = 1;
@@ -267,6 +466,20 @@ describe('mapCliMessage', () => {
         state,
       ),
     ).toEqual([{ id: 'reasoning-1', type: 'reasoning-end' }]);
+
+    expect(
+      mapCliMessage(
+        {
+          event: {
+            content_block: { type: 'other' },
+            index: 6,
+            type: 'content_block_start',
+          },
+          type: 'stream_event',
+        },
+        state,
+      ),
+    ).toEqual([]);
 
     expect(
       mapCliMessage(

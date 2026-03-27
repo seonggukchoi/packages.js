@@ -79,6 +79,41 @@ describe('ClaudeCodeLanguageModel smoke', () => {
     expect(Number(receivedPart?.delta.split(':')[1])).toBeGreaterThan(2_000_000);
   });
 
+  it('stops the Claude CLI after a native tool_use block so fallback text is not emitted', async () => {
+    const { cwd, fakeClaudePath } = await createFakeClaudeFixture();
+    const provider = createClaudeCode({ pathToClaudeCodeExecutable: fakeClaudePath });
+    const model = provider.languageModel('claude-haiku-4-5');
+
+    const result = await model.doStream({
+      prompt: [{ content: [{ text: 'native tool smoke', type: 'text' }], role: 'user' }],
+      providerOptions: {
+        'claude-code': {
+          cwd,
+          pathToClaudeCodeExecutable: fakeClaudePath,
+        },
+      },
+      tools: [
+        {
+          description: 'Read a file.',
+          inputSchema: { properties: { filePath: { type: 'string' } }, required: ['filePath'], type: 'object' },
+          name: 'read',
+          type: 'function',
+        },
+      ],
+    });
+
+    const parts = await readAllParts(result.stream);
+    const textDeltas = parts.filter(
+      (part): part is { delta: string; type: 'text-delta' } =>
+        typeof part === 'object' && part !== null && 'type' in part && part.type === 'text-delta' && 'delta' in part,
+    );
+
+    expect(parts).toContainEqual({ id: 'tool-call-1', toolName: 'read', type: 'tool-input-start' });
+    expect(parts).toContainEqual({ delta: '{"filePath":"README.md"}', id: 'tool-call-1', type: 'tool-input-delta' });
+    expect(parts).toContainEqual({ input: '{"filePath":"README.md"}', toolCallId: 'tool-call-1', toolName: 'read', type: 'tool-call' });
+    expect(textDeltas.map((part) => part.delta)).not.toContain('fallback text after tool use');
+  });
+
   async function createFakeClaudeFixture(): Promise<{ cwd: string; fakeClaudePath: string }> {
     const cwd = await mkdtemp(join(tmpdir(), 'claude-code-smoke-'));
     tempDirs.push(cwd);
@@ -105,6 +140,17 @@ const sessionId = resumeSessionId ?? 'sess_smoke';
 const text = prompt.includes('fresh smoke') ? 'fresh-ok' : 'received:' + String(prompt.length);
 
 emit({ session_id: sessionId, subtype: 'init', type: 'system' });
+if (prompt.includes('native tool smoke')) {
+  emit({ type: 'stream_event', event: { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'toolu_1', name: 'read', input: {} } }, session_id: sessionId });
+  emit({ type: 'stream_event', event: { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"filePath":"README.md"}' } }, session_id: sessionId });
+  emit({ type: 'stream_event', event: { type: 'content_block_stop', index: 0 }, session_id: sessionId });
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  emit({ type: 'stream_event', event: { type: 'content_block_start', index: 1, content_block: { type: 'text' } }, session_id: sessionId });
+  emit({ type: 'stream_event', event: { type: 'content_block_delta', index: 1, delta: { type: 'text_delta', text: 'fallback text after tool use' } }, session_id: sessionId });
+  emit({ type: 'result', subtype: 'success', is_error: false, stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 }, session_id: sessionId });
+  process.exit(0);
+}
+
 emit({ type: 'stream_event', event: { type: 'content_block_start', index: 0, content_block: { type: 'text' } }, session_id: sessionId });
 emit({ type: 'stream_event', event: { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } }, session_id: sessionId });
 emit({ type: 'stream_event', event: { type: 'content_block_stop', index: 0 }, session_id: sessionId });
