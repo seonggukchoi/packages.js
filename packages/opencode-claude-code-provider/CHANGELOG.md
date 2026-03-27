@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.8](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.7...@seonggukchoi/opencode-claude-code-provider@0.2.8) (2026-03-27)
+
+**Note:** Version bump only for package @seonggukchoi/opencode-claude-code-provider
+
 ## [0.2.7](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.6...@seonggukchoi/opencode-claude-code-provider@0.2.7) (2026-03-27)
 
 ### Bug Fixes

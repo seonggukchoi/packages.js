@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-plugin@0.2.1...@seonggukchoi/opencode-claude-code-plugin@0.2.2) (2026-03-27)
+
+**Note:** Version bump only for package @seonggukchoi/opencode-claude-code-plugin
+
 ## [0.2.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-plugin@0.2.0...@seonggukchoi/opencode-claude-code-plugin@0.2.1) (2026-03-27)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-claude-code-plugin
