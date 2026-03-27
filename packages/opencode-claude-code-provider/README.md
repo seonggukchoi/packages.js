@@ -21,7 +21,9 @@ Claude Code CLI based provider for OpenCode.
 
 - Non-streaming generation is intentionally not supported
 - `effort` is retained for config compatibility but is not sent to the CLI yet
-- `maxTurns` defaults to `1` because Claude does not execute tools directly in this mode
+- `maxTurns` is hardcoded to `1` because Claude does not execute tools directly in this mode
+- `loadClaudeMd` is hardcoded to `false` — CLAUDE.md loading is not supported
+- `permissionMode` is hardcoded to `bypassPermissions` (`--dangerously-skip-permissions`)
 - OpenCode custom providers still need a `models` block in config for model discovery
 - OpenCode 1.3.0 currently breaks direct `file:` package loading by appending `@latest`
 

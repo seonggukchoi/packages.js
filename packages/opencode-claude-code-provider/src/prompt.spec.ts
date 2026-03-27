@@ -1,12 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import { mkdtemp, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import { describe, expect, it } from 'vitest';
 
-import { buildPrompt, getLatestUserText, getSystem, loadClaudeMd } from './prompt.js';
+import { buildPrompt, getLatestUserText, getSystem } from './prompt.js';
 import { getResume } from './resume.js';
 
 import type { LanguageModelV2FilePart, LanguageModelV2Prompt } from '@ai-sdk/provider';
@@ -186,19 +182,5 @@ describe('prompt helpers', () => {
     ] as unknown as LanguageModelV2Prompt);
 
     expect(invalidJsonOutput).toContain('Assistant used the Read tool with input: "{"');
-  });
-
-  it('loads CLAUDE.md content only when enabled', async () => {
-    const cwd = await mkdtemp(join(tmpdir(), 'claude-md-'));
-    const filePath = join(cwd, 'CLAUDE.md');
-    await writeFile(filePath, '  Hello Claude  ');
-    const emptyPath = join(cwd, 'EMPTY.md');
-    await writeFile(emptyPath, '   ');
-
-    await expect(loadClaudeMd({ cwd, loadClaudeMd: false })).resolves.toBeUndefined();
-    await expect(loadClaudeMd({ cwd, loadClaudeMd: true })).resolves.toBe('Hello Claude');
-    await expect(loadClaudeMd({ cwd, explicitPath: filePath, loadClaudeMd: true })).resolves.toBe('Hello Claude');
-    await expect(loadClaudeMd({ cwd, explicitPath: emptyPath, loadClaudeMd: true })).resolves.toBeUndefined();
-    await expect(loadClaudeMd({ cwd, explicitPath: join(cwd, 'missing.md'), loadClaudeMd: true })).resolves.toBeUndefined();
   });
 });

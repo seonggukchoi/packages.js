@@ -6,11 +6,7 @@
       "name": "Claude Code",
       "npm": "@seonggukchoi/opencode-claude-code-provider",
       "options": {
-        "cwd": ".",
-        "loadClaudeMd": true,
-        "maxTurns": 1,
-        "pathToClaudeCodeExecutable": "claude",
-        "permissionMode": "bypassPermissions"
+        "pathToClaudeCodeExecutable": "claude"
       },
       "models": {
         "sonnet": {

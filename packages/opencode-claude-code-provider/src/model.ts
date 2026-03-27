@@ -2,9 +2,9 @@ import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 
 import { createStreamState, mapCliMessage, toLanguageModelUsage } from './messages.js';
-import { buildPrompt, getSystem, loadClaudeMd } from './prompt.js';
+import { buildPrompt, getSystem } from './prompt.js';
 import { getResume } from './resume.js';
-import { isRecord, normalizeProviderOptions } from './types.js';
+import { DEFAULT_MAX_TURNS, isRecord, normalizeProviderOptions } from './types.js';
 
 import type { ClaudeCodeProviderOptions, ProviderMetadataValue } from './types.js';
 import type { LanguageModelV2, LanguageModelV2CallOptions, LanguageModelV2StreamPart } from '@ai-sdk/provider';
@@ -42,17 +42,13 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       (options.providerOptions?.['claude-code'] ?? undefined) as Record<string, unknown> | undefined,
       this.defaults,
     );
+    const cwd = process.cwd();
     const resumeSessionId = shouldResumeSession(options.prompt) ? getResume(options.prompt, this.modelId) : undefined;
     const prompt = buildPrompt(options.prompt, { resumeSessionId });
-    const claudeMd = await loadClaudeMd({
-      cwd: normalizedOptions.cwd,
-      explicitPath: normalizedOptions.claudeMdPath,
-      loadClaudeMd: normalizedOptions.loadClaudeMd,
-    });
     const toolSystemPrompt = buildToolSystemPrompt(options.tools);
-    const system = [getSystem(options.prompt), claudeMd, toolSystemPrompt].filter((value): value is string => Boolean(value)).join('\n\n');
+    const system = [getSystem(options.prompt), toolSystemPrompt].filter((value): value is string => Boolean(value)).join('\n\n');
     const cliArgs = buildCliArgs({
-      maxTurns: normalizedOptions.maxTurns,
+      maxTurns: DEFAULT_MAX_TURNS,
       model: this.modelId,
       resumeSessionId,
       system,
@@ -68,7 +64,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
 
         try {
           child = spawn(normalizedOptions.pathToClaudeCodeExecutable, cliArgs, {
-            cwd: normalizedOptions.cwd,
+            cwd,
             env: normalizedOptions.env,
             stdio: ['pipe', 'pipe', 'pipe'],
           });
