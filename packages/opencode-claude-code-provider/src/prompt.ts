@@ -1,6 +1,3 @@
-import { access, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-
 import type {
   LanguageModelV2FilePart,
   LanguageModelV2Prompt,
@@ -68,24 +65,6 @@ export function getLatestUserText(prompt: LanguageModelV2Prompt): string | undef
   }
 
   return undefined;
-}
-
-export async function loadClaudeMd(options: { cwd: string; explicitPath?: string; loadClaudeMd?: boolean }): Promise<string | undefined> {
-  if (!options.loadClaudeMd) {
-    return undefined;
-  }
-
-  const filePath = options.explicitPath ?? join(options.cwd, 'CLAUDE.md');
-
-  try {
-    await access(filePath);
-    const content = await readFile(filePath, 'utf8');
-    const trimmed = content.trim();
-
-    return trimmed.length > 0 ? trimmed : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 function serializeConversation(prompt: LanguageModelV2Prompt): string {

@@ -82,7 +82,6 @@ await plugin['chat.params']?.(
 );
 
 assert.equal(normalized.options.maxTurns, 5);
-assert.equal(normalized.options.permissionMode, undefined);
 
 const model = provider.languageModel('claude-sonnet-4-6');
 const first = await model.doStream({
@@ -93,7 +92,6 @@ const first = await model.doStream({
   providerOptions: {
     'claude-code': {
       ...normalized.options,
-      cwd: fixtureDir,
     },
   },
   tools: [],
@@ -109,7 +107,6 @@ const toolCall = await model.doStream({
   prompt: [{ content: [{ text: 'please use read', type: 'text' }], role: 'user' }],
   providerOptions: {
     'claude-code': {
-      cwd: fixtureDir,
       pathToClaudeCodeExecutable: fakeClaudePath,
     },
   },
@@ -144,7 +141,6 @@ const resumed = await model.doStream({
   ],
   providerOptions: {
     'claude-code': {
-      cwd: fixtureDir,
       pathToClaudeCodeExecutable: fakeClaudePath,
     },
   },

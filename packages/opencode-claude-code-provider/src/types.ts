@@ -2,10 +2,8 @@ import type { LanguageModelV2FunctionTool, LanguageModelV2Prompt } from '@ai-sdk
 
 export const DEFAULT_MAX_TURNS = 1;
 export const DEFAULT_EXECUTABLE_PATH = 'claude';
-export const DEFAULT_PERMISSION_MODE = 'bypassPermissions' as const;
 
 export type ClaudeCodeEffort = 'low' | 'medium' | 'high' | 'max';
-export type ClaudeCodePermissionMode = 'acceptEdits' | 'bypassPermissions' | 'default' | 'dontAsk' | 'plan';
 
 export type ProviderMetadataValue = {
   cacheCreationInputTokens?: number;
@@ -24,25 +22,15 @@ export type OpenCodeToolLike = LanguageModelV2FunctionTool & {
 };
 
 export type ClaudeCodeProviderOptions = {
-  claudeMdPath?: string;
-  cwd?: string;
   env?: Record<string, string>;
   effort?: ClaudeCodeEffort;
-  loadClaudeMd?: boolean;
-  maxTurns?: number;
   pathToClaudeCodeExecutable?: string;
-  permissionMode?: ClaudeCodePermissionMode;
 };
 
 export type NormalizedClaudeCodeOptions = {
-  claudeMdPath?: string;
-  cwd: string;
   env: Record<string, string>;
   effort?: ClaudeCodeEffort;
-  loadClaudeMd: boolean;
-  maxTurns: number;
   pathToClaudeCodeExecutable: string;
-  permissionMode: ClaudeCodePermissionMode;
 };
 
 export function normalizeProviderOptions(
@@ -53,18 +41,13 @@ export function normalizeProviderOptions(
   const rawEnv = getStringRecord(raw.env);
 
   return {
-    claudeMdPath: getString(raw.claudeMdPath) ?? defaults.claudeMdPath,
-    cwd: getString(raw.cwd) ?? defaults.cwd ?? process.cwd(),
     env: {
       ...getProcessEnv(),
       ...(defaults.env ?? {}),
       ...(rawEnv ?? {}),
     },
     effort: getEffort(raw.effort) ?? defaults.effort,
-    loadClaudeMd: getBoolean(raw.loadClaudeMd) ?? defaults.loadClaudeMd ?? false,
-    maxTurns: getNumber(raw.maxTurns) ?? defaults.maxTurns ?? DEFAULT_MAX_TURNS,
     pathToClaudeCodeExecutable: getString(raw.pathToClaudeCodeExecutable) ?? defaults.pathToClaudeCodeExecutable ?? DEFAULT_EXECUTABLE_PATH,
-    permissionMode: getPermissionMode(raw.permissionMode) ?? defaults.permissionMode ?? DEFAULT_PERMISSION_MODE,
   };
 }
 
@@ -132,14 +115,6 @@ function getStringRecord(value: unknown): Record<string, string> | undefined {
 
 function getEffort(value: unknown): ClaudeCodeEffort | undefined {
   if (value === 'low' || value === 'medium' || value === 'high' || value === 'max') {
-    return value;
-  }
-
-  return undefined;
-}
-
-function getPermissionMode(value: unknown): ClaudeCodePermissionMode | undefined {
-  if (value === 'acceptEdits' || value === 'bypassPermissions' || value === 'default' || value === 'dontAsk' || value === 'plan') {
     return value;
   }
 
