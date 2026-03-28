@@ -737,4 +737,96 @@ describe('processTextBuffer', () => {
       { input: '{}', toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
     ] satisfies LanguageModelV2StreamPart[]);
   });
+
+  it('deep-parses stringified JSON array values in tool call arguments', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const stringifiedTodos = JSON.stringify([{ content: 'Write tests', priority: 'high', status: 'pending' }]);
+    const toolCallJson = JSON.stringify({
+      arguments: { todos: stringifiedTodos },
+      name: 'todowrite',
+    });
+
+    processTextBuffer({ id: 'text-stringified-array', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: `<tool_call>${toolCallJson}</tool_call>`,
+        id: 'text-stringified-array',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const expectedInput = '{"todos":[{"content":"Write tests","priority":"high","status":"pending"}]}';
+
+    expect(processTextBuffer({ id: 'text-stringified-array', type: 'text-end' }, streamState, textState)).toEqual([
+      { id: 'tool-call-1', toolName: 'todowrite', type: 'tool-input-start' },
+      { delta: expectedInput, id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: expectedInput, toolCallId: 'tool-call-1', toolName: 'todowrite', type: 'tool-call' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('deep-parses stringified JSON object values in tool call arguments', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const stringifiedConfig = JSON.stringify({ key: 'value', nested: true });
+    const toolCallJson = JSON.stringify({
+      arguments: { config: stringifiedConfig, name: 'test' },
+      name: 'sometool',
+    });
+
+    processTextBuffer({ id: 'text-stringified-object', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: `<tool_call>${toolCallJson}</tool_call>`,
+        id: 'text-stringified-object',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const expectedInput = '{"config":{"key":"value","nested":true},"name":"test"}';
+
+    expect(processTextBuffer({ id: 'text-stringified-object', type: 'text-end' }, streamState, textState)).toEqual([
+      { id: 'tool-call-1', toolName: 'sometool', type: 'tool-input-start' },
+      { delta: expectedInput, id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: expectedInput, toolCallId: 'tool-call-1', toolName: 'sometool', type: 'tool-call' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('does not deep-parse string values that are not valid JSON', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const toolCallJson = JSON.stringify({
+      arguments: { command: 'echo [hello world]', filePath: '/path/to/file' },
+      name: 'bash',
+    });
+
+    processTextBuffer({ id: 'text-non-json-string', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: `<tool_call>${toolCallJson}</tool_call>`,
+        id: 'text-non-json-string',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const expectedInput = '{"command":"echo [hello world]","filePath":"/path/to/file"}';
+
+    expect(processTextBuffer({ id: 'text-non-json-string', type: 'text-end' }, streamState, textState)).toEqual([
+      { id: 'tool-call-1', toolName: 'bash', type: 'tool-input-start' },
+      { delta: expectedInput, id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: expectedInput, toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
 });
