@@ -829,4 +829,155 @@ describe('processTextBuffer', () => {
       { input: expectedInput, toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
     ] satisfies LanguageModelV2StreamPart[]);
   });
+
+  it('coerces stringified number values in tool call arguments', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const toolCallJson = JSON.stringify({
+      arguments: { command: 'pnpm test', timeout: '60000' },
+      name: 'bash',
+    });
+
+    processTextBuffer({ id: 'text-number-coerce', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: `<tool_call>${toolCallJson}</tool_call>`,
+        id: 'text-number-coerce',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const expectedInput = '{"command":"pnpm test","timeout":60000}';
+
+    expect(processTextBuffer({ id: 'text-number-coerce', type: 'text-end' }, streamState, textState)).toEqual([
+      { id: 'tool-call-1', toolName: 'bash', type: 'tool-input-start' },
+      { delta: expectedInput, id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: expectedInput, toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('coerces stringified boolean values in tool call arguments', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const toolCallJson = JSON.stringify({
+      arguments: { includeSpamTrash: 'false', verbose: 'true' },
+      name: 'search',
+    });
+
+    processTextBuffer({ id: 'text-bool-coerce', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: `<tool_call>${toolCallJson}</tool_call>`,
+        id: 'text-bool-coerce',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const expectedInput = '{"includeSpamTrash":false,"verbose":true}';
+
+    expect(processTextBuffer({ id: 'text-bool-coerce', type: 'text-end' }, streamState, textState)).toEqual([
+      { id: 'tool-call-1', toolName: 'search', type: 'tool-input-start' },
+      { delta: expectedInput, id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: expectedInput, toolCallId: 'tool-call-1', toolName: 'search', type: 'tool-call' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('coerces stringified null values in tool call arguments', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const toolCallJson = JSON.stringify({
+      arguments: { filter: 'null', query: 'test' },
+      name: 'search',
+    });
+
+    processTextBuffer({ id: 'text-null-coerce', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: `<tool_call>${toolCallJson}</tool_call>`,
+        id: 'text-null-coerce',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const expectedInput = '{"filter":null,"query":"test"}';
+
+    expect(processTextBuffer({ id: 'text-null-coerce', type: 'text-end' }, streamState, textState)).toEqual([
+      { id: 'tool-call-1', toolName: 'search', type: 'tool-input-start' },
+      { delta: expectedInput, id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: expectedInput, toolCallId: 'tool-call-1', toolName: 'search', type: 'tool-call' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('keeps malformed JSON-like strings as-is when they fail to parse', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const toolCallJson = JSON.stringify({
+      arguments: { data: '[not valid json]', name: 'test' },
+      name: 'sometool',
+    });
+
+    processTextBuffer({ id: 'text-malformed-json', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: `<tool_call>${toolCallJson}</tool_call>`,
+        id: 'text-malformed-json',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const expectedInput = '{"data":"[not valid json]","name":"test"}';
+
+    expect(processTextBuffer({ id: 'text-malformed-json', type: 'text-end' }, streamState, textState)).toEqual([
+      { id: 'tool-call-1', toolName: 'sometool', type: 'tool-input-start' },
+      { delta: expectedInput, id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: expectedInput, toolCallId: 'tool-call-1', toolName: 'sometool', type: 'tool-call' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('deep-parses rest-entries when arguments key is absent', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const stringifiedTodos = JSON.stringify([{ content: 'Task 1', priority: 'high', status: 'pending' }]);
+    const toolCallJson = JSON.stringify({
+      name: 'todowrite',
+      todos: stringifiedTodos,
+    });
+
+    processTextBuffer({ id: 'text-rest-entries', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: `<tool_call>${toolCallJson}</tool_call>`,
+        id: 'text-rest-entries',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const expectedInput = '{"todos":[{"content":"Task 1","priority":"high","status":"pending"}]}';
+
+    expect(processTextBuffer({ id: 'text-rest-entries', type: 'text-end' }, streamState, textState)).toEqual([
+      { id: 'tool-call-1', toolName: 'todowrite', type: 'tool-input-start' },
+      { delta: expectedInput, id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: expectedInput, toolCallId: 'tool-call-1', toolName: 'todowrite', type: 'tool-call' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
 });

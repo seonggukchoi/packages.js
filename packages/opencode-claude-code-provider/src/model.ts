@@ -145,6 +145,7 @@ export function buildToolSystemPrompt(tools: unknown): string | undefined {
     'When a tool is required, output exactly one tool call wrapped in <tool_call> and </tool_call>.',
     'Inside the tag, output strict JSON with the shape {"name":"tool_name","arguments":{}}.',
     'String and scalar parameters should be specified as is, while lists and objects should use JSON format.',
+    'CRITICAL: Do NOT stringify JSON values. Array parameters must be actual JSON arrays, not strings containing JSON (use "items":[1,2,3] NOT "items":"[1,2,3]"). Number parameters must be actual JSON numbers, not strings (use "count":5 NOT "count":"5").',
     'If you decide to call a tool, the first non-whitespace character of your response must be < and the response must end immediately after </tool_call>.',
     'Do not include any prose before or after the tool call.',
     'Do not say that you will inspect, check, search, analyze, or look first before the tool call.',
@@ -516,7 +517,7 @@ function parseToolCallPayload(rawToolCall: string): { arguments: Record<string, 
     const restEntries = Object.entries(parsed).filter(([key]) => key !== 'arguments' && key !== 'name');
 
     return {
-      arguments: Object.fromEntries(restEntries),
+      arguments: deepParseStringifiedJsonValues(Object.fromEntries(restEntries)),
       name: parsed.name,
     };
   } catch {
@@ -691,15 +692,11 @@ function deepParseStringifiedJsonValues(record: Record<string, unknown>): Record
 
   for (const [key, value] of Object.entries(record)) {
     if (typeof value === 'string') {
-      const trimmed = value.trim();
+      const coerced = coerceStringValue(value);
 
-      if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
-        try {
-          result[key] = JSON.parse(trimmed);
-          continue;
-        } catch {
-          // not valid JSON, keep as string
-        }
+      if (coerced !== undefined) {
+        result[key] = coerced;
+        continue;
       }
     }
 
@@ -707,6 +704,36 @@ function deepParseStringifiedJsonValues(record: Record<string, unknown>): Record
   }
 
   return result;
+}
+
+function coerceStringValue(value: string): unknown {
+  const trimmed = value.trim();
+
+  if (trimmed === 'true') {
+    return true;
+  }
+
+  if (trimmed === 'false') {
+    return false;
+  }
+
+  if (trimmed === 'null') {
+    return null;
+  }
+
+  if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return undefined;
+    }
+  }
+
+  if (/^-?\d+(\.\d+)?$/u.test(trimmed) && trimmed.length <= 20) {
+    return Number(trimmed);
+  }
+
+  return undefined;
 }
 
 function normalizeToolArguments(value: unknown): Record<string, unknown> | undefined {
