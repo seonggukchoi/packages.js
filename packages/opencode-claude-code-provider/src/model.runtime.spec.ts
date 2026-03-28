@@ -324,7 +324,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     ]);
   });
 
-  it('omits resume for assistant messages that include tool results', async () => {
+  it('resumes session for assistant messages that include tool results', async () => {
     const { child, interfaceHandle } = createMockChild({ lines: [] });
     spawnMock.mockReturnValue(child);
     createInterfaceMock.mockReturnValue(interfaceHandle);
@@ -353,8 +353,8 @@ describe('ClaudeCodeLanguageModel runtime', () => {
 
     await readAllParts(result.stream);
 
-    expect(result.request.body.args).not.toContain('--resume');
-    expect(result.request.body).not.toHaveProperty('resume');
+    expect(result.request.body.args).toContain('--resume');
+    expect(result.request.body.resume).toBe('sess_assistant_tool_result');
   });
 
   it('emits an error finish when stdout is unavailable', async () => {
