@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.3.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.3.0...@seonggukchoi/opencode-claude-code-provider@0.3.1) (2026-03-28)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** normalize tool-call input across all stream paths ([a11774b](https://github.com/seonggukchoi/packages.js/commit/a11774b72fcc50a7a756b3f9d2795d9158773ad8))
+
 # [0.3.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.11...@seonggukchoi/opencode-claude-code-provider@0.3.0) (2026-03-28)
 
 ### Features
