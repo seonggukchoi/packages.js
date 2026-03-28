@@ -1062,6 +1062,33 @@ describe('processTextBuffer', () => {
     ] satisfies LanguageModelV2StreamPart[]);
   });
 
+  it('passes through native tool-call parts with unparseable input unchanged', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const input = 'not-valid-json';
+
+    const result = processTextBuffer(
+      {
+        input,
+        toolCallId: 'tool-call-1',
+        toolName: 'broken',
+        type: 'tool-call',
+      },
+      streamState,
+      textState,
+    );
+
+    expect(result).toEqual([
+      {
+        input,
+        toolCallId: 'tool-call-1',
+        toolName: 'broken',
+        type: 'tool-call',
+      },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
   it('normalizes stringified boolean and number values in native tool-call stream parts', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
