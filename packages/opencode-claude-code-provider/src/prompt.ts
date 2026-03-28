@@ -18,7 +18,7 @@ export function getSystem(prompt: LanguageModelV2Prompt): string {
 
 export function buildPrompt(prompt: LanguageModelV2Prompt, options: { resumeSessionId?: string } = {}): string {
   if (options.resumeSessionId) {
-    return getLatestUserText(prompt) ?? serializeConversation(prompt.slice(-1));
+    return buildResumePrompt(prompt);
   }
 
   const sections: string[] = [];
@@ -65,6 +65,48 @@ export function getLatestUserText(prompt: LanguageModelV2Prompt): string | undef
   }
 
   return undefined;
+}
+
+function buildResumePrompt(prompt: LanguageModelV2Prompt): string {
+  const resumeMessages = collectMessagesForResume(prompt);
+  const hasToolResults = resumeMessages.some(
+    (message) => message.role === 'tool' || (message.role === 'assistant' && message.content.some((part) => part.type === 'tool-result')),
+  );
+
+  if (hasToolResults) {
+    return serializeConversation(resumeMessages);
+  }
+
+  return getLatestUserText(prompt) ?? serializeConversation(prompt.slice(-1));
+}
+
+function collectMessagesForResume(prompt: LanguageModelV2Prompt): LanguageModelV2Prompt {
+  const messages: LanguageModelV2Prompt = [];
+
+  for (let index = prompt.length - 1; index >= 0; index -= 1) {
+    const message = prompt[index];
+
+    if (message.role === 'system') {
+      continue;
+    }
+
+    if (message.role === 'tool' || message.role === 'user') {
+      messages.unshift(message);
+      continue;
+    }
+
+    // Only 'assistant' role remains after system/tool/user checks above.
+    const hasToolResult = message.content.some((part) => part.type === 'tool-result');
+
+    if (hasToolResult) {
+      messages.unshift(message);
+      continue;
+    }
+
+    break;
+  }
+
+  return messages;
 }
 
 function serializeConversation(prompt: LanguageModelV2Prompt): string {

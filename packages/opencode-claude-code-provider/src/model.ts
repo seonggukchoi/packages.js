@@ -43,7 +43,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       this.defaults,
     );
     const cwd = process.cwd();
-    const resumeSessionId = shouldResumeSession(options.prompt) ? getResume(options.prompt, this.modelId) : undefined;
+    const resumeSessionId = getResume(options.prompt, this.modelId);
     const prompt = buildPrompt(options.prompt, { resumeSessionId });
     const toolSystemPrompt = buildToolSystemPrompt(options.tools);
     const system = [getSystem(options.prompt), toolSystemPrompt].filter((value): value is string => Boolean(value)).join('\n\n');
@@ -343,20 +343,6 @@ function buildCliArgs(options: { maxTurns: number; model: string; resumeSessionI
     ...(options.system ? ['--system-prompt', options.system] : []),
     ...(options.resumeSessionId ? ['--resume', options.resumeSessionId] : []),
   ];
-}
-
-function shouldResumeSession(prompt: LanguageModelV2CallOptions['prompt']): boolean {
-  return !prompt.some((message) => {
-    if (message.role === 'tool') {
-      return true;
-    }
-
-    if (message.role !== 'assistant') {
-      return false;
-    }
-
-    return message.content.some((part) => part.type === 'tool-result');
-  });
 }
 
 function buildProviderMetadata(modelId: string, sessionId: string | undefined, cacheCreationInputTokens: number | undefined) {
