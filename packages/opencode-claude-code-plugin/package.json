@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/opencode-claude-code-plugin",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "OpenCode plugin helpers for the Claude Code CLI provider",
   "author": "seonggukchoi",
   "license": "MIT",
