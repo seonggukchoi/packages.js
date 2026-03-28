@@ -95,16 +95,15 @@ function collectMessagesForResume(prompt: LanguageModelV2Prompt): LanguageModelV
       continue;
     }
 
-    if (message.role === 'assistant') {
-      const hasToolResult = message.content.some((part) => part.type === 'tool-result');
+    // Only 'assistant' role remains after system/tool/user checks above.
+    const hasToolResult = message.content.some((part) => part.type === 'tool-result');
 
-      if (hasToolResult) {
-        messages.unshift(message);
-        continue;
-      }
-
-      break;
+    if (hasToolResult) {
+      messages.unshift(message);
+      continue;
     }
+
+    break;
   }
 
   return messages;
