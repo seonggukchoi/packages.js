@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.10](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.9...@seonggukchoi/opencode-claude-code-provider@0.2.10) (2026-03-28)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** robust type coercion for stringified tool arguments ([3879a88](https://github.com/seonggukchoi/packages.js/commit/3879a88d96e24dbd2552555f247ce104d8fc7b3e))
+
 ## [0.2.9](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.8...@seonggukchoi/opencode-claude-code-provider@0.2.9) (2026-03-28)
 
 ### Bug Fixes
