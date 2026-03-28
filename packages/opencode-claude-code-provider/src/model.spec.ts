@@ -1006,4 +1006,113 @@ describe('processTextBuffer', () => {
       { input: expectedInput, toolCallId: 'tool-call-1', toolName: 'todowrite', type: 'tool-call' },
     ] satisfies LanguageModelV2StreamPart[]);
   });
+
+  it('normalizes stringified array values in native tool-call stream parts', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const stringifiedTodos = JSON.stringify([{ content: 'Task 1', priority: 'high', status: 'pending' }]);
+    const input = JSON.stringify({ todos: stringifiedTodos });
+
+    const result = processTextBuffer(
+      {
+        input,
+        toolCallId: 'tool-call-1',
+        toolName: 'todowrite',
+        type: 'tool-call',
+      },
+      streamState,
+      textState,
+    );
+
+    expect(result).toEqual([
+      {
+        input: '{"todos":[{"content":"Task 1","priority":"high","status":"pending"}]}',
+        toolCallId: 'tool-call-1',
+        toolName: 'todowrite',
+        type: 'tool-call',
+      },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('passes through native tool-call parts with correct types unchanged', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const input = '{"command":"ls","timeout":5000}';
+
+    const result = processTextBuffer(
+      {
+        input,
+        toolCallId: 'tool-call-1',
+        toolName: 'bash',
+        type: 'tool-call',
+      },
+      streamState,
+      textState,
+    );
+
+    expect(result).toEqual([
+      {
+        input,
+        toolCallId: 'tool-call-1',
+        toolName: 'bash',
+        type: 'tool-call',
+      },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('passes through native tool-call parts with unparseable input unchanged', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const input = 'not-valid-json';
+
+    const result = processTextBuffer(
+      {
+        input,
+        toolCallId: 'tool-call-1',
+        toolName: 'broken',
+        type: 'tool-call',
+      },
+      streamState,
+      textState,
+    );
+
+    expect(result).toEqual([
+      {
+        input,
+        toolCallId: 'tool-call-1',
+        toolName: 'broken',
+        type: 'tool-call',
+      },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('normalizes stringified boolean and number values in native tool-call stream parts', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    const input = JSON.stringify({ includeSpamTrash: 'false', maxResults: '20', q: 'test' });
+
+    const result = processTextBuffer(
+      {
+        input,
+        toolCallId: 'tool-call-1',
+        toolName: 'search',
+        type: 'tool-call',
+      },
+      streamState,
+      textState,
+    );
+
+    expect(result).toEqual([
+      {
+        input: '{"includeSpamTrash":false,"maxResults":20,"q":"test"}',
+        toolCallId: 'tool-call-1',
+        toolName: 'search',
+        type: 'tool-call',
+      },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
 });

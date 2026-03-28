@@ -270,7 +270,25 @@ export function processTextBuffer(
     return hadTextStart ? [{ id: part.id, type: 'text-end' }] : [];
   }
 
+  if (part.type === 'tool-call') {
+    return [normalizeToolCallPart(part)];
+  }
+
   return [part];
+}
+
+function normalizeToolCallPart(
+  part: Extract<LanguageModelV2StreamPart, { type: 'tool-call' }>,
+): Extract<LanguageModelV2StreamPart, { type: 'tool-call' }> {
+  const normalized = normalizeToolArguments(part.input);
+
+  if (!normalized) {
+    return part;
+  }
+
+  const input = safeJsonStringify(normalized);
+
+  return input !== part.input ? { ...part, input } : part;
 }
 
 function createTextDeltaParts(partId: string, text: string, textState: ToolCallTextState): LanguageModelV2StreamPart[] {
