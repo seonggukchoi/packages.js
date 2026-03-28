@@ -144,6 +144,7 @@ export function buildToolSystemPrompt(tools: unknown): string | undefined {
     'You may use tools provided by the client.',
     'When a tool is required, output exactly one tool call wrapped in <tool_call> and </tool_call>.',
     'Inside the tag, output strict JSON with the shape {"name":"tool_name","arguments":{}}.',
+    'String and scalar parameters should be specified as is, while lists and objects should use JSON format.',
     'If you decide to call a tool, the first non-whitespace character of your response must be < and the response must end immediately after </tool_call>.',
     'Do not include any prose before or after the tool call.',
     'Do not say that you will inspect, check, search, analyze, or look first before the tool call.',
@@ -685,9 +686,32 @@ function parseLooseValue(value: string): unknown {
   }
 }
 
+function deepParseStringifiedJsonValues(record: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(record)) {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+
+      if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+        try {
+          result[key] = JSON.parse(trimmed);
+          continue;
+        } catch {
+          // not valid JSON, keep as string
+        }
+      }
+    }
+
+    result[key] = value;
+  }
+
+  return result;
+}
+
 function normalizeToolArguments(value: unknown): Record<string, unknown> | undefined {
   if (isRecord(value)) {
-    return value;
+    return deepParseStringifiedJsonValues(value);
   }
 
   if (typeof value !== 'string') {
@@ -696,7 +720,7 @@ function normalizeToolArguments(value: unknown): Record<string, unknown> | undef
 
   try {
     const parsed = JSON.parse(value);
-    return isRecord(parsed) ? parsed : undefined;
+    return isRecord(parsed) ? deepParseStringifiedJsonValues(parsed) : undefined;
   } catch {
     return undefined;
   }
