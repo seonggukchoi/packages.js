@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.11](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.10...@seonggukchoi/opencode-claude-code-provider@0.2.11) (2026-03-28)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** resume session after tool call results ([b84111a](https://github.com/seonggukchoi/packages.js/commit/b84111a370d4fecd7e71ee656a1a37d519e798a2))
+- **opencode-claude-code-provider:** satisfy branch coverage threshold ([9cbc9fc](https://github.com/seonggukchoi/packages.js/commit/9cbc9fca8fa3e4f87a55ae6c5272474d33dda66f))
+
 ## [0.2.10](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.9...@seonggukchoi/opencode-claude-code-provider@0.2.10) (2026-03-28)
 
 ### Bug Fixes
