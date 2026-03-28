@@ -212,7 +212,7 @@ describe('processTextBuffer', () => {
     ] satisfies LanguageModelV2StreamPart[]);
   });
 
-  it('keeps only the first valid tool call when multiple calls are emitted', () => {
+  it('extracts all valid tool calls when multiple calls are emitted', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
 
@@ -241,6 +241,19 @@ describe('processTextBuffer', () => {
         input: '{"description":"코드베이스 구조 파악","prompt":"Analyze the repository","subagent_type":"explore"}',
         toolCallId: 'tool-call-1',
         toolName: 'task',
+        type: 'tool-call',
+      },
+      { id: 'tool-call-2', toolName: 'todowrite', type: 'tool-input-start' },
+      {
+        delta: '{"todos":[{"content":"코드베이스 구조 파악","status":"in_progress","priority":"medium"}]}',
+        id: 'tool-call-2',
+        type: 'tool-input-delta',
+      },
+      { id: 'tool-call-2', type: 'tool-input-end' },
+      {
+        input: '{"todos":[{"content":"코드베이스 구조 파악","status":"in_progress","priority":"medium"}]}',
+        toolCallId: 'tool-call-2',
+        toolName: 'todowrite',
         type: 'tool-call',
       },
     ] satisfies LanguageModelV2StreamPart[]);
@@ -430,7 +443,7 @@ describe('processTextBuffer', () => {
     ] satisfies LanguageModelV2StreamPart[]);
   });
 
-  it('parses legacy tool_use payloads and keeps only the first call', () => {
+  it('parses legacy tool_use and function_call payloads and extracts all calls', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
 
@@ -459,6 +472,19 @@ describe('processTextBuffer', () => {
         input: '{"todos":[{"content":"Write tests","status":"pending","priority":"high"}]}',
         toolCallId: 'tool-call-1',
         toolName: 'todowrite',
+        type: 'tool-call',
+      },
+      { id: 'tool-call-2', toolName: 'read', type: 'tool-input-start' },
+      {
+        delta: '{"filePath":"README.md"}',
+        id: 'tool-call-2',
+        type: 'tool-input-delta',
+      },
+      { id: 'tool-call-2', type: 'tool-input-end' },
+      {
+        input: '{"filePath":"README.md"}',
+        toolCallId: 'tool-call-2',
+        toolName: 'read',
         type: 'tool-call',
       },
     ] satisfies LanguageModelV2StreamPart[]);

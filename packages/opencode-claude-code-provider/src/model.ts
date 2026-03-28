@@ -142,18 +142,21 @@ export function buildToolSystemPrompt(tools: unknown): string | undefined {
 
   return [
     'You may use tools provided by the client.',
-    'When a tool is required, output exactly one tool call wrapped in <tool_call> and </tool_call>.',
+    'When a tool is required, wrap each tool call in <tool_call> and </tool_call>.',
     'Inside the tag, output strict JSON with the shape {"name":"tool_name","arguments":{}}.',
     'String and scalar parameters should be specified as is, while lists and objects should use JSON format.',
     'CRITICAL: Do NOT stringify JSON values. Array parameters must be actual JSON arrays, not strings containing JSON (use "items":[1,2,3] NOT "items":"[1,2,3]"). Number parameters must be actual JSON numbers, not strings (use "count":5 NOT "count":"5").',
-    'If you decide to call a tool, the first non-whitespace character of your response must be < and the response must end immediately after </tool_call>.',
+    'If you decide to call a tool, the first non-whitespace character of your response must be < and the response must end immediately after the last </tool_call>.',
     'Do not include any prose before or after the tool call.',
     'Do not say that you will inspect, check, search, analyze, or look first before the tool call.',
     'Do not use <function_calls>, <function_call>, <tool_use>, XML parameters, markdown fences, or natural-language explanations.',
     'Transcript markers such as User:, Assistant:, Tool:, [tool-call:*], and [tool-result:*] are internal context. Never echo them unless the user explicitly asks for the raw transcript.',
-    'After emitting a tool call, stop immediately.',
+    'After emitting tool call(s), stop immediately.',
     'Never hallucinate tool execution or tool results.',
-    'Call at most one tool per response.',
+    'You can call multiple tools in a single response. If you intend to call multiple tools and there are no dependencies between them, make all independent tool calls in parallel. Maximize use of parallel tool calls where possible to increase efficiency. However, if some tool calls depend on previous calls to inform dependent values, do NOT call these tools in parallel and instead call them sequentially. For instance, if one operation must complete before another starts, run these operations sequentially instead. Never use placeholders or guess missing parameters in tool calls.',
+    'If you intend to call multiple tools in a single response, output each tool call wrapped in its own <tool_call> and </tool_call> tags, one after another with no text between them. For example, if you need to read two files, send a single message with two tool_call blocks:',
+    '<tool_call>{"name":"read","arguments":{"filePath":"/path/to/file1.ts"}}</tool_call>',
+    '<tool_call>{"name":"read","arguments":{"filePath":"/path/to/file2.ts"}}</tool_call>',
     'Tool selection rules:',
     ...selectionRules,
     'Available tools:',
@@ -409,15 +412,22 @@ async function streamCliProcess(options: {
       const parts = mapCliMessage(message, streamState);
 
       for (const part of parts) {
-        for (const processedPart of processTextBuffer(part, streamState, textState)) {
+        const processedParts = processTextBuffer(part, streamState, textState);
+        let hasToolCall = false;
+
+        for (const processedPart of processedParts) {
           controller.enqueue(processedPart);
 
           if (processedPart.type === 'tool-call') {
-            streamState.finishReason = 'tool-calls';
-            allowEarlyExit = true;
-            child.kill();
-            return;
+            hasToolCall = true;
           }
+        }
+
+        if (hasToolCall) {
+          streamState.finishReason = 'tool-calls';
+          allowEarlyExit = true;
+          child.kill();
+          return;
         }
       }
     }
@@ -532,7 +542,7 @@ function extractToolCallParts(text: string, streamState: ReturnType<typeof creat
     return [];
   }
 
-  return createToolCallSequenceFromPayload(firstMatch.payload, streamState);
+  return matches.flatMap((match) => createToolCallSequenceFromPayload(match.payload, streamState));
 }
 
 function collectAllToolCallMatches(
