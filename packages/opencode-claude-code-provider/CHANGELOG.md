@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.3.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.11...@seonggukchoi/opencode-claude-code-provider@0.3.0) (2026-03-28)
+
+### Features
+
+- **opencode-claude-code-provider:** support parallel tool calls in a single response ([86dc092](https://github.com/seonggukchoi/packages.js/commit/86dc0924057aa0618d1f4c415e52cb8ab76a7b42))
+
 ## [0.2.11](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.2.10...@seonggukchoi/opencode-claude-code-provider@0.2.11) (2026-03-28)
 
 ### Bug Fixes

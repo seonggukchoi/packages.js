@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/opencode-claude-code-provider",
-  "version": "0.2.11",
+  "version": "0.3.0",
   "description": "OpenCode provider backed by Claude Code CLI",
   "author": "seonggukchoi",
   "license": "MIT",
