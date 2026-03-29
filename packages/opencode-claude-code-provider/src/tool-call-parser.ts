@@ -19,6 +19,7 @@ export function createToolCallTextState(): ToolCallTextState {
 
 const TAG_OPENERS = ['<tool_call', '<tool_use', '<function_call'] as const;
 const MAX_PARTIAL_TAG_LENGTH = '<function_call'.length;
+const TAG_CLOSERS = ['</tool_call>', '</tool_use>', '</function_call>', '</function_calls>', '</invoke>'] as const;
 
 export function processTextBuffer(
   part: LanguageModelV2StreamPart,
@@ -33,7 +34,26 @@ export function processTextBuffer(
   if (part.type === 'text-delta') {
     if (textState.foundToolCall) {
       const current = textState.buffers.get(part.id) ?? '';
-      textState.buffers.set(part.id, current + part.delta);
+      const combined = current + part.delta;
+      const closeEnd = findLastClosingTagEnd(combined);
+
+      if (closeEnd >= 0) {
+        const afterClose = combined.slice(closeEnd);
+
+        if (afterClose.trim().length > 0 && findTagOpenerIndex(afterClose) < 0 && findPartialTagSuffix(afterClose) === 0) {
+          const toolCallText = combined.slice(0, closeEnd);
+          const toolCallResult = consumeTextBuffer(toolCallText, streamState);
+
+          if (toolCallResult.hasToolCalls) {
+            textState.foundToolCall = false;
+            textState.buffers.delete(part.id);
+            textState.emittedTextStart.delete(part.id);
+            return toolCallResult.parts;
+          }
+        }
+      }
+
+      textState.buffers.set(part.id, combined);
       return [];
     }
 
@@ -182,6 +202,20 @@ function findPartialTagSuffix(text: string): number {
   return 0;
 }
 
+function findLastClosingTagEnd(text: string): number {
+  let latest = -1;
+
+  for (const tag of TAG_CLOSERS) {
+    const index = text.lastIndexOf(tag);
+
+    if (index >= 0) {
+      latest = Math.max(latest, index + tag.length);
+    }
+  }
+
+  return latest;
+}
+
 function isEligibleToolCallPrefix(prefix: string): boolean {
   if (prefix.trim().length === 0) {
     return true;
@@ -252,13 +286,7 @@ function extractToolCallParts(text: string, streamState: StreamState): LanguageM
 
   const firstMatch = matches[0];
   const leadingText = text.slice(0, firstMatch.index);
-  const lastMatch = matches[matches.length - 1] as (typeof matches)[number];
-  const trailingText = text.slice(lastMatch.end);
   const hasLeadingContext = leadingText.trim().length > 0;
-
-  if (trailingText.trim().length > 0) {
-    return [];
-  }
 
   if (hasLeadingContext && !leadingText.includes('\n')) {
     return [];
