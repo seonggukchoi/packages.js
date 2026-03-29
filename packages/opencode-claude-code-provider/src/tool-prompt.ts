@@ -46,7 +46,8 @@ export function buildToolSystemPrompt(tools: unknown): string | undefined {
     'If you intend to call multiple tools in a single response, output each tool call wrapped in its own <tool_call> and </tool_call> tags, one after another with no text between them. For example, if you need to read two files, send a single message with two tool_call blocks:',
     '<tool_call>{"name":"read","arguments":{"filePath":"/path/to/file1.ts"}}</tool_call>',
     '<tool_call>{"name":"read","arguments":{"filePath":"/path/to/file2.ts"}}</tool_call>',
-    ...(selectionRules.length > 0 ? ['Tool selection rules:', ...selectionRules] : []),
+    'Tool selection rules:',
+    ...selectionRules,
     'Available tools:',
     serializedTools,
   ].join('\n');
