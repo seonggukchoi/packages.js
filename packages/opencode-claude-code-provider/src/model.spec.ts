@@ -400,7 +400,7 @@ describe('processTextBuffer', () => {
     ] satisfies LanguageModelV2StreamPart[]);
   });
 
-  it('falls back to plain text when a tool call has trailing text', () => {
+  it('parses tool calls and discards trailing text after closing tag', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
 
@@ -416,13 +416,82 @@ describe('processTextBuffer', () => {
     );
 
     expect(processTextBuffer({ id: 'text-trailing', type: 'text-end' }, streamState, textState)).toEqual([
-      { id: 'text-trailing', type: 'text-start' },
+      { id: 'tool-call-1', toolName: 'bash', type: 'tool-input-start' },
+      { delta: '{"command":"ls"}', id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: '{"command":"ls"}', toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('emits tool calls when trailing text arrives in a separate delta after closing tag', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    processTextBuffer({ id: 'text-close-detect', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
       {
-        delta: '<tool_call>{"name":"bash","arguments":{"command":"ls"}}</tool_call> trailing text',
-        id: 'text-trailing',
+        delta: '<tool_call>{"name":"bash","arguments":{"command":"ls"}}</tool_call>',
+        id: 'text-close-detect',
         type: 'text-delta',
       },
-      { id: 'text-trailing', type: 'text-end' },
+      streamState,
+      textState,
+    );
+
+    expect(processTextBuffer({ delta: ' Done!', id: 'text-close-detect', type: 'text-delta' }, streamState, textState)).toEqual([
+      { id: 'tool-call-1', toolName: 'bash', type: 'tool-input-start' },
+      { delta: '{"command":"ls"}', id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: '{"command":"ls"}', toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('continues buffering when closing tag with trailing text has malformed payload', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    processTextBuffer({ id: 'text-malformed-trail', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: '<tool_call>not-json</tool_call>',
+        id: 'text-malformed-trail',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    expect(processTextBuffer({ delta: ' Done!', id: 'text-malformed-trail', type: 'text-delta' }, streamState, textState)).toEqual([]);
+
+    expect(processTextBuffer({ id: 'text-malformed-trail', type: 'text-end' }, streamState, textState)).toEqual([
+      { id: 'text-malformed-trail', type: 'text-start' },
+      { delta: '<tool_call>not-json</tool_call> Done!', id: 'text-malformed-trail', type: 'text-delta' },
+      { id: 'text-malformed-trail', type: 'text-end' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('handles closing tag split across deltas with trailing text', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    processTextBuffer({ id: 'text-split-close', type: 'text-start' }, streamState, textState);
+    expect(
+      processTextBuffer(
+        {
+          delta: '<tool_call>{"name":"bash","arguments":{"command":"pwd"}}</tool_',
+          id: 'text-split-close',
+          type: 'text-delta',
+        },
+        streamState,
+        textState,
+      ),
+    ).toEqual([]);
+
+    expect(processTextBuffer({ delta: 'call> Done!', id: 'text-split-close', type: 'text-delta' }, streamState, textState)).toEqual([
+      { id: 'tool-call-1', toolName: 'bash', type: 'tool-input-start' },
+      { delta: '{"command":"pwd"}', id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: '{"command":"pwd"}', toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
     ] satisfies LanguageModelV2StreamPart[]);
   });
 
