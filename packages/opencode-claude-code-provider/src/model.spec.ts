@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createStreamState } from './messages.js';
-import { buildToolSystemPrompt, createToolCallTextState, processTextBuffer } from './model.js';
+import { createToolCallTextState, processTextBuffer } from './tool-call-parser.js';
+import { buildToolSystemPrompt } from './tool-prompt.js';
 
 import type { LanguageModelV2StreamPart } from '@ai-sdk/provider';
 
@@ -1114,5 +1115,38 @@ describe('processTextBuffer', () => {
         type: 'tool-call',
       },
     ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('falls back to empty JSON when stringify throws during tool-call normalization', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    vi.spyOn(JSON, 'stringify').mockImplementation(() => {
+      throw new Error('stringify failure');
+    });
+
+    try {
+      const result = processTextBuffer(
+        {
+          input: '{"key":"value"}',
+          toolCallId: 'tool-call-1',
+          toolName: 'test',
+          type: 'tool-call',
+        },
+        streamState,
+        textState,
+      );
+
+      expect(result).toEqual([
+        {
+          input: '{}',
+          toolCallId: 'tool-call-1',
+          toolName: 'test',
+          type: 'tool-call',
+        },
+      ] satisfies LanguageModelV2StreamPart[]);
+    } finally {
+      vi.restoreAllMocks();
+    }
   });
 });
