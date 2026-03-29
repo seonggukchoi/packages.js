@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { createStreamState } from './messages.js';
-import { buildToolSystemPrompt, createToolCallTextState, processTextBuffer } from './model.js';
+import { createToolCallTextState, processTextBuffer } from './tool-call-parser.js';
+import { buildToolSystemPrompt } from './tool-prompt.js';
 
 import type { LanguageModelV2StreamPart } from '@ai-sdk/provider';
 

@@ -1,4 +1,4 @@
-import { isRecord } from './types.js';
+import { getNumber, getRecord, isRecord } from './types.js';
 
 import type { LanguageModelV2FinishReason, LanguageModelV2StreamPart, LanguageModelV2Usage } from '@ai-sdk/provider';
 
@@ -341,14 +341,6 @@ function safeJsonStringify(value: Record<string, unknown>): string {
   } catch {
     return '{}';
   }
-}
-
-function getNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
-
-function getRecord(value: unknown): Record<string, unknown> | undefined {
-  return isRecord(value) ? value : undefined;
 }
 
 function getString(value: unknown): string | undefined {
