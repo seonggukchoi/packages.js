@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.3.3](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.3.2...@seonggukchoi/opencode-claude-code-provider@0.3.3) (2026-03-29)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** detect closing tags to prevent silent tool call drops ([e7a32b6](https://github.com/seonggukchoi/packages.js/commit/e7a32b6bf49ba1dd12de1e5d4eea79937f47197c))
+
 ## [0.3.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.3.1...@seonggukchoi/opencode-claude-code-provider@0.3.2) (2026-03-29)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-claude-code-provider
