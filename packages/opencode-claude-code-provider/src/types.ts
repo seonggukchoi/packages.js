@@ -3,8 +3,6 @@ import type { LanguageModelV2FunctionTool, LanguageModelV2Prompt } from '@ai-sdk
 export const DEFAULT_MAX_TURNS = 1;
 export const DEFAULT_EXECUTABLE_PATH = 'claude';
 
-export type ClaudeCodeEffort = 'low' | 'medium' | 'high' | 'max';
-
 export type ProviderMetadataValue = {
   cacheCreationInputTokens?: number;
   modelId?: string;
@@ -23,13 +21,11 @@ export type OpenCodeToolLike = LanguageModelV2FunctionTool & {
 
 export type ClaudeCodeProviderOptions = {
   env?: Record<string, string>;
-  effort?: ClaudeCodeEffort;
   pathToClaudeCodeExecutable?: string;
 };
 
 export type NormalizedClaudeCodeOptions = {
   env: Record<string, string>;
-  effort?: ClaudeCodeEffort;
   pathToClaudeCodeExecutable: string;
 };
 
@@ -46,7 +42,6 @@ export function normalizeProviderOptions(
       ...(defaults.env ?? {}),
       ...(rawEnv ?? {}),
     },
-    effort: getEffort(raw.effort) ?? defaults.effort,
     pathToClaudeCodeExecutable: getString(raw.pathToClaudeCodeExecutable) ?? defaults.pathToClaudeCodeExecutable ?? DEFAULT_EXECUTABLE_PATH,
   };
 }
@@ -111,14 +106,6 @@ function getStringRecord(value: unknown): Record<string, string> | undefined {
   }
 
   return value;
-}
-
-function getEffort(value: unknown): ClaudeCodeEffort | undefined {
-  if (value === 'low' || value === 'medium' || value === 'high' || value === 'max') {
-    return value;
-  }
-
-  return undefined;
 }
 
 function getProcessEnv(): Record<string, string> {

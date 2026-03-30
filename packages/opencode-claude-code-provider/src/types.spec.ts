@@ -22,7 +22,6 @@ describe('normalizeProviderOptions', () => {
   it('applies raw option overrides', () => {
     const normalized = normalizeProviderOptions(
       {
-        effort: 'high',
         env: { API_URL: 'https://example.com' },
         pathToClaudeCodeExecutable: '/usr/local/bin/claude',
       },
@@ -32,7 +31,6 @@ describe('normalizeProviderOptions', () => {
     );
 
     expect(normalized).toMatchObject({
-      effort: 'high',
       pathToClaudeCodeExecutable: '/usr/local/bin/claude',
     });
     expect(normalized.env.BASE_URL).toBe('https://default.example.com');
