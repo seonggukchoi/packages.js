@@ -8,12 +8,19 @@ import { isRecord } from './types.js';
 import type { ToolCallTextState } from './tool-call-parser.js';
 import type { LanguageModelV2StreamPart } from '@ai-sdk/provider';
 
-export function buildCliArgs(options: { maxTurns: number; model: string; resumeSessionId?: string; system?: string }): string[] {
+export function buildCliArgs(options: {
+  effort?: string;
+  maxTurns: number;
+  model: string;
+  resumeSessionId?: string;
+  system?: string;
+}): string[] {
   return [
     '-p',
     '--verbose',
     '--tools',
     '',
+    '--strict-mcp-config',
     '--input-format',
     'text',
     '--output-format',
@@ -24,6 +31,7 @@ export function buildCliArgs(options: { maxTurns: number; model: string; resumeS
     '--model',
     options.model,
     '--dangerously-skip-permissions',
+    ...(options.effort ? ['--effort', options.effort] : []),
     ...(options.system ? ['--system-prompt', options.system] : []),
     ...(options.resumeSessionId ? ['--resume', options.resumeSessionId] : []),
   ];

@@ -5,7 +5,7 @@ Claude Code CLI based provider for OpenCode.
 ## What it does
 
 - Exposes a custom `LanguageModelV2` provider named `claude-code`
-- Runs `claude -p --verbose --input-format text --tools "" --output-format stream-json` as a pure LLM client
+- Runs `claude -p --verbose --input-format text --tools "" --strict-mcp-config --output-format stream-json` as a pure LLM client
 - Injects OpenCode tool schemas into the Claude system prompt and converts `<tool_call>` text blocks into AI SDK tool-call parts
 - Keeps all tool execution inside OpenCode, including OpenCode-only tools such as `todowrite` and `task`
 - Persists the Claude session id in `providerMetadata["claude-code"].sessionId`
@@ -20,7 +20,7 @@ Claude Code CLI based provider for OpenCode.
 ## Known limits
 
 - Non-streaming generation is intentionally not supported
-- `effort` is retained for config compatibility but is not sent to the CLI yet
+- `effort` is forwarded to the CLI via `--effort` when set in provider options
 - `maxTurns` is hardcoded to `1` because Claude does not execute tools directly in this mode
 - `loadClaudeMd` is hardcoded to `false` — CLAUDE.md loading is not supported
 - `permissionMode` is hardcoded to `bypassPermissions` (`--dangerously-skip-permissions`)
