@@ -9,30 +9,6 @@
         "pathToClaudeCodeExecutable": "claude"
       },
       "models": {
-        "sonnet": {
-          "id": "claude-sonnet-4-6",
-          "limit": {
-            "context": 1000000,
-            "output": 64000
-          },
-          "name": "Claude Sonnet",
-          "options": {
-            "effort": "medium"
-          },
-          "reasoning": true,
-          "tool_call": true,
-          "variants": {
-            "low": {
-              "effort": "low"
-            },
-            "medium": {
-              "effort": "medium"
-            },
-            "high": {
-              "effort": "high"
-            }
-          }
-        },
         "opus": {
           "id": "claude-opus-4-6",
           "limit": {
@@ -57,6 +33,30 @@
             },
             "max": {
               "effort": "max"
+            }
+          }
+        },
+        "sonnet": {
+          "id": "claude-sonnet-4-6",
+          "limit": {
+            "context": 1000000,
+            "output": 64000
+          },
+          "name": "Claude Sonnet",
+          "options": {
+            "effort": "medium"
+          },
+          "reasoning": true,
+          "tool_call": true,
+          "variants": {
+            "low": {
+              "effort": "low"
+            },
+            "medium": {
+              "effort": "medium"
+            },
+            "high": {
+              "effort": "high"
             }
           }
         },
