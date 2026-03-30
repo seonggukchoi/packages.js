@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.3.4](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.3.3...@seonggukchoi/opencode-claude-code-provider@0.3.4) (2026-03-30)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** remove deprecated bare cli flag ([0e25da2](https://github.com/seonggukchoi/packages.js/commit/0e25da2465ca2624efb1883ecb8491d9b79543a9))
+
 ## [0.3.3](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.3.2...@seonggukchoi/opencode-claude-code-provider@0.3.3) (2026-03-29)
 
 ### Bug Fixes
