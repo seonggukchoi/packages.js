@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.4.1...@seonggukchoi/opencode-claude-code-provider@0.4.2) (2026-03-30)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** remove --effort cli option ([bf2d48a](https://github.com/seonggukchoi/packages.js/commit/bf2d48ad9f158c0372838c09eecf113a1a6bc9c3))
+
 ## [0.4.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.4.0...@seonggukchoi/opencode-claude-code-provider@0.4.1) (2026-03-30)
 
 ### Bug Fixes
