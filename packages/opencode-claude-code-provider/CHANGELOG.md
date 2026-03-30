@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.4.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.3.7...@seonggukchoi/opencode-claude-code-provider@0.4.0) (2026-03-30)
+
+### Features
+
+- **opencode-claude-code-provider:** add --effort flag and --strict-mcp-config for MCP isolation ([c03f951](https://github.com/seonggukchoi/packages.js/commit/c03f95155f52ead5fbd95388ddf8cbb1c21cff6f))
+
 ## [0.3.7](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.3.6...@seonggukchoi/opencode-claude-code-provider@0.3.7) (2026-03-30)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-claude-code-provider
