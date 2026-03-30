@@ -38,7 +38,6 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
     const toolSystemPrompt = buildToolSystemPrompt(options.tools);
     const system = [getSystem(options.prompt), toolSystemPrompt].filter((value): value is string => Boolean(value)).join('\n\n');
     const cliArgs = buildCliArgs({
-      effort: normalizedOptions.effort,
       maxTurns: DEFAULT_MAX_TURNS,
       model: this.modelId,
       resumeSessionId,
