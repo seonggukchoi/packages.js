@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.4.0...@seonggukchoi/opencode-claude-code-provider@0.4.1) (2026-03-30)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** remove --strict-mcp-config flag causing infinite turn loop ([290d9b2](https://github.com/seonggukchoi/packages.js/commit/290d9b2c150be0382c08df61216b12ce8639539e))
+
 # [0.4.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.3.7...@seonggukchoi/opencode-claude-code-provider@0.4.0) (2026-03-30)
 
 ### Features
