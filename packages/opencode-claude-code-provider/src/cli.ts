@@ -20,7 +20,6 @@ export function buildCliArgs(options: {
     '--verbose',
     '--tools',
     '',
-    '--strict-mcp-config',
     '--input-format',
     'text',
     '--output-format',

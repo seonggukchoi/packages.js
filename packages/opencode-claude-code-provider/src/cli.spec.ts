@@ -14,12 +14,6 @@ describe('buildCliArgs', () => {
     expect(args).toContain('');
   });
 
-  it('includes --strict-mcp-config to isolate MCP tools', () => {
-    const args = buildCliArgs({ maxTurns: 1, model: 'sonnet' });
-
-    expect(args).toContain('--strict-mcp-config');
-  });
-
   it('includes --effort when effort option is provided', () => {
     const args = buildCliArgs({ effort: 'high', maxTurns: 1, model: 'sonnet' });
 
