@@ -1,25 +1,33 @@
+import { deepParseStringifiedJsonValues, normalizeToolArguments } from './tool-argument-normalizer.js';
 import { isRecord } from './types.js';
 
 import type { StreamState } from './messages.js';
 import type { LanguageModelV2StreamPart } from '@ai-sdk/provider';
 
+type ParserMode = 'buffering' | 'idle';
+
 export type ToolCallTextState = {
   buffers: Map<string, string>;
   emittedTextStart: Set<string>;
-  foundToolCall: boolean;
+  insideCodeFence: boolean;
+  mode: ParserMode;
+  trailingBackticks: number;
 };
 
 export function createToolCallTextState(): ToolCallTextState {
   return {
     buffers: new Map(),
     emittedTextStart: new Set(),
-    foundToolCall: false,
+    insideCodeFence: false,
+    mode: 'idle',
+    trailingBackticks: 0,
   };
 }
 
-const TAG_OPENERS = ['<tool_call', '<tool_use', '<function_call'] as const;
-const MAX_PARTIAL_TAG_LENGTH = '<function_call'.length;
-const TAG_CLOSERS = ['</tool_call>', '</tool_use>', '</function_call>', '</function_calls>', '</invoke>'] as const;
+const TAG_OPENER = '<tool_call';
+const OPEN_TAG = TAG_OPENER + '>';
+const CLOSE_TAG = '</' + TAG_OPENER.slice(1) + '>';
+const MAX_PARTIAL_TAG_LENGTH = TAG_OPENER.length;
 
 export function processTextBuffer(
   part: LanguageModelV2StreamPart,
@@ -32,107 +40,11 @@ export function processTextBuffer(
   }
 
   if (part.type === 'text-delta') {
-    if (textState.foundToolCall) {
-      const current = textState.buffers.get(part.id) ?? '';
-      const combined = current + part.delta;
-      const closeEnd = findLastClosingTagEnd(combined);
-
-      if (closeEnd >= 0) {
-        const afterClose = combined.slice(closeEnd);
-
-        if (afterClose.trim().length > 0 && findTagOpenerIndex(afterClose) < 0 && findPartialTagSuffix(afterClose) === 0) {
-          const toolCallText = combined.slice(0, closeEnd);
-          const toolCallResult = consumeTextBuffer(toolCallText, streamState);
-
-          if (toolCallResult.hasToolCalls) {
-            textState.foundToolCall = false;
-            textState.buffers.delete(part.id);
-            textState.emittedTextStart.delete(part.id);
-            return toolCallResult.parts;
-          }
-        }
-      }
-
-      textState.buffers.set(part.id, combined);
-      return [];
-    }
-
-    const current = textState.buffers.get(part.id) ?? '';
-    const combined = current + part.delta;
-    const tagIndex = findTagOpenerIndex(combined);
-
-    if (tagIndex >= 0 && isEligibleToolCallPrefix(combined.slice(0, tagIndex))) {
-      textState.foundToolCall = true;
-      textState.buffers.set(part.id, combined.slice(tagIndex));
-
-      const safeText = combined.slice(0, tagIndex);
-      const result = createTextDeltaParts(part.id, safeText, textState);
-
-      if (textState.emittedTextStart.has(part.id)) {
-        textState.emittedTextStart.delete(part.id);
-        result.push({ id: part.id, type: 'text-end' });
-      }
-
-      return result;
-    }
-
-    const partialSuffix = findPartialTagSuffix(combined);
-
-    if (partialSuffix > 0 && isEligibleToolCallPrefix(combined.slice(0, combined.length - partialSuffix))) {
-      const safeText = combined.slice(0, combined.length - partialSuffix);
-      textState.buffers.set(part.id, combined.slice(combined.length - partialSuffix));
-      return createTextDeltaParts(part.id, safeText, textState);
-    }
-
-    textState.buffers.set(part.id, '');
-    return createTextDeltaParts(part.id, combined, textState);
+    return textState.mode === 'buffering' ? handleBufferingDelta(part, streamState, textState) : handleIdleDelta(part, textState);
   }
 
   if (part.type === 'text-end') {
-    const current = textState.buffers.get(part.id) ?? '';
-    textState.buffers.delete(part.id);
-    const hadTextStart = textState.emittedTextStart.has(part.id);
-    textState.emittedTextStart.delete(part.id);
-
-    if (textState.foundToolCall) {
-      textState.foundToolCall = false;
-
-      const toolCallResult = consumeTextBuffer(current, streamState);
-
-      if (toolCallResult.hasToolCalls) {
-        return toolCallResult.parts;
-      }
-
-      if (current.length === 0) {
-        return hadTextStart ? [{ id: part.id, type: 'text-end' }] : [];
-      }
-
-      const result: LanguageModelV2StreamPart[] = [];
-
-      if (!hadTextStart) {
-        result.push({ id: part.id, type: 'text-start' });
-      }
-
-      result.push({ delta: current, id: part.id, type: 'text-delta' });
-      result.push({ id: part.id, type: 'text-end' });
-      return result;
-    }
-
-    textState.foundToolCall = false;
-
-    if (current.length > 0) {
-      const result: LanguageModelV2StreamPart[] = [];
-
-      if (!hadTextStart) {
-        result.push({ id: part.id, type: 'text-start' });
-      }
-
-      result.push({ delta: current, id: part.id, type: 'text-delta' });
-      result.push({ id: part.id, type: 'text-end' });
-      return result;
-    }
-
-    return hadTextStart ? [{ id: part.id, type: 'text-end' }] : [];
+    return handleTextEnd(part, streamState, textState);
   }
 
   if (part.type === 'tool-call') {
@@ -140,6 +52,121 @@ export function processTextBuffer(
   }
 
   return [part];
+}
+
+function handleIdleDelta(
+  part: Extract<LanguageModelV2StreamPart, { type: 'text-delta' }>,
+  textState: ToolCallTextState,
+): LanguageModelV2StreamPart[] {
+  const current = textState.buffers.get(part.id) ?? '';
+  const combined = current + part.delta;
+  const tagIndex = findTagOpenerIndex(combined);
+
+  if (tagIndex >= 0 && isEligibleToolCallPrefix(combined.slice(0, tagIndex))) {
+    if (wouldBeInsideCodeFence(combined.slice(0, tagIndex), textState)) {
+      textState.buffers.set(part.id, '');
+      return createTextDeltaParts(part.id, combined, textState);
+    }
+
+    textState.mode = 'buffering';
+    textState.buffers.set(part.id, combined.slice(tagIndex));
+
+    const safeText = combined.slice(0, tagIndex);
+    const result = createTextDeltaParts(part.id, safeText, textState);
+
+    if (textState.emittedTextStart.has(part.id)) {
+      textState.emittedTextStart.delete(part.id);
+      result.push({ id: part.id, type: 'text-end' });
+    }
+
+    return result;
+  }
+
+  const partialSuffix = findPartialTagSuffix(combined);
+
+  if (partialSuffix > 0 && isEligibleToolCallPrefix(combined.slice(0, combined.length - partialSuffix))) {
+    const safeText = combined.slice(0, combined.length - partialSuffix);
+    textState.buffers.set(part.id, combined.slice(combined.length - partialSuffix));
+    return createTextDeltaParts(part.id, safeText, textState);
+  }
+
+  textState.buffers.set(part.id, '');
+  return createTextDeltaParts(part.id, combined, textState);
+}
+
+function handleBufferingDelta(
+  part: Extract<LanguageModelV2StreamPart, { type: 'text-delta' }>,
+  streamState: StreamState,
+  textState: ToolCallTextState,
+): LanguageModelV2StreamPart[] {
+  const current = textState.buffers.get(part.id) ?? '';
+  const combined = current + part.delta;
+  const closeEnd = findLastClosingTagEnd(combined);
+
+  if (closeEnd >= 0) {
+    const afterClose = combined.slice(closeEnd);
+
+    if (afterClose.trim().length > 0 && findTagOpenerIndex(afterClose) < 0 && findPartialTagSuffix(afterClose) === 0) {
+      const toolCallText = combined.slice(0, closeEnd);
+      const toolCallResult = consumeTextBuffer(toolCallText, streamState);
+
+      if (toolCallResult.hasToolCalls) {
+        textState.mode = 'idle';
+        textState.buffers.delete(part.id);
+        textState.emittedTextStart.delete(part.id);
+        return toolCallResult.parts;
+      }
+    }
+  }
+
+  textState.buffers.set(part.id, combined);
+  return [];
+}
+
+function handleTextEnd(
+  part: Extract<LanguageModelV2StreamPart, { type: 'text-end' }>,
+  streamState: StreamState,
+  textState: ToolCallTextState,
+): LanguageModelV2StreamPart[] {
+  const current = textState.buffers.get(part.id) ?? '';
+  textState.buffers.delete(part.id);
+  const hadTextStart = textState.emittedTextStart.has(part.id);
+  textState.emittedTextStart.delete(part.id);
+  const wasBuffering = textState.mode === 'buffering';
+  textState.mode = 'idle';
+
+  if (wasBuffering) {
+    const toolCallResult = consumeTextBuffer(current, streamState);
+
+    if (toolCallResult.hasToolCalls) {
+      return toolCallResult.parts;
+    }
+  }
+
+  return flushRemainingBuffer(part.id, current, hadTextStart, textState);
+}
+
+function flushRemainingBuffer(
+  partId: string,
+  buffer: string,
+  hadTextStart: boolean,
+  textState: ToolCallTextState,
+): LanguageModelV2StreamPart[] {
+  if (buffer.length === 0) {
+    return hadTextStart ? [{ id: partId, type: 'text-end' }] : [];
+  }
+
+  updateCodeFenceState(buffer, textState);
+
+  const result: LanguageModelV2StreamPart[] = [];
+
+  if (!hadTextStart) {
+    result.push({ id: partId, type: 'text-start' });
+  }
+
+  result.push({ delta: buffer, id: partId, type: 'text-delta' });
+  result.push({ id: partId, type: 'text-end' });
+  return result;
 }
 
 function normalizeToolCallPart(
@@ -161,6 +188,8 @@ function createTextDeltaParts(partId: string, text: string, textState: ToolCallT
     return [];
   }
 
+  updateCodeFenceState(text, textState);
+
   const result: LanguageModelV2StreamPart[] = [];
 
   if (!textState.emittedTextStart.has(partId)) {
@@ -172,18 +201,49 @@ function createTextDeltaParts(partId: string, text: string, textState: ToolCallT
   return result;
 }
 
-function findTagOpenerIndex(text: string): number {
-  let earliest = -1;
+function updateCodeFenceState(text: string, state: ToolCallTextState): void {
+  let backticks = state.trailingBackticks;
 
-  for (const tag of TAG_OPENERS) {
-    const index = text.indexOf(tag);
+  for (const character of text) {
+    if (character === '`') {
+      backticks += 1;
+    } else {
+      if (backticks >= 3) {
+        state.insideCodeFence = !state.insideCodeFence;
+      }
 
-    if (index >= 0 && (earliest < 0 || index < earliest)) {
-      earliest = index;
+      backticks = 0;
     }
   }
 
-  return earliest;
+  state.trailingBackticks = backticks;
+}
+
+function wouldBeInsideCodeFence(text: string, state: ToolCallTextState): boolean {
+  let backticks = state.trailingBackticks;
+  let inside = state.insideCodeFence;
+
+  for (const character of text) {
+    if (character === '`') {
+      backticks += 1;
+    } else {
+      if (backticks >= 3) {
+        inside = !inside;
+      }
+
+      backticks = 0;
+    }
+  }
+
+  if (backticks >= 3) {
+    inside = !inside;
+  }
+
+  return inside;
+}
+
+function findTagOpenerIndex(text: string): number {
+  return text.indexOf(TAG_OPENER);
 }
 
 function findPartialTagSuffix(text: string): number {
@@ -192,10 +252,8 @@ function findPartialTagSuffix(text: string): number {
   for (let length = tailLength; length >= 1; length--) {
     const suffix = text.slice(text.length - length);
 
-    for (const tag of TAG_OPENERS) {
-      if (tag.startsWith(suffix)) {
-        return length;
-      }
+    if (TAG_OPENER.startsWith(suffix)) {
+      return length;
     }
   }
 
@@ -203,17 +261,9 @@ function findPartialTagSuffix(text: string): number {
 }
 
 function findLastClosingTagEnd(text: string): number {
-  let latest = -1;
+  const index = text.lastIndexOf(CLOSE_TAG);
 
-  for (const tag of TAG_CLOSERS) {
-    const index = text.lastIndexOf(tag);
-
-    if (index >= 0) {
-      latest = Math.max(latest, index + tag.length);
-    }
-  }
-
-  return latest;
+  return index >= 0 ? index + CLOSE_TAG.length : -1;
 }
 
 function isEligibleToolCallPrefix(prefix: string): boolean {
@@ -298,34 +348,94 @@ function extractToolCallParts(text: string, streamState: StreamState): LanguageM
 function collectAllToolCallMatches(
   text: string,
 ): Array<{ end: number; index: number; payload: { arguments: Record<string, unknown>; name: string } }> {
-  return [
-    ...collectToolCallMatches(text, /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g, (content) => parseToolCallPayload(content)),
-    ...collectToolCallMatches(text, /<tool_use>\s*([\s\S]*?)\s*<\/tool_use>/g, (content) => parseToolUsePayload(content)),
-    ...collectToolCallMatches(text, /<function_call>\s*([\s\S]*?)(?:<\/function_call>|<\/function_calls>|<\/invoke>)/g, (content) =>
-      parseFunctionCallPayload(content),
-    ),
-  ].sort((left, right) => left.index - right.index);
-}
-
-function collectToolCallMatches(
-  text: string,
-  pattern: RegExp,
-  parse: (content: string) => { arguments: Record<string, unknown>; name: string } | undefined,
-): Array<{ end: number; index: number; payload: { arguments: Record<string, unknown>; name: string } }> {
   const matches: Array<{ end: number; index: number; payload: { arguments: Record<string, unknown>; name: string } }> = [];
+  let searchFrom = 0;
 
-  for (const match of text.matchAll(pattern)) {
-    const content = match[1];
-    const index = /* v8 ignore next */ match.index ?? 0;
-    const fullMatch = match[0];
-    const payload = parse(content);
+  while (searchFrom < text.length) {
+    const tagStart = text.indexOf(OPEN_TAG, searchFrom);
+
+    if (tagStart < 0) {
+      break;
+    }
+
+    const contentStart = tagStart + OPEN_TAG.length;
+    const jsonEnd = findJsonObjectEnd(text, contentStart);
+
+    if (jsonEnd < 0) {
+      searchFrom = contentStart;
+      continue;
+    }
+
+    const jsonContent = text.slice(contentStart, jsonEnd).trim();
+    const closeIndex = text.indexOf(CLOSE_TAG, jsonEnd);
+
+    if (closeIndex < 0 || text.slice(jsonEnd, closeIndex).trim().length > 0) {
+      searchFrom = contentStart;
+      continue;
+    }
+
+    const matchEnd = closeIndex + CLOSE_TAG.length;
+    const payload = parseToolCallPayload(jsonContent);
 
     if (payload) {
-      matches.push({ end: index + fullMatch.length, index, payload });
+      matches.push({ end: matchEnd, index: tagStart, payload });
     }
+
+    searchFrom = matchEnd;
   }
 
   return matches;
+}
+
+function findJsonObjectEnd(text: string, from: number): number {
+  let position = from;
+
+  while (position < text.length && /\s/u.test(text[position])) {
+    position += 1;
+  }
+
+  if (position >= text.length || text[position] !== '{') {
+    return -1;
+  }
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = position; index < text.length; index += 1) {
+    const character = text[index];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (character === '\\' && inString) {
+      escaped = true;
+      continue;
+    }
+
+    if (character === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) {
+      continue;
+    }
+
+    if (character === '{') {
+      depth += 1;
+    } else if (character === '}') {
+      depth -= 1;
+
+      if (depth === 0) {
+        return index + 1;
+      }
+    }
+  }
+
+  return -1;
 }
 
 function createToolCallSequenceFromPayload(
@@ -355,158 +465,10 @@ function createToolCallSequenceFromPayload(
   ];
 }
 
-function parseToolUsePayload(content: string): { arguments: Record<string, unknown>; name: string } | undefined {
-  const name = getXmlTagValue(content, 'name');
-
-  if (!name) {
-    return undefined;
-  }
-
-  const argumentsText =
-    getXmlTagValue(content, 'arguments') ?? getXmlTagValue(content, 'parameters') ?? getNamedParameterValue(content, 'arguments');
-
-  const argumentsValue = normalizeToolArguments(argumentsText);
-
-  return {
-    arguments: argumentsValue ?? {},
-    name,
-  };
-}
-
-function parseFunctionCallPayload(content: string): { arguments: Record<string, unknown>; name: string } | undefined {
-  const name = getXmlTagValue(content, 'function_name') ?? getXmlTagValue(content, 'name');
-
-  if (!name) {
-    return undefined;
-  }
-
-  const structuredArguments =
-    normalizeToolArguments(getXmlTagValue(content, 'arguments')) ?? normalizeToolArguments(getXmlTagValue(content, 'parameters'));
-
-  if (structuredArguments) {
-    return {
-      arguments: structuredArguments,
-      name,
-    };
-  }
-
-  const parameterMatches = [...content.matchAll(/<parameter\s+name="([^"]+)">([\s\S]*?)<\/parameter>/g)];
-
-  if (parameterMatches.length === 0) {
-    return {
-      arguments: {},
-      name,
-    };
-  }
-
-  return {
-    arguments: Object.fromEntries(parameterMatches.map((match) => [match[1], parseLooseValue(match[2])])),
-    name,
-  };
-}
-
-function normalizeToolArguments(value: unknown): Record<string, unknown> | undefined {
-  if (isRecord(value)) {
-    return deepParseStringifiedJsonValues(value);
-  }
-
-  if (typeof value !== 'string') {
-    return undefined;
-  }
-
-  try {
-    const parsed = JSON.parse(value);
-    return isRecord(parsed) ? deepParseStringifiedJsonValues(parsed) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function deepParseStringifiedJsonValues(record: Record<string, unknown>): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-
-  for (const [key, value] of Object.entries(record)) {
-    if (typeof value === 'string') {
-      const coerced = coerceStringValue(value);
-
-      if (coerced !== undefined) {
-        result[key] = coerced;
-        continue;
-      }
-    }
-
-    result[key] = value;
-  }
-
-  return result;
-}
-
-function coerceStringValue(value: string): unknown {
-  const trimmed = value.trim();
-
-  if (trimmed === 'true') {
-    return true;
-  }
-
-  if (trimmed === 'false') {
-    return false;
-  }
-
-  if (trimmed === 'null') {
-    return null;
-  }
-
-  if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
-    try {
-      return JSON.parse(trimmed);
-    } catch {
-      return undefined;
-    }
-  }
-
-  if (/^-?\d+(\.\d+)?$/u.test(trimmed) && trimmed.length <= 20) {
-    return Number(trimmed);
-  }
-
-  return undefined;
-}
-
-function getNamedParameterValue(content: string, name: string): string | undefined {
-  const pattern = new RegExp(`<parameter\\s+name="${escapeRegExp(name)}">([\\s\\S]*?)<\\/parameter>`);
-  const match = content.match(pattern);
-
-  return match?.[1]?.trim();
-}
-
-function getXmlTagValue(content: string, tagName: string): string | undefined {
-  const pattern = new RegExp(`<${escapeRegExp(tagName)}>([\\s\\S]*?)(?:<\\/${escapeRegExp(tagName)}>|<\\/parameter>)`);
-  const match = content.match(pattern);
-
-  return match?.[1]?.trim();
-}
-
-function parseLooseValue(value: string): unknown {
-  const trimmed = value.trim();
-
-  if (trimmed.length === 0) {
-    return '';
-  }
-
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return trimmed;
-  }
-}
-
 function safeJsonStringify(value: unknown): string {
   try {
     return JSON.stringify(value);
   } catch {
     return '{}';
   }
-}
-
-function escapeRegExp(value: string): string {
-  return value.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
