@@ -14,6 +14,25 @@ describe('buildCliArgs', () => {
     expect(args).toContain('');
   });
 
+  it('includes --strict-mcp-config to isolate MCP tools', () => {
+    const args = buildCliArgs({ maxTurns: 1, model: 'sonnet' });
+
+    expect(args).toContain('--strict-mcp-config');
+  });
+
+  it('includes --effort when effort option is provided', () => {
+    const args = buildCliArgs({ effort: 'high', maxTurns: 1, model: 'sonnet' });
+
+    expect(args).toContain('--effort');
+    expect(args).toContain('high');
+  });
+
+  it('excludes --effort when effort option is omitted', () => {
+    const args = buildCliArgs({ maxTurns: 1, model: 'sonnet' });
+
+    expect(args).not.toContain('--effort');
+  });
+
   it('includes optional system prompt and resume session id', () => {
     const args = buildCliArgs({
       maxTurns: 5,
