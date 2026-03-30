@@ -347,7 +347,7 @@ describe('processTextBuffer', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
 
-    textState.foundToolCall = true;
+    textState.mode = 'buffering';
 
     expect(
       processTextBuffer({ delta: '<tool_call>{"name":"bash"}', id: 'text-missing-fragment', type: 'text-delta' }, streamState, textState),
@@ -499,7 +499,7 @@ describe('processTextBuffer', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
 
-    textState.foundToolCall = true;
+    textState.mode = 'buffering';
     textState.buffers.set('text-inline-leading', 'Before <tool_call>{"name":"bash","arguments":{"command":"ls"}}</tool_call>');
 
     expect(processTextBuffer({ id: 'text-inline-leading', type: 'text-end' }, streamState, textState)).toEqual([
@@ -513,215 +513,61 @@ describe('processTextBuffer', () => {
     ] satisfies LanguageModelV2StreamPart[]);
   });
 
-  it('parses legacy tool_use and function_call payloads and extracts all calls', () => {
+  it('correctly parses tool calls whose arguments contain closing tag literals', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
+    const closeTag = '<' + '/tool_call>';
+    const innerValue = 'expect(output).toContain(' + "'" + closeTag + "'" + ')';
+    const payload = JSON.stringify({ name: 'edit', arguments: { newString: innerValue } });
+    const fullText = '<tool_call>' + payload + closeTag;
 
-    processTextBuffer({ id: 'text-legacy', type: 'text-start' }, streamState, textState);
-    processTextBuffer(
-      {
-        delta:
-          '<tool_use><name>todowrite</name><arguments>{"todos":[{"content":"Write tests","status":"pending","priority":"high"}]}</arguments></tool_use>' +
-          '<function_call><function_name>read</function_name><parameter name="filePath">README.md</parameter></invoke>',
-        id: 'text-legacy',
-        type: 'text-delta',
-      },
-      streamState,
-      textState,
-    );
+    processTextBuffer({ id: 'text-nested-close', type: 'text-start' }, streamState, textState);
+    processTextBuffer({ delta: fullText, id: 'text-nested-close', type: 'text-delta' }, streamState, textState);
 
-    expect(processTextBuffer({ id: 'text-legacy', type: 'text-end' }, streamState, textState)).toEqual([
-      { id: 'tool-call-1', toolName: 'todowrite', type: 'tool-input-start' },
-      {
-        delta: '{"todos":[{"content":"Write tests","status":"pending","priority":"high"}]}',
-        id: 'tool-call-1',
-        type: 'tool-input-delta',
-      },
-      { id: 'tool-call-1', type: 'tool-input-end' },
-      {
-        input: '{"todos":[{"content":"Write tests","status":"pending","priority":"high"}]}',
-        toolCallId: 'tool-call-1',
-        toolName: 'todowrite',
-        type: 'tool-call',
-      },
-      { id: 'tool-call-2', toolName: 'read', type: 'tool-input-start' },
-      {
-        delta: '{"filePath":"README.md"}',
-        id: 'tool-call-2',
-        type: 'tool-input-delta',
-      },
-      { id: 'tool-call-2', type: 'tool-input-end' },
-      {
-        input: '{"filePath":"README.md"}',
-        toolCallId: 'tool-call-2',
-        toolName: 'read',
-        type: 'tool-call',
-      },
-    ] satisfies LanguageModelV2StreamPart[]);
+    const result = processTextBuffer({ id: 'text-nested-close', type: 'text-end' }, streamState, textState);
+    const toolCallPart = result.find((part) => part.type === 'tool-call');
+
+    expect(toolCallPart).toBeDefined();
+    expect(toolCallPart!.type).toBe('tool-call');
+    expect((toolCallPart as { toolName: string }).toolName).toBe('edit');
+
+    const parsedInput = JSON.parse((toolCallPart as { input: string }).input);
+    expect(parsedInput.newString).toBe(innerValue);
   });
 
-  it('parses tool_use payloads from named argument parameters', () => {
+  it('skips tool call parsing inside code fences', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
+    const openTag = '<tool_' + 'call>';
+    const closeTag = '</' + 'tool_call>';
+    const fencedContent = '```\n' + openTag + '{"name":"bash","arguments":{"command":"pwd"}}' + closeTag + '\n```';
 
-    processTextBuffer({ id: 'text-tool-use-parameter', type: 'text-start' }, streamState, textState);
-    processTextBuffer(
-      {
-        delta: '<tool_use><name>bash</name><parameter name="arguments">{"command":"pwd"}</parameter></tool_use>',
-        id: 'text-tool-use-parameter',
-        type: 'text-delta',
-      },
-      streamState,
-      textState,
-    );
+    processTextBuffer({ id: 'text-fenced', type: 'text-start' }, streamState, textState);
+    processTextBuffer({ delta: fencedContent, id: 'text-fenced', type: 'text-delta' }, streamState, textState);
 
-    expect(processTextBuffer({ id: 'text-tool-use-parameter', type: 'text-end' }, streamState, textState)).toEqual([
-      { id: 'tool-call-1', toolName: 'bash', type: 'tool-input-start' },
-      { delta: '{"command":"pwd"}', id: 'tool-call-1', type: 'tool-input-delta' },
-      { id: 'tool-call-1', type: 'tool-input-end' },
-      { input: '{"command":"pwd"}', toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
-    ] satisfies LanguageModelV2StreamPart[]);
+    const result = processTextBuffer({ id: 'text-fenced', type: 'text-end' }, streamState, textState);
+
+    expect(result.every((part) => part.type !== 'tool-call')).toBe(true);
   });
 
-  it('treats invalid json arguments in tool_use payloads as empty objects', () => {
+  it('skips tool call parsing when code fence spans multiple deltas', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
+    const openTag = '<tool_' + 'call>';
+    const closeTag = '</' + 'tool_call>';
 
-    processTextBuffer({ id: 'text-tool-use-invalid-json', type: 'text-start' }, streamState, textState);
+    processTextBuffer({ id: 'text-multi-fence', type: 'text-start' }, streamState, textState);
+    processTextBuffer({ delta: 'Example:\n```\n', id: 'text-multi-fence', type: 'text-delta' }, streamState, textState);
     processTextBuffer(
-      {
-        delta: '<tool_use><name>bash</name><arguments>{oops</arguments></tool_use>',
-        id: 'text-tool-use-invalid-json',
-        type: 'text-delta',
-      },
+      { delta: openTag + '{"name":"bash","arguments":{"command":"ls"}}' + closeTag, id: 'text-multi-fence', type: 'text-delta' },
       streamState,
       textState,
     );
+    processTextBuffer({ delta: '\n```\n', id: 'text-multi-fence', type: 'text-delta' }, streamState, textState);
 
-    expect(processTextBuffer({ id: 'text-tool-use-invalid-json', type: 'text-end' }, streamState, textState)).toEqual([
-      { id: 'tool-call-1', toolName: 'bash', type: 'tool-input-start' },
-      { delta: '{}', id: 'tool-call-1', type: 'tool-input-delta' },
-      { id: 'tool-call-1', type: 'tool-input-end' },
-      { input: '{}', toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
-    ] satisfies LanguageModelV2StreamPart[]);
-  });
+    const result = processTextBuffer({ id: 'text-multi-fence', type: 'text-end' }, streamState, textState);
 
-  it('falls back to plain text when tool_use payloads do not include a name', () => {
-    const streamState = createStreamState();
-    const textState = createToolCallTextState();
-
-    processTextBuffer({ id: 'text-tool-use-missing-name', type: 'text-start' }, streamState, textState);
-    processTextBuffer(
-      {
-        delta: '<tool_use><arguments>{"command":"pwd"}</arguments></tool_use>',
-        id: 'text-tool-use-missing-name',
-        type: 'text-delta',
-      },
-      streamState,
-      textState,
-    );
-
-    expect(processTextBuffer({ id: 'text-tool-use-missing-name', type: 'text-end' }, streamState, textState)).toEqual([
-      { id: 'text-tool-use-missing-name', type: 'text-start' },
-      { delta: '<tool_use><arguments>{"command":"pwd"}</arguments></tool_use>', id: 'text-tool-use-missing-name', type: 'text-delta' },
-      { id: 'text-tool-use-missing-name', type: 'text-end' },
-    ] satisfies LanguageModelV2StreamPart[]);
-  });
-
-  it('parses structured function_call arguments from name and arguments tags', () => {
-    const streamState = createStreamState();
-    const textState = createToolCallTextState();
-
-    processTextBuffer({ id: 'text-function-call-structured', type: 'text-start' }, streamState, textState);
-    processTextBuffer(
-      {
-        delta: '<function_call><name>read</name><arguments>{"filePath":"README.md"}</arguments></function_call>',
-        id: 'text-function-call-structured',
-        type: 'text-delta',
-      },
-      streamState,
-      textState,
-    );
-
-    expect(processTextBuffer({ id: 'text-function-call-structured', type: 'text-end' }, streamState, textState)).toEqual([
-      { id: 'tool-call-1', toolName: 'read', type: 'tool-input-start' },
-      { delta: '{"filePath":"README.md"}', id: 'tool-call-1', type: 'tool-input-delta' },
-      { id: 'tool-call-1', type: 'tool-input-end' },
-      { input: '{"filePath":"README.md"}', toolCallId: 'tool-call-1', toolName: 'read', type: 'tool-call' },
-    ] satisfies LanguageModelV2StreamPart[]);
-  });
-
-  it('parses loose function_call parameters including json values and empty strings', () => {
-    const streamState = createStreamState();
-    const textState = createToolCallTextState();
-
-    processTextBuffer({ id: 'text-function-call-loose', type: 'text-start' }, streamState, textState);
-    processTextBuffer(
-      {
-        delta:
-          '<function_call><function_name>task</function_name><parameter name="count">1</parameter><parameter name="note"></parameter></function_call>',
-        id: 'text-function-call-loose',
-        type: 'text-delta',
-      },
-      streamState,
-      textState,
-    );
-
-    expect(processTextBuffer({ id: 'text-function-call-loose', type: 'text-end' }, streamState, textState)).toEqual([
-      { id: 'tool-call-1', toolName: 'task', type: 'tool-input-start' },
-      { delta: '{"count":1,"note":""}', id: 'tool-call-1', type: 'tool-input-delta' },
-      { id: 'tool-call-1', type: 'tool-input-end' },
-      { input: '{"count":1,"note":""}', toolCallId: 'tool-call-1', toolName: 'task', type: 'tool-call' },
-    ] satisfies LanguageModelV2StreamPart[]);
-  });
-
-  it('defaults function_call arguments to an empty object when no parameters are present', () => {
-    const streamState = createStreamState();
-    const textState = createToolCallTextState();
-
-    processTextBuffer({ id: 'text-function-call-empty', type: 'text-start' }, streamState, textState);
-    processTextBuffer(
-      {
-        delta: '<function_call><function_name>read</function_name></function_call>',
-        id: 'text-function-call-empty',
-        type: 'text-delta',
-      },
-      streamState,
-      textState,
-    );
-
-    expect(processTextBuffer({ id: 'text-function-call-empty', type: 'text-end' }, streamState, textState)).toEqual([
-      { id: 'tool-call-1', toolName: 'read', type: 'tool-input-start' },
-      { delta: '{}', id: 'tool-call-1', type: 'tool-input-delta' },
-      { id: 'tool-call-1', type: 'tool-input-end' },
-      { input: '{}', toolCallId: 'tool-call-1', toolName: 'read', type: 'tool-call' },
-    ] satisfies LanguageModelV2StreamPart[]);
-  });
-
-  it('falls back to plain text when function_call payloads do not include a name', () => {
-    const streamState = createStreamState();
-    const textState = createToolCallTextState();
-
-    processTextBuffer({ id: 'text-function-call-missing-name', type: 'text-start' }, streamState, textState);
-    processTextBuffer(
-      {
-        delta: '<function_call><arguments>{"filePath":"README.md"}</arguments></function_call>',
-        id: 'text-function-call-missing-name',
-        type: 'text-delta',
-      },
-      streamState,
-      textState,
-    );
-
-    expect(processTextBuffer({ id: 'text-function-call-missing-name', type: 'text-end' }, streamState, textState)).toEqual([
-      { id: 'text-function-call-missing-name', type: 'text-start' },
-      {
-        delta: '<function_call><arguments>{"filePath":"README.md"}</arguments></function_call>',
-        id: 'text-function-call-missing-name',
-        type: 'text-delta',
-      },
-      { id: 'text-function-call-missing-name', type: 'text-end' },
-    ] satisfies LanguageModelV2StreamPart[]);
+    expect(result.every((part) => part.type !== 'tool-call')).toBe(true);
   });
 
   it('passes through non-text parts and flushes orphan text on end', () => {
@@ -778,7 +624,7 @@ describe('processTextBuffer', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
 
-    textState.foundToolCall = true;
+    textState.mode = 'buffering';
     textState.buffers.set('text-empty-tool', '');
     textState.emittedTextStart.add('text-empty-tool');
 
@@ -791,7 +637,7 @@ describe('processTextBuffer', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
 
-    textState.foundToolCall = true;
+    textState.mode = 'buffering';
     textState.buffers.set('text-empty-tool-no-start', '');
 
     expect(processTextBuffer({ id: 'text-empty-tool-no-start', type: 'text-end' }, streamState, textState)).toEqual([]);
@@ -801,36 +647,13 @@ describe('processTextBuffer', () => {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
 
-    textState.foundToolCall = true;
+    textState.mode = 'buffering';
     textState.buffers.set('text-malformed-open', '<tool_call>not-json</tool_call>');
     textState.emittedTextStart.add('text-malformed-open');
 
     expect(processTextBuffer({ id: 'text-malformed-open', type: 'text-end' }, streamState, textState)).toEqual([
       { delta: '<tool_call>not-json</tool_call>', id: 'text-malformed-open', type: 'text-delta' },
       { id: 'text-malformed-open', type: 'text-end' },
-    ] satisfies LanguageModelV2StreamPart[]);
-  });
-
-  it('treats non-object json arguments as empty objects', () => {
-    const streamState = createStreamState();
-    const textState = createToolCallTextState();
-
-    processTextBuffer({ id: 'text-non-object', type: 'text-start' }, streamState, textState);
-    processTextBuffer(
-      {
-        delta: '<tool_use><name>bash</name><arguments>1</arguments></tool_use>',
-        id: 'text-non-object',
-        type: 'text-delta',
-      },
-      streamState,
-      textState,
-    );
-
-    expect(processTextBuffer({ id: 'text-non-object', type: 'text-end' }, streamState, textState)).toEqual([
-      { id: 'tool-call-1', toolName: 'bash', type: 'tool-input-start' },
-      { delta: '{}', id: 'tool-call-1', type: 'tool-input-delta' },
-      { id: 'tool-call-1', type: 'tool-input-end' },
-      { input: '{}', toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
     ] satisfies LanguageModelV2StreamPart[]);
   });
 
