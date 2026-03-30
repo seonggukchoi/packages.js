@@ -1041,4 +1041,196 @@ describe('processTextBuffer', () => {
       vi.restoreAllMocks();
     }
   });
+
+  it('skips tool call when garbage exists between JSON end and closing tag', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    processTextBuffer({ id: 'text-garbage-between', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: '<tool_call>{"name":"bash","arguments":{"command":"ls"}}GARBAGE</tool_call>',
+        id: 'text-garbage-between',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const result = processTextBuffer({ id: 'text-garbage-between', type: 'text-end' }, streamState, textState);
+
+    expect(result).toEqual([
+      { id: 'text-garbage-between', type: 'text-start' },
+      {
+        delta: '<tool_call>{"name":"bash","arguments":{"command":"ls"}}GARBAGE</tool_call>',
+        id: 'text-garbage-between',
+        type: 'text-delta',
+      },
+      { id: 'text-garbage-between', type: 'text-end' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('parses tool call when whitespace exists before JSON object', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    processTextBuffer({ id: 'text-ws-before-json', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: '<tool_call>  \n  {"name":"bash","arguments":{"command":"ls"}}</tool_call>',
+        id: 'text-ws-before-json',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const result = processTextBuffer({ id: 'text-ws-before-json', type: 'text-end' }, streamState, textState);
+
+    expect(result).toEqual([
+      { id: 'tool-call-1', toolName: 'bash', type: 'tool-input-start' },
+      { delta: '{"command":"ls"}', id: 'tool-call-1', type: 'tool-input-delta' },
+      { id: 'tool-call-1', type: 'tool-input-end' },
+      { input: '{"command":"ls"}', toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('treats unclosed JSON object as plain text', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    processTextBuffer({ id: 'text-unclosed-json', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: '<tool_call>{"name":"bash","arguments":{"command":"ls"}</tool_call>',
+        id: 'text-unclosed-json',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const result = processTextBuffer({ id: 'text-unclosed-json', type: 'text-end' }, streamState, textState);
+
+    expect(result).toEqual([
+      { id: 'text-unclosed-json', type: 'text-start' },
+      {
+        delta: '<tool_call>{"name":"bash","arguments":{"command":"ls"}</tool_call>',
+        id: 'text-unclosed-json',
+        type: 'text-delta',
+      },
+      { id: 'text-unclosed-json', type: 'text-end' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('skips tool call parsing when opener follows trailing backticks', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    processTextBuffer({ id: 'text-trailing-backticks', type: 'text-start' }, streamState, textState);
+    expect(
+      processTextBuffer(
+        {
+          delta: '```<tool_call>{"name":"bash","arguments":{"command":"ls"}}</tool_call>',
+          id: 'text-trailing-backticks',
+          type: 'text-delta',
+        },
+        streamState,
+        textState,
+      ),
+    ).toEqual([
+      { id: 'text-trailing-backticks', type: 'text-start' },
+      {
+        delta: '```<tool_call>{"name":"bash","arguments":{"command":"ls"}}</tool_call>',
+        id: 'text-trailing-backticks',
+        type: 'text-delta',
+      },
+    ] satisfies LanguageModelV2StreamPart[]);
+
+    const result = processTextBuffer({ id: 'text-trailing-backticks', type: 'text-end' }, streamState, textState);
+
+    expect(result).toEqual([{ id: 'text-trailing-backticks', type: 'text-end' }] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('skips tool call parsing when a prior delta ends with triple backticks', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    processTextBuffer({ id: 'text-split-trailing-backticks', type: 'text-start' }, streamState, textState);
+
+    expect(processTextBuffer({ delta: '```', id: 'text-split-trailing-backticks', type: 'text-delta' }, streamState, textState)).toEqual([
+      { id: 'text-split-trailing-backticks', type: 'text-start' },
+      { delta: '```', id: 'text-split-trailing-backticks', type: 'text-delta' },
+    ] satisfies LanguageModelV2StreamPart[]);
+
+    expect(
+      processTextBuffer(
+        {
+          delta: '<tool_call>{"name":"bash","arguments":{"command":"ls"}}</tool_call>',
+          id: 'text-split-trailing-backticks',
+          type: 'text-delta',
+        },
+        streamState,
+        textState,
+      ),
+    ).toEqual([
+      {
+        delta: '<tool_call>{"name":"bash","arguments":{"command":"ls"}}</tool_call>',
+        id: 'text-split-trailing-backticks',
+        type: 'text-delta',
+      },
+    ] satisfies LanguageModelV2StreamPart[]);
+
+    expect(processTextBuffer({ id: 'text-split-trailing-backticks', type: 'text-end' }, streamState, textState)).toEqual([
+      { id: 'text-split-trailing-backticks', type: 'text-end' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('falls back to plain text when parsed payload has no valid tool name', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    processTextBuffer({ id: 'text-missing-name', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: '<tool_call>{"arguments":{"command":"ls"}}</tool_call>',
+        id: 'text-missing-name',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const result = processTextBuffer({ id: 'text-missing-name', type: 'text-end' }, streamState, textState);
+
+    expect(result).toEqual([
+      { id: 'text-missing-name', type: 'text-start' },
+      { delta: '<tool_call>{"arguments":{"command":"ls"}}</tool_call>', id: 'text-missing-name', type: 'text-delta' },
+      { id: 'text-missing-name', type: 'text-end' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
+
+  it('falls back to plain text when payload JSON parsing throws', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    processTextBuffer({ id: 'text-invalid-json-object', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: '<tool_call>{"name":"bash",}</tool_call>',
+        id: 'text-invalid-json-object',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const result = processTextBuffer({ id: 'text-invalid-json-object', type: 'text-end' }, streamState, textState);
+
+    expect(result).toEqual([
+      { id: 'text-invalid-json-object', type: 'text-start' },
+      { delta: '<tool_call>{"name":"bash",}</tool_call>', id: 'text-invalid-json-object', type: 'text-delta' },
+      { id: 'text-invalid-json-object', type: 'text-end' },
+    ] satisfies LanguageModelV2StreamPart[]);
+  });
 });
