@@ -10,7 +10,7 @@
       },
       "models": {
         "opus": {
-          "id": "claude-opus-4-6",
+          "id": "claude-opus",
           "limit": {
             "context": 1000000,
             "output": 128000
@@ -37,7 +37,7 @@
           }
         },
         "sonnet": {
-          "id": "claude-sonnet-4-6",
+          "id": "claude-sonnet",
           "limit": {
             "context": 1000000,
             "output": 64000
@@ -61,7 +61,7 @@
           }
         },
         "haiku": {
-          "id": "claude-haiku-4-5",
+          "id": "claude-haiku",
           "limit": {
             "context": 200000,
             "output": 64000
