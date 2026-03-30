@@ -11,7 +11,6 @@ import type { LanguageModelV2StreamPart } from '@ai-sdk/provider';
 export function buildCliArgs(options: { maxTurns: number; model: string; resumeSessionId?: string; system?: string }): string[] {
   return [
     '-p',
-    '--bare',
     '--verbose',
     '--tools',
     '',
