@@ -50,10 +50,10 @@ export function createStreamState(): StreamState {
 export function toLanguageModelUsage(usage: StreamUsage): LanguageModelV2Usage {
   return {
     cachedInputTokens: usage.cachedInputTokens,
-    inputTokens: usage.inputTokens,
-    outputTokens: usage.outputTokens,
+    inputTokens: usage.inputTokens ?? 0,
+    outputTokens: usage.outputTokens ?? 0,
     reasoningTokens: usage.reasoningTokens,
-    totalTokens: usage.totalTokens,
+    totalTokens: usage.totalTokens ?? 0,
   };
 }
 

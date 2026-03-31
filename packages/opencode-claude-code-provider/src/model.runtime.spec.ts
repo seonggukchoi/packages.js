@@ -233,10 +233,10 @@ describe('ClaudeCodeLanguageModel runtime', () => {
         type: 'finish',
         usage: {
           cachedInputTokens: undefined,
-          inputTokens: undefined,
-          outputTokens: undefined,
+          inputTokens: 0,
+          outputTokens: 0,
           reasoningTokens: undefined,
-          totalTokens: undefined,
+          totalTokens: 0,
         },
       },
     ]);
@@ -315,10 +315,10 @@ describe('ClaudeCodeLanguageModel runtime', () => {
         type: 'finish',
         usage: {
           cachedInputTokens: undefined,
-          inputTokens: undefined,
-          outputTokens: undefined,
+          inputTokens: 0,
+          outputTokens: 0,
           reasoningTokens: undefined,
-          totalTokens: undefined,
+          totalTokens: 0,
         },
       },
     ]);
