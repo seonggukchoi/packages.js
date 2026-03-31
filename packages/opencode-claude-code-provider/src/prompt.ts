@@ -74,7 +74,10 @@ function buildResumePrompt(prompt: LanguageModelV2Prompt): string {
   );
 
   if (hasToolResults) {
-    return serializeConversation(resumeMessages);
+    return [
+      serializeConversation(resumeMessages),
+      'If you have sufficient information, respond with text. Otherwise, call another tool.',
+    ].join('\n\n');
   }
 
   return getLatestUserText(prompt) ?? serializeConversation(prompt.slice(-1));
@@ -96,9 +99,9 @@ function collectMessagesForResume(prompt: LanguageModelV2Prompt): LanguageModelV
     }
 
     // Only 'assistant' role remains after system/tool/user checks above.
-    const hasToolResult = message.content.some((part) => part.type === 'tool-result');
+    const hasToolInteraction = message.content.some((part) => part.type === 'tool-result' || part.type === 'tool-call');
 
-    if (hasToolResult) {
+    if (hasToolInteraction) {
       messages.unshift(message);
       continue;
     }
