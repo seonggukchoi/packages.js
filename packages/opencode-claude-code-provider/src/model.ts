@@ -9,7 +9,7 @@ import { buildToolSystemPrompt } from './tool-prompt.js';
 import { DEFAULT_MAX_TURNS, normalizeProviderOptions } from './types.js';
 
 import type { ClaudeCodeProviderOptions, ProviderMetadataValue } from './types.js';
-import type { LanguageModelV2, LanguageModelV2CallOptions, LanguageModelV2StreamPart } from '@ai-sdk/provider';
+import type { LanguageModelV2, LanguageModelV2CallOptions, LanguageModelV2Prompt, LanguageModelV2StreamPart } from '@ai-sdk/provider';
 
 export class ClaudeCodeLanguageModel implements LanguageModelV2 {
   public readonly modelId: string;
@@ -29,6 +29,10 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
   }
 
   public async doStream(options: LanguageModelV2CallOptions) {
+    if (isAwaitingUserInput(options.prompt)) {
+      return createNoOpResponse(this.modelId);
+    }
+
     const normalizedOptions = normalizeProviderOptions(
       (options.providerOptions?.['claude-code'] ?? undefined) as Record<string, unknown> | undefined,
       this.defaults,
@@ -119,6 +123,41 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       stream,
     };
   }
+}
+
+function isAwaitingUserInput(prompt: LanguageModelV2Prompt): boolean {
+  for (let index = prompt.length - 1; index >= 0; index -= 1) {
+    const message = prompt[index];
+
+    if (message.role === 'system') {
+      continue;
+    }
+
+    if (message.role !== 'assistant') {
+      return false;
+    }
+
+    return !message.content.some((part) => part.type === 'tool-call' || part.type === 'tool-result');
+  }
+
+  return false;
+}
+
+function createNoOpResponse(modelId: string) {
+  const stream = new ReadableStream<LanguageModelV2StreamPart>({
+    start(controller) {
+      controller.enqueue({ type: 'stream-start', warnings: [] });
+      controller.enqueue({
+        finishReason: 'stop',
+        providerMetadata: buildProviderMetadata(modelId, undefined, undefined),
+        type: 'finish',
+        usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+      });
+      controller.close();
+    },
+  });
+
+  return { request: { body: {} }, response: { headers: {} }, stream };
 }
 
 function buildProviderMetadata(modelId: string, sessionId: string | undefined, cacheCreationInputTokens: number | undefined) {
