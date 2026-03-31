@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.7.0...@seonggukchoi/opencode-claude-code-provider@0.7.1) (2026-03-31)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** correct V3 usage token mapping for cache tokens ([fde7777](https://github.com/seonggukchoi/packages.js/commit/fde7777f0879bcd552c3b7d10a97766e985451e9))
+
 # [0.7.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.6.0...@seonggukchoi/opencode-claude-code-provider@0.7.0) (2026-03-31)
 
 ### Bug Fixes
