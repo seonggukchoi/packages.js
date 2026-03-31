@@ -74,6 +74,8 @@ export async function streamCliProcess(options: {
   const reader = createInterface({ input: child.stdout });
 
   try {
+    let hasSubstantiveText = false;
+
     for await (const line of reader) {
       if (line.trim().length === 0) {
         continue;
@@ -94,7 +96,11 @@ export async function streamCliProcess(options: {
         for (const processedPart of processedParts) {
           controller.enqueue(processedPart);
 
-          if (processedPart.type === 'tool-call') {
+          if (processedPart.type === 'text-delta' && processedPart.delta.trim().length > 0) {
+            hasSubstantiveText = true;
+          }
+
+          if (processedPart.type === 'tool-call' && !hasSubstantiveText) {
             toolCallDetected = true;
           }
         }
@@ -103,6 +109,8 @@ export async function streamCliProcess(options: {
 
     if (toolCallDetected) {
       streamState.finishReason = 'tool-calls';
+    } else if (hasSubstantiveText && streamState.finishReason === 'tool-calls') {
+      streamState.finishReason = 'stop';
     }
 
     await exitPromise;
