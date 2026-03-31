@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.5.0...@seonggukchoi/opencode-claude-code-provider@0.5.1) (2026-03-31)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** let CLI complete its turn before exiting on tool calls ([152f50f](https://github.com/seonggukchoi/packages.js/commit/152f50ff6b315862be32b2ee31e089e547f9b8b7))
+
 # [0.5.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.4.2...@seonggukchoi/opencode-claude-code-provider@0.5.0) (2026-03-31)
 
 ### Features
