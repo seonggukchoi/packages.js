@@ -94,7 +94,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
       { delta: 'hello', id: 'text-0', type: 'text-delta' },
       { id: 'text-0', type: 'text-end' },
       {
-        finishReason: 'unknown',
+        finishReason: 'stop',
         providerMetadata: {
           anthropic: {},
           'claude-code': {
@@ -150,7 +150,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     const parts = await readAllParts(result.stream);
 
     expect(parts[parts.length - 1]).toEqual({
-      finishReason: 'unknown',
+      finishReason: 'stop',
       providerMetadata: {
         anthropic: {
           cacheCreationInputTokens: 11,

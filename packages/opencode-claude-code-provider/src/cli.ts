@@ -109,7 +109,7 @@ export async function streamCliProcess(options: {
 
     if (toolCallDetected) {
       streamState.finishReason = 'tool-calls';
-    } else if (hasSubstantiveText && streamState.finishReason === 'tool-calls') {
+    } else if (streamState.finishReason === 'tool-calls' && hasSubstantiveText) {
       streamState.finishReason = 'stop';
     }
 

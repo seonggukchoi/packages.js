@@ -36,7 +36,7 @@ export type StreamState = {
 export function createStreamState(): StreamState {
   return {
     blocks: new Map(),
-    finishReason: 'unknown',
+    finishReason: 'stop',
     toolCallCounter: 0,
     usage: {
       cacheCreationInputTokens: undefined,
@@ -279,7 +279,7 @@ function mapFinishReason(
     return 'other';
   }
 
-  return 'unknown';
+  return 'stop';
 }
 
 function mapUsageRecord(usage: Record<string, unknown> | undefined): StreamUsage {

@@ -640,6 +640,6 @@ describe('mapCliMessage', () => {
 
     const unknownState = createStreamState();
     mapCliMessage({ subtype: 'success', type: 'result' }, unknownState);
-    expect(unknownState.finishReason).toBe('unknown');
+    expect(unknownState.finishReason).toBe('stop');
   });
 });
