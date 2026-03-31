@@ -56,10 +56,10 @@ export function createStreamState(): StreamState {
 export function toLanguageModelUsage(usage: StreamUsage): LanguageModelV3Usage {
   return {
     inputTokens: {
-      total: usage.inputTokens,
-      noCache: undefined,
+      total: sumNumbers(usage.inputTokens, usage.cachedInputTokens, usage.cacheCreationInputTokens),
+      noCache: usage.inputTokens,
       cacheRead: usage.cachedInputTokens,
-      cacheWrite: undefined,
+      cacheWrite: usage.cacheCreationInputTokens,
     },
     outputTokens: {
       total: usage.outputTokens,

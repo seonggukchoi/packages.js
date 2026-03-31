@@ -104,7 +104,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
         },
         type: 'finish',
         usage: {
-          inputTokens: { total: 1, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
+          inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
           outputTokens: { total: 1, text: undefined, reasoning: undefined },
         },
       },
@@ -159,7 +159,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
       },
       type: 'finish',
       usage: {
-        inputTokens: { total: 5, noCache: undefined, cacheRead: 7, cacheWrite: undefined },
+        inputTokens: { total: 23, noCache: 5, cacheRead: 7, cacheWrite: 11 },
         outputTokens: { total: 3, text: undefined, reasoning: undefined },
       },
     });
