@@ -15,6 +15,7 @@ describe('normalizeChatParams', () => {
         model: {
           providerID: 'claude-code',
         },
+        sessionID: 'sess-123',
       },
       output,
     );
@@ -23,6 +24,7 @@ describe('normalizeChatParams', () => {
       effort: 'high',
       env: {},
       pathToClaudeCodeExecutable: 'claude',
+      sessionId: 'sess-123',
     });
   });
 
@@ -38,6 +40,7 @@ describe('normalizeChatParams', () => {
         model: {
           providerID: 'openai',
         },
+        sessionID: 'sess-456',
       },
       output,
     );
@@ -59,6 +62,7 @@ describe('normalizeChatParams', () => {
         model: {
           providerID: 'claude-code',
         },
+        sessionID: 'sess-123',
       },
       output,
     );
@@ -67,6 +71,7 @@ describe('normalizeChatParams', () => {
       effort: undefined,
       env: { A: '1' },
       pathToClaudeCodeExecutable: 'claude',
+      sessionId: 'sess-123',
     });
   });
 
@@ -84,6 +89,7 @@ describe('normalizeChatParams', () => {
         model: {
           providerID: 'claude-code',
         },
+        sessionID: 'sess-123',
       },
       output,
     );
@@ -92,6 +98,7 @@ describe('normalizeChatParams', () => {
       effort: 'medium',
       env: { A: '1' },
       pathToClaudeCodeExecutable: '/usr/local/bin/claude',
+      sessionId: 'sess-123',
     });
   });
 });
