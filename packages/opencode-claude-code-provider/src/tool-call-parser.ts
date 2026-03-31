@@ -2,7 +2,7 @@ import { deepParseStringifiedJsonValues, normalizeToolArguments } from './tool-a
 import { isRecord } from './types.js';
 
 import type { StreamState } from './messages.js';
-import type { LanguageModelV2StreamPart } from '@ai-sdk/provider';
+import type { LanguageModelV3StreamPart } from '@ai-sdk/provider';
 
 type ParserMode = 'buffering' | 'idle';
 
@@ -30,10 +30,10 @@ const CLOSE_TAG = '</' + TAG_OPENER.slice(1) + '>';
 const MAX_PARTIAL_TAG_LENGTH = TAG_OPENER.length;
 
 export function processTextBuffer(
-  part: LanguageModelV2StreamPart,
+  part: LanguageModelV3StreamPart,
   streamState: StreamState,
   textState: ToolCallTextState,
-): LanguageModelV2StreamPart[] {
+): LanguageModelV3StreamPart[] {
   if (part.type === 'text-start') {
     textState.buffers.set(part.id, '');
     return [];
@@ -55,9 +55,9 @@ export function processTextBuffer(
 }
 
 function handleIdleDelta(
-  part: Extract<LanguageModelV2StreamPart, { type: 'text-delta' }>,
+  part: Extract<LanguageModelV3StreamPart, { type: 'text-delta' }>,
   textState: ToolCallTextState,
-): LanguageModelV2StreamPart[] {
+): LanguageModelV3StreamPart[] {
   const current = textState.buffers.get(part.id) ?? '';
   const combined = current + part.delta;
   const tagIndex = findTagOpenerIndex(combined);
@@ -95,10 +95,10 @@ function handleIdleDelta(
 }
 
 function handleBufferingDelta(
-  part: Extract<LanguageModelV2StreamPart, { type: 'text-delta' }>,
+  part: Extract<LanguageModelV3StreamPart, { type: 'text-delta' }>,
   streamState: StreamState,
   textState: ToolCallTextState,
-): LanguageModelV2StreamPart[] {
+): LanguageModelV3StreamPart[] {
   const current = textState.buffers.get(part.id) ?? '';
   const combined = current + part.delta;
   const closeEnd = findLastClosingTagEnd(combined);
@@ -124,10 +124,10 @@ function handleBufferingDelta(
 }
 
 function handleTextEnd(
-  part: Extract<LanguageModelV2StreamPart, { type: 'text-end' }>,
+  part: Extract<LanguageModelV3StreamPart, { type: 'text-end' }>,
   streamState: StreamState,
   textState: ToolCallTextState,
-): LanguageModelV2StreamPart[] {
+): LanguageModelV3StreamPart[] {
   const current = textState.buffers.get(part.id) ?? '';
   textState.buffers.delete(part.id);
   const hadTextStart = textState.emittedTextStart.has(part.id);
@@ -151,14 +151,14 @@ function flushRemainingBuffer(
   buffer: string,
   hadTextStart: boolean,
   textState: ToolCallTextState,
-): LanguageModelV2StreamPart[] {
+): LanguageModelV3StreamPart[] {
   if (buffer.length === 0) {
     return hadTextStart ? [{ id: partId, type: 'text-end' }] : [];
   }
 
   updateCodeFenceState(buffer, textState);
 
-  const result: LanguageModelV2StreamPart[] = [];
+  const result: LanguageModelV3StreamPart[] = [];
 
   if (!hadTextStart) {
     result.push({ id: partId, type: 'text-start' });
@@ -170,8 +170,8 @@ function flushRemainingBuffer(
 }
 
 function normalizeToolCallPart(
-  part: Extract<LanguageModelV2StreamPart, { type: 'tool-call' }>,
-): Extract<LanguageModelV2StreamPart, { type: 'tool-call' }> {
+  part: Extract<LanguageModelV3StreamPart, { type: 'tool-call' }>,
+): Extract<LanguageModelV3StreamPart, { type: 'tool-call' }> {
   const normalized = normalizeToolArguments(part.input);
 
   if (!normalized) {
@@ -183,14 +183,14 @@ function normalizeToolCallPart(
   return input !== part.input ? { ...part, input } : part;
 }
 
-function createTextDeltaParts(partId: string, text: string, textState: ToolCallTextState): LanguageModelV2StreamPart[] {
+function createTextDeltaParts(partId: string, text: string, textState: ToolCallTextState): LanguageModelV3StreamPart[] {
   if (text.length === 0) {
     return [];
   }
 
   updateCodeFenceState(text, textState);
 
-  const result: LanguageModelV2StreamPart[] = [];
+  const result: LanguageModelV3StreamPart[] = [];
 
   if (!textState.emittedTextStart.has(partId)) {
     textState.emittedTextStart.add(partId);
@@ -279,7 +279,7 @@ function consumeTextBuffer(
   streamState: StreamState,
 ): {
   hasToolCalls: boolean;
-  parts: LanguageModelV2StreamPart[];
+  parts: LanguageModelV3StreamPart[];
   text: string;
 } {
   const toolCalls = extractToolCallParts(buffer, streamState);
@@ -327,7 +327,7 @@ function parseToolCallPayload(rawToolCall: string): { arguments: Record<string, 
   }
 }
 
-function extractToolCallParts(text: string, streamState: StreamState): LanguageModelV2StreamPart[] {
+function extractToolCallParts(text: string, streamState: StreamState): LanguageModelV3StreamPart[] {
   const matches = collectAllToolCallMatches(text);
 
   if (matches.length === 0) {
@@ -441,7 +441,7 @@ function findJsonObjectEnd(text: string, from: number): number {
 function createToolCallSequenceFromPayload(
   payload: { arguments: Record<string, unknown>; name: string } | undefined,
   streamState: StreamState,
-): LanguageModelV2StreamPart[] {
+): LanguageModelV3StreamPart[] {
   /* v8 ignore start */
   if (!payload) {
     return [];

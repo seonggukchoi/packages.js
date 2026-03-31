@@ -6,7 +6,7 @@ import { processTextBuffer } from './tool-call-parser.js';
 import { isRecord } from './types.js';
 
 import type { ToolCallTextState } from './tool-call-parser.js';
-import type { LanguageModelV2StreamPart } from '@ai-sdk/provider';
+import type { LanguageModelV3StreamPart } from '@ai-sdk/provider';
 
 export function buildCliArgs(options: {
   effort?: string;
@@ -39,7 +39,7 @@ export function buildCliArgs(options: {
 
 export async function streamCliProcess(options: {
   child: ReturnType<typeof spawn>;
-  controller: ReadableStreamDefaultController<LanguageModelV2StreamPart>;
+  controller: ReadableStreamDefaultController<LanguageModelV3StreamPart>;
   streamState: StreamState;
   textState: ToolCallTextState;
 }): Promise<void> {

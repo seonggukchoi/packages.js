@@ -94,7 +94,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
       { delta: 'hello', id: 'text-0', type: 'text-delta' },
       { id: 'text-0', type: 'text-end' },
       {
-        finishReason: 'unknown',
+        finishReason: { unified: 'other', raw: undefined },
         providerMetadata: {
           anthropic: {},
           'claude-code': {
@@ -104,11 +104,8 @@ describe('ClaudeCodeLanguageModel runtime', () => {
         },
         type: 'finish',
         usage: {
-          cachedInputTokens: undefined,
-          inputTokens: 1,
-          outputTokens: 1,
-          reasoningTokens: undefined,
-          totalTokens: 2,
+          inputTokens: { total: 1, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
+          outputTokens: { total: 1, text: undefined, reasoning: undefined },
         },
       },
     ]);
@@ -150,7 +147,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     const parts = await readAllParts(result.stream);
 
     expect(parts[parts.length - 1]).toEqual({
-      finishReason: 'unknown',
+      finishReason: { unified: 'other', raw: undefined },
       providerMetadata: {
         anthropic: {
           cacheCreationInputTokens: 11,
@@ -162,11 +159,8 @@ describe('ClaudeCodeLanguageModel runtime', () => {
       },
       type: 'finish',
       usage: {
-        cachedInputTokens: 7,
-        inputTokens: 5,
-        outputTokens: 3,
-        reasoningTokens: undefined,
-        totalTokens: 26,
+        inputTokens: { total: 5, noCache: undefined, cacheRead: 7, cacheWrite: undefined },
+        outputTokens: { total: 3, text: undefined, reasoning: undefined },
       },
     });
   });
@@ -222,7 +216,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
       { id: 'tool-call-1', type: 'tool-input-end' },
       { input: '{"command":"ls"}', toolCallId: 'tool-call-1', toolName: 'bash', type: 'tool-call' },
       {
-        finishReason: 'tool-calls',
+        finishReason: { unified: 'tool-calls', raw: undefined },
         providerMetadata: {
           anthropic: {},
           'claude-code': {
@@ -232,11 +226,8 @@ describe('ClaudeCodeLanguageModel runtime', () => {
         },
         type: 'finish',
         usage: {
-          cachedInputTokens: undefined,
-          inputTokens: undefined,
-          outputTokens: undefined,
-          reasoningTokens: undefined,
-          totalTokens: undefined,
+          inputTokens: { total: undefined, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
+          outputTokens: { total: undefined, text: undefined, reasoning: undefined },
         },
       },
     ]);
@@ -304,7 +295,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
       { id: 'tool-call-1', type: 'tool-input-end' },
       { input: '{"filePath":"README.md"}', toolCallId: 'tool-call-1', toolName: 'read', type: 'tool-call' },
       {
-        finishReason: 'tool-calls',
+        finishReason: { unified: 'tool-calls', raw: undefined },
         providerMetadata: {
           anthropic: {},
           'claude-code': {
@@ -314,11 +305,8 @@ describe('ClaudeCodeLanguageModel runtime', () => {
         },
         type: 'finish',
         usage: {
-          cachedInputTokens: undefined,
-          inputTokens: undefined,
-          outputTokens: undefined,
-          reasoningTokens: undefined,
-          totalTokens: undefined,
+          inputTokens: { total: undefined, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
+          outputTokens: { total: undefined, text: undefined, reasoning: undefined },
         },
       },
     ]);
@@ -460,7 +448,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     const parts = await readAllParts(result.stream);
 
     expect(parts[1]).toMatchObject({ type: 'error' });
-    expect(parts[2]).toMatchObject({ finishReason: 'error', type: 'finish' });
+    expect(parts[2]).toMatchObject({ finishReason: { unified: 'error', raw: undefined }, type: 'finish' });
   });
 
   it('emits an error finish when stdin is unavailable', async () => {
@@ -475,7 +463,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     const parts = await readAllParts(result.stream);
 
     expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('stdin is not available'))).toBe(true);
-    expect(parts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+    expect(parts.some((part) => isFinishPart(part) && part.finishReason.unified === 'error')).toBe(true);
   });
 
   it('emits an error finish when stdin emits an error while writing the prompt', async () => {
@@ -503,7 +491,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     const parts = await readAllParts(result.stream);
 
     expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('stdin write failed'))).toBe(true);
-    expect(parts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+    expect(parts.some((part) => isFinishPart(part) && part.finishReason.unified === 'error')).toBe(true);
   });
 
   it('emits an error finish when stdin.end throws synchronously', async () => {
@@ -526,7 +514,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     const parts = await readAllParts(result.stream);
 
     expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('stdin end threw'))).toBe(true);
-    expect(parts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+    expect(parts.some((part) => isFinishPart(part) && part.finishReason.unified === 'error')).toBe(true);
   });
 
   it('cancels the stream by killing the child process', async () => {
@@ -554,7 +542,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     const invalidParts = await readAllParts(invalidResult.stream);
 
     expect(invalidParts.some((part) => isErrorPart(part))).toBe(true);
-    expect(invalidParts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+    expect(invalidParts.some((part) => isFinishPart(part) && part.finishReason.unified === 'error')).toBe(true);
 
     const failed = createMockChild({ exitCode: 1, lines: [], stderr: 'broken' });
     spawnMock.mockReturnValueOnce(failed.child);
@@ -564,7 +552,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     const failedParts = await readAllParts(failedResult.stream);
 
     expect(failedParts.some((part) => isErrorPart(part))).toBe(true);
-    expect(failedParts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+    expect(failedParts.some((part) => isFinishPart(part) && part.finishReason.unified === 'error')).toBe(true);
 
     const signalOnly = createMockChild({ exitCode: 1, lines: [], signal: 'SIGTERM' });
     spawnMock.mockReturnValueOnce(signalOnly.child);
@@ -596,7 +584,7 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     const parts = await readAllParts(result.stream);
 
     expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('spawn failed'))).toBe(true);
-    expect(parts.some((part) => isFinishPart(part) && part.finishReason === 'error')).toBe(true);
+    expect(parts.some((part) => isFinishPart(part) && part.finishReason.unified === 'error')).toBe(true);
   });
 });
 
@@ -708,6 +696,6 @@ function isErrorPart(part: unknown): part is { error: unknown; type: 'error' } {
   return typeof part === 'object' && part !== null && 'type' in part && part.type === 'error';
 }
 
-function isFinishPart(part: unknown): part is { finishReason: string; type: 'finish' } {
+function isFinishPart(part: unknown): part is { finishReason: { unified: string; raw: unknown }; type: 'finish' } {
   return typeof part === 'object' && part !== null && 'type' in part && part.type === 'finish';
 }
