@@ -16,6 +16,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
   public readonly provider = 'claude-code';
   public readonly specificationVersion = 'v2' as const;
   public readonly supportedUrls: Record<string, RegExp[]> = {};
+  private activeSessionId: string | undefined;
   private readonly defaults: ClaudeCodeProviderOptions;
 
   constructor(modelId: string, defaults: ClaudeCodeProviderOptions = {}) {
@@ -33,7 +34,13 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       this.defaults,
     );
     const cwd = process.cwd();
-    const resumeSessionId = getResume(options.prompt, this.modelId);
+    const hasConversationHistory = options.prompt.some((message) => message.role === 'assistant');
+    const resumeSessionId = getResume(options.prompt, this.modelId) ?? (hasConversationHistory ? this.activeSessionId : undefined);
+
+    if (!hasConversationHistory) {
+      this.activeSessionId = undefined;
+    }
+
     const prompt = buildPrompt(options.prompt, { resumeSessionId });
     const toolSystemPrompt = buildToolSystemPrompt(options.tools);
     const system = [getSystem(options.prompt), toolSystemPrompt].filter((value): value is string => Boolean(value)).join('\n\n');
@@ -47,6 +54,11 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
     const streamState = createStreamState();
     const textState = createToolCallTextState();
     const currentModelId = this.modelId;
+    const persistSessionId = (sessionId: string | undefined) => {
+      if (sessionId) {
+        this.activeSessionId = sessionId;
+      }
+    };
     let child: ReturnType<typeof spawn> | undefined;
 
     const stream = new ReadableStream<LanguageModelV2StreamPart>({
@@ -81,6 +93,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
             usage: toLanguageModelUsage(streamState.usage),
           });
         } finally {
+          persistSessionId(streamState.sessionId);
           child?.kill();
           controller.close();
         }
