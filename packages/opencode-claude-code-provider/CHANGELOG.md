@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.5.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.4.2...@seonggukchoi/opencode-claude-code-provider@0.5.0) (2026-03-31)
+
+### Features
+
+- **opencode-claude-code-provider:** restore --effort and --strict-mcp-config CLI options ([7e84d11](https://github.com/seonggukchoi/packages.js/commit/7e84d11142f5f7e206e3ad32e9e02db4aa1f2319)), closes [#54](https://github.com/seonggukchoi/packages.js/issues/54) [#55](https://github.com/seonggukchoi/packages.js/issues/55)
+
 ## [0.4.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.4.1...@seonggukchoi/opencode-claude-code-provider@0.4.2) (2026-03-30)
 
 ### Bug Fixes
