@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.7.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.6.0...@seonggukchoi/opencode-claude-code-provider@0.7.0) (2026-03-31)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** cache model instances to preserve session across calls ([f924d71](https://github.com/seonggukchoi/packages.js/commit/f924d71c0c8ca090a002614043ac1c22a7a3f203))
+
+### Features
+
+- **opencode-claude-code-provider:** support explicit sessionId for persistent session resume ([4da28b1](https://github.com/seonggukchoi/packages.js/commit/4da28b1372001fef03c37c87466e4c7ee9584d95))
+
 # [0.6.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.5.2...@seonggukchoi/opencode-claude-code-provider@0.6.0) (2026-03-31)
 
 ### Features

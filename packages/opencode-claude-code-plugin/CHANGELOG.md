@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.3.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-plugin@0.2.3...@seonggukchoi/opencode-claude-code-plugin@0.3.0) (2026-03-31)
+
+### Features
+
+- **opencode-claude-code-plugin:** forward sessionID to claude code provider options ([dbfe394](https://github.com/seonggukchoi/packages.js/commit/dbfe3942c54da9ee1933a8d411e8f8bbbcd20ebe))
+
 ## [0.2.3](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-plugin@0.2.2...@seonggukchoi/opencode-claude-code-plugin@0.2.3) (2026-03-28)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-claude-code-plugin
