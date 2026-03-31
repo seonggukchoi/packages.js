@@ -13,6 +13,7 @@ export function buildCliArgs(options: {
   maxTurns: number;
   model: string;
   resumeSessionId?: string;
+  sessionId?: string;
   system?: string;
 }): string[] {
   return [
@@ -34,6 +35,7 @@ export function buildCliArgs(options: {
     ...(options.effort ? ['--effort', options.effort] : []),
     ...(options.system ? ['--system-prompt', options.system] : []),
     ...(options.resumeSessionId ? ['--resume', options.resumeSessionId] : []),
+    ...(options.sessionId && !options.resumeSessionId ? ['--session-id', options.sessionId] : []),
   ];
 }
 
