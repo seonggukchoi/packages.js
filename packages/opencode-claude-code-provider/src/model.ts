@@ -29,17 +29,16 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
   }
 
   public async doStream(options: LanguageModelV2CallOptions) {
-    if (isAwaitingUserInput(options.prompt)) {
-      return createNoOpResponse(this.modelId);
-    }
-
     const normalizedOptions = normalizeProviderOptions(
       (options.providerOptions?.['claude-code'] ?? undefined) as Record<string, unknown> | undefined,
       this.defaults,
     );
     const cwd = process.cwd();
     const hasConversationHistory = options.prompt.some((message) => message.role === 'assistant');
-    const resumeSessionId = getResume(options.prompt, this.modelId) ?? (hasConversationHistory ? this.activeSessionId : undefined);
+    const needsNewInput = hasNewUserInputOrToolResults(options.prompt);
+    const resumeSessionId = needsNewInput
+      ? (getResume(options.prompt, this.modelId) ?? (hasConversationHistory ? this.activeSessionId : undefined))
+      : undefined;
 
     if (!hasConversationHistory) {
       this.activeSessionId = undefined;
@@ -125,7 +124,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
   }
 }
 
-function isAwaitingUserInput(prompt: LanguageModelV2Prompt): boolean {
+function hasNewUserInputOrToolResults(prompt: LanguageModelV2Prompt): boolean {
   for (let index = prompt.length - 1; index >= 0; index -= 1) {
     const message = prompt[index];
 
@@ -133,31 +132,16 @@ function isAwaitingUserInput(prompt: LanguageModelV2Prompt): boolean {
       continue;
     }
 
-    if (message.role !== 'assistant') {
-      return false;
+    if (message.role === 'user' || message.role === 'tool') {
+      return true;
     }
 
-    return !message.content.some((part) => part.type === 'tool-call' || part.type === 'tool-result');
+    if (message.role === 'assistant') {
+      return message.content.some((part) => part.type === 'tool-call' || part.type === 'tool-result');
+    }
   }
 
   return false;
-}
-
-function createNoOpResponse(modelId: string) {
-  const stream = new ReadableStream<LanguageModelV2StreamPart>({
-    start(controller) {
-      controller.enqueue({ type: 'stream-start', warnings: [] });
-      controller.enqueue({
-        finishReason: 'stop',
-        providerMetadata: buildProviderMetadata(modelId, undefined, undefined),
-        type: 'finish',
-        usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
-      });
-      controller.close();
-    },
-  });
-
-  return { request: { body: {} }, response: { headers: {} }, stream };
 }
 
 function buildProviderMetadata(modelId: string, sessionId: string | undefined, cacheCreationInputTokens: number | undefined) {
