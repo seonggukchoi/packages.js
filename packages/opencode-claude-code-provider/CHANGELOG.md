@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.5.1...@seonggukchoi/opencode-claude-code-provider@0.5.2) (2026-03-31)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** include assistant tool-call context in resume prompt ([2a61330](https://github.com/seonggukchoi/packages.js/commit/2a61330d55a984160feb612f360aefcdaef22ef7))
+- **opencode-claude-code-provider:** track session ID on model instance for reliable resume ([37a0b77](https://github.com/seonggukchoi/packages.js/commit/37a0b77a09ac2afa67f83aec9bca874e96df1eac))
+
 ## [0.5.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.5.0...@seonggukchoi/opencode-claude-code-provider@0.5.1) (2026-03-31)
 
 ### Bug Fixes
