@@ -45,7 +45,7 @@ export async function streamCliProcess(options: {
 }): Promise<void> {
   const { child, controller, streamState, textState } = options;
   const stderrChunks: string[] = [];
-  let allowEarlyExit = false;
+  let toolCallDetected = false;
 
   child.stderr?.on('data', (chunk) => {
     stderrChunks.push(chunk.toString());
@@ -54,7 +54,7 @@ export async function streamCliProcess(options: {
   const exitPromise = new Promise<void>((resolve, reject) => {
     child.once('error', reject);
     child.once('close', (code, signal) => {
-      if (code === 0 || allowEarlyExit) {
+      if (code === 0 || toolCallDetected) {
         resolve();
         return;
       }
@@ -80,27 +80,29 @@ export async function streamCliProcess(options: {
       }
 
       const message = parseCliMessage(line);
+
+      if (toolCallDetected) {
+        mapCliMessage(message, streamState);
+        continue;
+      }
+
       const parts = mapCliMessage(message, streamState);
 
       for (const part of parts) {
         const processedParts = processTextBuffer(part, streamState, textState);
-        let hasToolCall = false;
 
         for (const processedPart of processedParts) {
           controller.enqueue(processedPart);
 
           if (processedPart.type === 'tool-call') {
-            hasToolCall = true;
+            toolCallDetected = true;
           }
         }
-
-        if (hasToolCall) {
-          streamState.finishReason = 'tool-calls';
-          allowEarlyExit = true;
-          child.kill();
-          return;
-        }
       }
+    }
+
+    if (toolCallDetected) {
+      streamState.finishReason = 'tool-calls';
     }
 
     await exitPromise;
