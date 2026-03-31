@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.5.2...@seonggukchoi/opencode-claude-code-provider@0.6.0) (2026-03-31)
+
+### Features
+
+- **opencode-claude-code-provider:** migrate to AI SDK v3 specification ([9854477](https://github.com/seonggukchoi/packages.js/commit/98544777cc1065198a8326b3de115110312a445e))
+
 ## [0.5.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.5.1...@seonggukchoi/opencode-claude-code-provider@0.5.2) (2026-03-31)
 
 ### Bug Fixes
