@@ -84,7 +84,7 @@ describe('prompt helpers', () => {
     expect(getResume(prompt, 'opus')).toBeUndefined();
   });
 
-  it('falls back to the last conversation chunk when no resumed user text exists', () => {
+  it('returns empty string when resumed prompt has no new user input', () => {
     const prompt = [
       {
         content: [{ text: 'done', type: 'text' as const }],
@@ -92,7 +92,7 @@ describe('prompt helpers', () => {
       },
     ];
 
-    expect(buildPrompt(prompt, { resumeSessionId: 'sess_123' })).toContain('Assistant:');
+    expect(buildPrompt(prompt, { resumeSessionId: 'sess_123' })).toBe('');
     expect(buildPrompt([{ content: 'System only', role: 'system' as const }], { resumeSessionId: 'sess_123' })).toBe('');
   });
 

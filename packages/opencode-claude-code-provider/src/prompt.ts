@@ -80,7 +80,41 @@ function buildResumePrompt(prompt: LanguageModelV2Prompt): string {
     ].join('\n\n');
   }
 
-  return getLatestUserText(prompt) ?? serializeConversation(prompt.slice(-1));
+  const latestUserText = getLatestUserTextAfterAssistant(prompt);
+
+  if (latestUserText) {
+    return latestUserText;
+  }
+
+  return '';
+}
+
+function getLatestUserTextAfterAssistant(prompt: LanguageModelV2Prompt): string | undefined {
+  for (let index = prompt.length - 1; index >= 0; index -= 1) {
+    const message = prompt[index];
+
+    if (message.role === 'system') {
+      continue;
+    }
+
+    if (message.role === 'assistant') {
+      return undefined;
+    }
+
+    if (message.role === 'user') {
+      const text = message.content
+        .map((part) => (part.type === 'text' ? part.text : ''))
+        .filter((value) => value.length > 0)
+        .join('\n')
+        .trim();
+
+      return text || undefined;
+    }
+
+    break;
+  }
+
+  return undefined;
 }
 
 function collectMessagesForResume(prompt: LanguageModelV2Prompt): LanguageModelV2Prompt {

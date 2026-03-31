@@ -9,7 +9,7 @@ import { buildToolSystemPrompt } from './tool-prompt.js';
 import { DEFAULT_MAX_TURNS, normalizeProviderOptions } from './types.js';
 
 import type { ClaudeCodeProviderOptions, ProviderMetadataValue } from './types.js';
-import type { LanguageModelV2, LanguageModelV2CallOptions, LanguageModelV2Prompt, LanguageModelV2StreamPart } from '@ai-sdk/provider';
+import type { LanguageModelV2, LanguageModelV2CallOptions, LanguageModelV2StreamPart } from '@ai-sdk/provider';
 
 export class ClaudeCodeLanguageModel implements LanguageModelV2 {
   public readonly modelId: string;
@@ -35,10 +35,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
     );
     const cwd = process.cwd();
     const hasConversationHistory = options.prompt.some((message) => message.role === 'assistant');
-    const needsNewInput = hasNewUserInputOrToolResults(options.prompt);
-    const resumeSessionId = needsNewInput
-      ? (getResume(options.prompt, this.modelId) ?? (hasConversationHistory ? this.activeSessionId : undefined))
-      : undefined;
+    const resumeSessionId = getResume(options.prompt, this.modelId) ?? (hasConversationHistory ? this.activeSessionId : undefined);
 
     if (!hasConversationHistory) {
       this.activeSessionId = undefined;
@@ -122,26 +119,6 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       stream,
     };
   }
-}
-
-function hasNewUserInputOrToolResults(prompt: LanguageModelV2Prompt): boolean {
-  for (let index = prompt.length - 1; index >= 0; index -= 1) {
-    const message = prompt[index];
-
-    if (message.role === 'system') {
-      continue;
-    }
-
-    if (message.role === 'user' || message.role === 'tool') {
-      return true;
-    }
-
-    if (message.role === 'assistant') {
-      return message.content.some((part) => part.type === 'tool-call' || part.type === 'tool-result');
-    }
-  }
-
-  return false;
 }
 
 function buildProviderMetadata(modelId: string, sessionId: string | undefined, cacheCreationInputTokens: number | undefined) {
