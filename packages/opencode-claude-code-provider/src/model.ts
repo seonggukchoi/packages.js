@@ -42,6 +42,11 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
     }
 
     const prompt = buildPrompt(options.prompt, { resumeSessionId });
+
+    if (prompt.length === 0) {
+      return createStopResponse(this.modelId, this.activeSessionId);
+    }
+
     const toolSystemPrompt = buildToolSystemPrompt(options.tools);
     const system = [getSystem(options.prompt), toolSystemPrompt].filter((value): value is string => Boolean(value)).join('\n\n');
     const cliArgs = buildCliArgs({
@@ -119,6 +124,29 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
       stream,
     };
   }
+}
+
+function createStopResponse(modelId: string, sessionId: string | undefined) {
+  const metadata = buildProviderMetadata(modelId, sessionId, undefined);
+
+  const stream = new ReadableStream<LanguageModelV2StreamPart>({
+    start(controller) {
+      controller.enqueue({ type: 'stream-start', warnings: [] });
+      controller.enqueue({
+        finishReason: 'stop',
+        providerMetadata: metadata,
+        type: 'finish',
+        usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+      });
+      controller.close();
+    },
+  });
+
+  return {
+    request: { body: { model: modelId, ...(sessionId ? { resume: sessionId } : {}) } },
+    response: { headers: {} },
+    stream,
+  };
 }
 
 function buildProviderMetadata(modelId: string, sessionId: string | undefined, cacheCreationInputTokens: number | undefined) {
