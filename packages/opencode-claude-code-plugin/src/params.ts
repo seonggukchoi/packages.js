@@ -4,6 +4,7 @@ type ChatParamsInput = {
   model: {
     providerID: string;
   };
+  sessionID: string;
 };
 
 type ChatParamsOutput = {
@@ -20,6 +21,7 @@ export function normalizeChatParams(input: ChatParamsInput, output: ChatParamsOu
     effort: normalizeClaudeCodeEffort(output.options.effort),
     env: normalizeRecord(output.options.env) ?? {},
     pathToClaudeCodeExecutable: normalizeString(output.options.pathToClaudeCodeExecutable) ?? 'claude',
+    sessionId: input.sessionID,
   };
 }
 

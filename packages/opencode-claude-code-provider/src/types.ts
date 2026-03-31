@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import type { LanguageModelV2FunctionTool, LanguageModelV2Prompt } from '@ai-sdk/provider';
 
 export const DEFAULT_MAX_TURNS = 1;
@@ -25,12 +27,14 @@ export type ClaudeCodeProviderOptions = {
   effort?: ClaudeCodeEffort;
   env?: Record<string, string>;
   pathToClaudeCodeExecutable?: string;
+  sessionId?: string;
 };
 
 export type NormalizedClaudeCodeOptions = {
   effort?: ClaudeCodeEffort;
   env: Record<string, string>;
   pathToClaudeCodeExecutable: string;
+  sessionId?: string;
 };
 
 export function normalizeProviderOptions(
@@ -48,6 +52,7 @@ export function normalizeProviderOptions(
       ...(rawEnv ?? {}),
     },
     pathToClaudeCodeExecutable: getString(raw.pathToClaudeCodeExecutable) ?? defaults.pathToClaudeCodeExecutable ?? DEFAULT_EXECUTABLE_PATH,
+    sessionId: getSessionId(raw.sessionId) ?? defaults.sessionId,
   };
 }
 
@@ -111,6 +116,37 @@ function getStringRecord(value: unknown): Record<string, string> | undefined {
   }
 
   return value;
+}
+
+const UUID_PATTERN = /^[\da-f]{8}-[\da-f]{4}-[1-5][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
+
+// RFC 4122 UUID v5 namespace for this provider
+const NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+
+function toSessionUuid(value: string): string {
+  if (UUID_PATTERN.test(value)) {
+    return value;
+  }
+
+  const namespaceBytes = Buffer.from(NAMESPACE.replaceAll('-', ''), 'hex');
+  const hash = createHash('sha1').update(namespaceBytes).update(value).digest();
+
+  hash[6] = (hash[6] & 0x0f) | 0x50;
+  hash[8] = (hash[8] & 0x3f) | 0x80;
+
+  const hex = hash.subarray(0, 16).toString('hex');
+
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
+function getSessionId(value: unknown): string | undefined {
+  const raw = getString(value);
+
+  if (!raw) {
+    return undefined;
+  }
+
+  return toSessionUuid(raw);
 }
 
 function getEffort(value: unknown): ClaudeCodeEffort | undefined {

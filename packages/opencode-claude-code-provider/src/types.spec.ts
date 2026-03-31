@@ -40,6 +40,29 @@ describe('normalizeProviderOptions', () => {
   });
 });
 
+describe('sessionId normalization', () => {
+  it('passes through a valid UUID', () => {
+    const normalized = normalizeProviderOptions({ sessionId: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d' }, {});
+
+    expect(normalized.sessionId).toBe('a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d');
+  });
+
+  it('converts a non-UUID string to a deterministic UUID v5', () => {
+    const normalized = normalizeProviderOptions({ sessionId: 'my-opencode-session' }, {});
+
+    expect(normalized.sessionId).toMatch(/^[\da-f]{8}-[\da-f]{4}-5[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/);
+
+    const again = normalizeProviderOptions({ sessionId: 'my-opencode-session' }, {});
+
+    expect(again.sessionId).toBe(normalized.sessionId);
+  });
+
+  it('returns undefined for empty or missing sessionId', () => {
+    expect(normalizeProviderOptions({ sessionId: '' }, {}).sessionId).toBeUndefined();
+    expect(normalizeProviderOptions({}, {}).sessionId).toBeUndefined();
+  });
+});
+
 describe('type helpers', () => {
   it('normalizes primitive helper values', () => {
     expect(getString('x')).toBe('x');

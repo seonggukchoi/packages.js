@@ -16,7 +16,6 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
   public readonly provider = 'claude-code';
   public readonly specificationVersion = 'v3' as const;
   public readonly supportedUrls: Record<string, RegExp[]> = {};
-  private activeSessionId: string | undefined;
   private readonly defaults: ClaudeCodeProviderOptions;
 
   constructor(modelId: string, defaults: ClaudeCodeProviderOptions = {}) {
@@ -37,11 +36,8 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
     // V3Prompt and V2Prompt are structurally identical at runtime; cast to satisfy internal helpers.
     const promptMessages = options.prompt as unknown as import('@ai-sdk/provider').LanguageModelV2Prompt;
     const hasConversationHistory = promptMessages.some((message) => message.role === 'assistant');
-    const resumeSessionId = getResume(promptMessages, this.modelId) ?? (hasConversationHistory ? this.activeSessionId : undefined);
-
-    if (!hasConversationHistory) {
-      this.activeSessionId = undefined;
-    }
+    const sessionId = normalizedOptions.sessionId;
+    const resumeSessionId = (hasConversationHistory ? sessionId : undefined) ?? getResume(promptMessages, this.modelId);
 
     const prompt = buildPrompt(promptMessages, { resumeSessionId });
     const toolSystemPrompt = buildToolSystemPrompt(options.tools);
@@ -51,16 +47,12 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
       maxTurns: DEFAULT_MAX_TURNS,
       model: this.modelId,
       resumeSessionId,
+      sessionId,
       system,
     });
     const streamState = createStreamState();
     const textState = createToolCallTextState();
     const currentModelId = this.modelId;
-    const persistSessionId = (sessionId: string | undefined) => {
-      if (sessionId) {
-        this.activeSessionId = sessionId;
-      }
-    };
     let child: ReturnType<typeof spawn> | undefined;
 
     const stream = new ReadableStream<LanguageModelV3StreamPart>({
@@ -95,7 +87,6 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
             usage: toLanguageModelUsage(streamState.usage),
           });
         } finally {
-          persistSessionId(streamState.sessionId);
           child?.kill();
           controller.close();
         }
