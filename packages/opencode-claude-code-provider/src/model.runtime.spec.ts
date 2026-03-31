@@ -324,6 +324,98 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     ]);
   });
 
+  it('resumes using instance-tracked session ID when prompt metadata is absent', async () => {
+    const first = createMockChild({
+      lines: [
+        JSON.stringify({ session_id: 'sess_tracked', subtype: 'init', type: 'system' }),
+        JSON.stringify({ event: { content_block: { type: 'text' }, index: 0, type: 'content_block_start' }, type: 'stream_event' }),
+        JSON.stringify({
+          event: { delta: { text: 'hello', type: 'text_delta' }, index: 0, type: 'content_block_delta' },
+          type: 'stream_event',
+        }),
+        JSON.stringify({ event: { index: 0, type: 'content_block_stop' }, type: 'stream_event' }),
+        JSON.stringify({ subtype: 'success', type: 'result', usage: { input_tokens: 1, output_tokens: 1 } }),
+      ],
+    });
+    spawnMock.mockReturnValueOnce(first.child);
+    createInterfaceMock.mockReturnValueOnce(first.interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+
+    const firstResult = await model.doStream({
+      prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }],
+      tools: [],
+    });
+    await readAllParts(firstResult.stream);
+    expect(firstResult.request.body.args).not.toContain('--resume');
+
+    const second = createMockChild({
+      lines: [
+        JSON.stringify({ session_id: 'sess_tracked', subtype: 'init', type: 'system' }),
+        JSON.stringify({ event: { content_block: { type: 'text' }, index: 0, type: 'content_block_start' }, type: 'stream_event' }),
+        JSON.stringify({
+          event: { delta: { text: 'world', type: 'text_delta' }, index: 0, type: 'content_block_delta' },
+          type: 'stream_event',
+        }),
+        JSON.stringify({ event: { index: 0, type: 'content_block_stop' }, type: 'stream_event' }),
+        JSON.stringify({ subtype: 'success', type: 'result', usage: { input_tokens: 2, output_tokens: 1 } }),
+      ],
+    });
+    spawnMock.mockReturnValueOnce(second.child);
+    createInterfaceMock.mockReturnValueOnce(second.interfaceHandle);
+
+    const secondResult = await model.doStream({
+      prompt: [
+        { content: [{ text: 'hello', type: 'text' }], role: 'user' },
+        { content: [{ text: 'hi!', type: 'text' }], role: 'assistant' },
+        { content: [{ text: 'what can you do?', type: 'text' }], role: 'user' },
+      ] as never,
+      tools: [],
+    });
+    await readAllParts(secondResult.stream);
+
+    expect(secondResult.request.body.args).toContain('--resume');
+    expect(secondResult.request.body.resume).toBe('sess_tracked');
+  });
+
+  it('resets instance-tracked session ID for new conversations', async () => {
+    const first = createMockChild({
+      lines: [
+        JSON.stringify({ session_id: 'sess_old', subtype: 'init', type: 'system' }),
+        JSON.stringify({ subtype: 'success', type: 'result', usage: { input_tokens: 1, output_tokens: 1 } }),
+      ],
+    });
+    spawnMock.mockReturnValueOnce(first.child);
+    createInterfaceMock.mockReturnValueOnce(first.interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+
+    const firstResult = await model.doStream({
+      prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }],
+      tools: [],
+    });
+    await readAllParts(firstResult.stream);
+
+    const second = createMockChild({
+      lines: [
+        JSON.stringify({ session_id: 'sess_new', subtype: 'init', type: 'system' }),
+        JSON.stringify({ subtype: 'success', type: 'result', usage: { input_tokens: 1, output_tokens: 1 } }),
+      ],
+    });
+    spawnMock.mockReturnValueOnce(second.child);
+    createInterfaceMock.mockReturnValueOnce(second.interfaceHandle);
+
+    const secondResult = await model.doStream({
+      prompt: [{ content: [{ text: 'new conversation', type: 'text' }], role: 'user' }],
+      tools: [],
+    });
+    await readAllParts(secondResult.stream);
+
+    expect(secondResult.request.body.args).not.toContain('--resume');
+  });
+
   it('resumes session for assistant messages that include tool results', async () => {
     const { child, interfaceHandle } = createMockChild({ lines: [] });
     spawnMock.mockReturnValue(child);
