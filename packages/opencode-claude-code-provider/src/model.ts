@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 
 import { buildCliArgs, streamCliProcess, writePromptToCliProcess } from './cli.js';
-import { createStreamState, toLanguageModelUsage } from './messages.js';
+import { createStreamState, toLanguageModelUsage, toV3FinishReason } from './messages.js';
 import { buildPrompt, getSystem } from './prompt.js';
 import { getResume } from './resume.js';
 import { createToolCallTextState } from './tool-call-parser.js';
@@ -9,12 +9,12 @@ import { buildToolSystemPrompt } from './tool-prompt.js';
 import { DEFAULT_MAX_TURNS, normalizeProviderOptions } from './types.js';
 
 import type { ClaudeCodeProviderOptions, ProviderMetadataValue } from './types.js';
-import type { LanguageModelV2, LanguageModelV2CallOptions, LanguageModelV2StreamPart } from '@ai-sdk/provider';
+import type { LanguageModelV3, LanguageModelV3CallOptions, LanguageModelV3StreamPart } from '@ai-sdk/provider';
 
-export class ClaudeCodeLanguageModel implements LanguageModelV2 {
+export class ClaudeCodeLanguageModel implements LanguageModelV3 {
   public readonly modelId: string;
   public readonly provider = 'claude-code';
-  public readonly specificationVersion = 'v2' as const;
+  public readonly specificationVersion = 'v3' as const;
   public readonly supportedUrls: Record<string, RegExp[]> = {};
   private activeSessionId: string | undefined;
   private readonly defaults: ClaudeCodeProviderOptions;
@@ -28,22 +28,24 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
     throw new Error('Claude Code provider only supports the streaming path. Use doStream() instead.');
   }
 
-  public async doStream(options: LanguageModelV2CallOptions) {
+  public async doStream(options: LanguageModelV3CallOptions) {
     const normalizedOptions = normalizeProviderOptions(
       (options.providerOptions?.['claude-code'] ?? undefined) as Record<string, unknown> | undefined,
       this.defaults,
     );
     const cwd = process.cwd();
-    const hasConversationHistory = options.prompt.some((message) => message.role === 'assistant');
-    const resumeSessionId = getResume(options.prompt, this.modelId) ?? (hasConversationHistory ? this.activeSessionId : undefined);
+    // V3Prompt and V2Prompt are structurally identical at runtime; cast to satisfy internal helpers.
+    const promptMessages = options.prompt as unknown as import('@ai-sdk/provider').LanguageModelV2Prompt;
+    const hasConversationHistory = promptMessages.some((message) => message.role === 'assistant');
+    const resumeSessionId = getResume(promptMessages, this.modelId) ?? (hasConversationHistory ? this.activeSessionId : undefined);
 
     if (!hasConversationHistory) {
       this.activeSessionId = undefined;
     }
 
-    const prompt = buildPrompt(options.prompt, { resumeSessionId });
+    const prompt = buildPrompt(promptMessages, { resumeSessionId });
     const toolSystemPrompt = buildToolSystemPrompt(options.tools);
-    const system = [getSystem(options.prompt), toolSystemPrompt].filter((value): value is string => Boolean(value)).join('\n\n');
+    const system = [getSystem(promptMessages), toolSystemPrompt].filter((value): value is string => Boolean(value)).join('\n\n');
     const cliArgs = buildCliArgs({
       effort: normalizedOptions.effort,
       maxTurns: DEFAULT_MAX_TURNS,
@@ -61,7 +63,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
     };
     let child: ReturnType<typeof spawn> | undefined;
 
-    const stream = new ReadableStream<LanguageModelV2StreamPart>({
+    const stream = new ReadableStream<LanguageModelV3StreamPart>({
       async start(controller) {
         controller.enqueue({ type: 'stream-start', warnings: [] });
 
@@ -79,7 +81,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
           await Promise.all([streamCliProcess({ child, controller, streamState, textState }), writePromptToCliProcess(child, prompt)]);
 
           controller.enqueue({
-            finishReason: streamState.finishReason,
+            finishReason: toV3FinishReason(streamState.finishReason),
             providerMetadata: buildProviderMetadata(currentModelId, streamState.sessionId, streamState.usage.cacheCreationInputTokens),
             type: 'finish',
             usage: toLanguageModelUsage(streamState.usage),
@@ -87,7 +89,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV2 {
         } catch (error) {
           controller.enqueue({ error, type: 'error' });
           controller.enqueue({
-            finishReason: 'error',
+            finishReason: toV3FinishReason('error'),
             providerMetadata: buildProviderMetadata(currentModelId, streamState.sessionId, streamState.usage.cacheCreationInputTokens),
             type: 'finish',
             usage: toLanguageModelUsage(streamState.usage),

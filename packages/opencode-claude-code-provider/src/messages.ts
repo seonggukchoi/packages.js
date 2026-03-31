@@ -1,6 +1,12 @@
 import { getNumber, getRecord, isRecord } from './types.js';
 
-import type { LanguageModelV2FinishReason, LanguageModelV2StreamPart, LanguageModelV2Usage } from '@ai-sdk/provider';
+import type {
+  LanguageModelV2FinishReason,
+  LanguageModelV3FinishReason,
+  LanguageModelV3StreamPart,
+  LanguageModelV3Usage,
+  LanguageModelV2Usage,
+} from '@ai-sdk/provider';
 
 type StreamUsage = LanguageModelV2Usage & {
   cacheCreationInputTokens?: number;
@@ -47,17 +53,30 @@ export function createStreamState(): StreamState {
   };
 }
 
-export function toLanguageModelUsage(usage: StreamUsage): LanguageModelV2Usage {
+export function toLanguageModelUsage(usage: StreamUsage): LanguageModelV3Usage {
   return {
-    cachedInputTokens: usage.cachedInputTokens,
-    inputTokens: usage.inputTokens,
-    outputTokens: usage.outputTokens,
-    reasoningTokens: usage.reasoningTokens,
-    totalTokens: usage.totalTokens,
+    inputTokens: {
+      total: usage.inputTokens,
+      noCache: undefined,
+      cacheRead: usage.cachedInputTokens,
+      cacheWrite: undefined,
+    },
+    outputTokens: {
+      total: usage.outputTokens,
+      text: undefined,
+      reasoning: usage.reasoningTokens,
+    },
   };
 }
 
-export function mapCliMessage(message: CliMessage, state: StreamState): LanguageModelV2StreamPart[] {
+export function toV3FinishReason(reason: LanguageModelV2FinishReason): LanguageModelV3FinishReason {
+  return {
+    unified: reason === 'unknown' ? 'other' : reason,
+    raw: undefined,
+  };
+}
+
+export function mapCliMessage(message: CliMessage, state: StreamState): LanguageModelV3StreamPart[] {
   captureSessionId(message, state);
 
   const messageType = getString(message.type);
@@ -91,7 +110,7 @@ export function mapCliMessage(message: CliMessage, state: StreamState): Language
   return [];
 }
 
-function mapStreamEvent(event: Record<string, unknown> | undefined, state: StreamState): LanguageModelV2StreamPart[] {
+function mapStreamEvent(event: Record<string, unknown> | undefined, state: StreamState): LanguageModelV3StreamPart[] {
   if (!event) {
     return [];
   }
@@ -132,7 +151,7 @@ function mapStreamEvent(event: Record<string, unknown> | undefined, state: Strea
   return [];
 }
 
-function onContentBlockStart(event: Record<string, unknown>, index: number, state: StreamState): LanguageModelV2StreamPart[] {
+function onContentBlockStart(event: Record<string, unknown>, index: number, state: StreamState): LanguageModelV3StreamPart[] {
   const block = getRecord(event.content_block) ?? getRecord(event.block);
   const blockType = getString(block?.type);
 
@@ -164,7 +183,7 @@ function onContentBlockStart(event: Record<string, unknown>, index: number, stat
   return [];
 }
 
-function onContentBlockDelta(event: Record<string, unknown>, index: number, state: StreamState): LanguageModelV2StreamPart[] {
+function onContentBlockDelta(event: Record<string, unknown>, index: number, state: StreamState): LanguageModelV3StreamPart[] {
   const block = state.blocks.get(index);
   const delta = getRecord(event.delta);
   const deltaType = getString(delta?.type);
@@ -192,7 +211,7 @@ function onContentBlockDelta(event: Record<string, unknown>, index: number, stat
   return [];
 }
 
-function onContentBlockStop(index: number, state: StreamState): LanguageModelV2StreamPart[] {
+function onContentBlockStop(index: number, state: StreamState): LanguageModelV3StreamPart[] {
   const block = state.blocks.get(index);
 
   if (!block) {
@@ -220,7 +239,7 @@ function onContentBlockStop(index: number, state: StreamState): LanguageModelV2S
   return [{ id: block.id, type: 'reasoning-end' }];
 }
 
-function mapAssistantToolUse(message: Record<string, unknown> | undefined, state: StreamState): LanguageModelV2StreamPart[] {
+function mapAssistantToolUse(message: Record<string, unknown> | undefined, state: StreamState): LanguageModelV3StreamPart[] {
   const content = Array.isArray(message?.content) ? message.content : [];
   const toolUse = content.find((part) => isRecord(part) && part.type === 'tool_use');
 
