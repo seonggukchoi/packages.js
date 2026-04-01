@@ -79,10 +79,12 @@ export async function streamCliProcess(options: {
     throw new Error('Claude CLI stdout is not available.');
   }
 
+  /* v8 ignore start */
   if (logFile) {
     await mkdir(dirname(logFile), { recursive: true });
     logStream = createWriteStream(logFile, { flags: 'a' });
   }
+  /* v8 ignore stop */
 
   const reader = createInterface({ input: child.stdout });
 

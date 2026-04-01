@@ -105,4 +105,21 @@ describe('normalizeChatParams', () => {
       sessionId: 'sess-123',
     });
   });
+
+  it('prefixes sessionId with title- for the title agent', () => {
+    const output = { options: {} };
+
+    normalizeChatParams(
+      {
+        model: { providerID: 'claude-code' },
+        sessionID: 'sess-123',
+        agent: 'title',
+      },
+      output,
+    );
+
+    expect(output.options).toMatchObject({
+      sessionId: 'title-sess-123',
+    });
+  });
 });

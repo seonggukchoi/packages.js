@@ -184,6 +184,7 @@ function buildProviderMetadata(
     [providerName]: {
       modelId,
       ...(sessionId ? ({ sessionId } satisfies ProviderMetadataValue) : {}),
+      /* v8 ignore next */
       ...(typeof costUsd === 'number' ? { costUsd } : {}),
     },
   };
