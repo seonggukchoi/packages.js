@@ -16,6 +16,7 @@ describe('normalizeChatParams', () => {
           providerID: 'claude-code',
         },
         sessionID: 'sess-123',
+        agent: 'coder',
       },
       output,
     );
@@ -41,6 +42,7 @@ describe('normalizeChatParams', () => {
           providerID: 'openai',
         },
         sessionID: 'sess-456',
+        agent: 'coder',
       },
       output,
     );
@@ -63,6 +65,7 @@ describe('normalizeChatParams', () => {
           providerID: 'claude-code',
         },
         sessionID: 'sess-123',
+        agent: 'coder',
       },
       output,
     );
@@ -90,6 +93,7 @@ describe('normalizeChatParams', () => {
           providerID: 'claude-code',
         },
         sessionID: 'sess-123',
+        agent: 'coder',
       },
       output,
     );
