@@ -284,7 +284,7 @@ describe('prompt helpers', () => {
     expect(output).toContain('different model while your session was paused');
     expect(output).toContain('user asks GPT');
     expect(output).toContain('GPT response');
-    expect(output).toContain('The Read tool returned:');
+    expect(output).toContain('[tool-result:Read]');
     expect(output).toContain('If you have sufficient information');
   });
 
