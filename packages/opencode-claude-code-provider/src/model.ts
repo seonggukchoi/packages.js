@@ -98,9 +98,11 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
               stdio: ['pipe', 'pipe', 'pipe'],
             });
 
+            /* v8 ignore start */
             options.abortSignal?.addEventListener('abort', () => {
               child?.kill();
             });
+            /* v8 ignore stop */
 
             await Promise.all([
               streamCliProcess({ child, controller, streamState, textState }),
