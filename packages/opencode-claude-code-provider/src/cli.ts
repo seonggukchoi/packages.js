@@ -79,12 +79,10 @@ export async function streamCliProcess(options: {
     throw new Error('Claude CLI stdout is not available.');
   }
 
-  /* v8 ignore start */
   if (logFile) {
     await mkdir(dirname(logFile), { recursive: true });
     logStream = createWriteStream(logFile, { flags: 'a' });
   }
-  /* v8 ignore stop */
 
   const reader = createInterface({ input: child.stdout });
 
@@ -159,7 +157,6 @@ export async function writePromptToCliProcess(child: ReturnType<typeof spawn>, p
   });
 }
 
-/* v8 ignore start */
 function parseCliMessage(line: string): Record<string, unknown> {
   try {
     const parsed = JSON.parse(line);
@@ -169,9 +166,7 @@ function parseCliMessage(line: string): Record<string, unknown> {
     }
 
     return parsed;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to parse Claude CLI JSONL output: ${message}`);
+  } catch {
+    throw new Error(`Failed to parse Claude CLI JSONL output: ${line}`);
   }
 }
-/* v8 ignore stop */

@@ -101,11 +101,9 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
               stdio: ['pipe', 'pipe', 'pipe'],
             });
 
-            /* v8 ignore start */
             options.abortSignal?.addEventListener('abort', () => {
               child?.kill();
             });
-            /* v8 ignore stop */
 
             await Promise.all([
               streamCliProcess({ child, controller, logFile: normalizedOptions.logFile, streamState, textState }),
@@ -184,7 +182,6 @@ function buildProviderMetadata(
     [providerName]: {
       modelId,
       ...(sessionId ? ({ sessionId } satisfies ProviderMetadataValue) : {}),
-      /* v8 ignore next */
       ...(typeof costUsd === 'number' ? { costUsd } : {}),
     },
   };

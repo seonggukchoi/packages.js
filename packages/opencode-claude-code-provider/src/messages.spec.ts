@@ -621,6 +621,54 @@ describe('mapCliMessage', () => {
     ).toEqual([]);
   });
 
+  it('captures costUsd from result messages', () => {
+    const state = createStreamState();
+
+    mapCliMessage({ subtype: 'success', total_cost_usd: 0.005, type: 'result' }, state);
+    expect(state.costUsd).toBe(0.005);
+
+    const state2 = createStreamState();
+
+    mapCliMessage(
+      {
+        modelUsage: { 'claude-haiku-4-5': { costUSD: 0.003 } },
+        subtype: 'success',
+        type: 'result',
+      },
+      state2,
+    );
+    expect(state2.costUsd).toBe(0.003);
+
+    const state3 = createStreamState();
+
+    mapCliMessage({ subtype: 'success', type: 'result' }, state3);
+    expect(state3.costUsd).toBeUndefined();
+
+    const state4 = createStreamState();
+
+    mapCliMessage(
+      {
+        modelUsage: { 'claude-haiku-4-5': { tokens: 100 } },
+        subtype: 'success',
+        type: 'result',
+      },
+      state4,
+    );
+    expect(state4.costUsd).toBeUndefined();
+
+    const state5 = createStreamState();
+
+    mapCliMessage(
+      {
+        modelUsage: { 'claude-haiku-4-5': 'not-a-record' },
+        subtype: 'success',
+        type: 'result',
+      },
+      state5,
+    );
+    expect(state5.costUsd).toBeUndefined();
+  });
+
   it('maps all finish-reason branches', () => {
     const errorState = createStreamState();
     mapCliMessage({ is_error: true, subtype: 'success', type: 'result' }, errorState);

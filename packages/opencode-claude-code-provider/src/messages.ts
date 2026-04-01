@@ -364,7 +364,6 @@ function safeJsonStringify(value: Record<string, unknown>): string {
   }
 }
 
-/* v8 ignore start */
 function extractModelUsageCost(modelUsage: Record<string, unknown> | undefined): number | undefined {
   if (!modelUsage) {
     return undefined;
@@ -380,7 +379,6 @@ function extractModelUsageCost(modelUsage: Record<string, unknown> | undefined):
 
   return undefined;
 }
-/* v8 ignore stop */
 
 function getString(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
