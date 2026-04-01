@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.8.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.7.4...@seonggukchoi/opencode-claude-code-provider@0.8.0) (2026-04-01)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** fix type assertion in costUsd test ([7fdfde6](https://github.com/seonggukchoi/packages.js/commit/7fdfde62978e95b80fbad2859037a4defaaff34f))
+
+### Features
+
+- **opencode-claude-code-provider:** add logFile option to log raw CLI JSON stream ([5b626e2](https://github.com/seonggukchoi/packages.js/commit/5b626e2d684fdc5e4da58dd5b30c686094babf8e))
+- **opencode-claude-code-provider:** forward CLI costUsd in provider metadata ([99512f3](https://github.com/seonggukchoi/packages.js/commit/99512f332ffdff331ff6dd069c80e923c28c2cc5))
+
 ## [0.7.4](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.7.3...@seonggukchoi/opencode-claude-code-provider@0.7.4) (2026-04-01)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-claude-code-provider
