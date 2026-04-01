@@ -10,10 +10,6 @@ This plugin bridges OpenCode's chat lifecycle with the Claude Code provider. It 
 
 ## Installation
 
-```bash
-npm install @seonggukchoi/opencode-claude-code-plugin
-```
-
 Register it alongside the provider in `opencode.json`:
 
 ```json
