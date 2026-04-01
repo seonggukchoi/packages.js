@@ -1,4 +1,7 @@
 import { spawn } from 'node:child_process';
+import { createWriteStream } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { createInterface } from 'node:readline';
 
 import { mapCliMessage, type StreamState } from './messages.js';
@@ -7,6 +10,7 @@ import { isRecord } from './types.js';
 
 import type { ToolCallTextState } from './tool-call-parser.js';
 import type { LanguageModelV3StreamPart } from '@ai-sdk/provider';
+import type { WriteStream } from 'node:fs';
 
 export function buildCliArgs(options: {
   effort?: string;
@@ -42,12 +46,14 @@ export function buildCliArgs(options: {
 export async function streamCliProcess(options: {
   child: ReturnType<typeof spawn>;
   controller: ReadableStreamDefaultController<LanguageModelV3StreamPart>;
+  logFile?: string;
   streamState: StreamState;
   textState: ToolCallTextState;
 }): Promise<void> {
-  const { child, controller, streamState, textState } = options;
+  const { child, controller, logFile, streamState, textState } = options;
   const stderrChunks: string[] = [];
   let toolCallDetected = false;
+  let logStream: WriteStream | undefined;
 
   child.stderr?.on('data', (chunk) => {
     stderrChunks.push(chunk.toString());
@@ -73,6 +79,11 @@ export async function streamCliProcess(options: {
     throw new Error('Claude CLI stdout is not available.');
   }
 
+  if (logFile) {
+    await mkdir(dirname(logFile), { recursive: true });
+    logStream = createWriteStream(logFile, { flags: 'a' });
+  }
+
   const reader = createInterface({ input: child.stdout });
 
   try {
@@ -80,6 +91,8 @@ export async function streamCliProcess(options: {
       if (line.trim().length === 0) {
         continue;
       }
+
+      logStream?.write(line + '\n');
 
       const message = parseCliMessage(line);
 
@@ -110,6 +123,7 @@ export async function streamCliProcess(options: {
     await exitPromise;
   } finally {
     reader.close();
+    logStream?.end();
   }
 }
 

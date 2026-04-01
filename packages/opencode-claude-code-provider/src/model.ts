@@ -72,7 +72,10 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
               child?.kill();
             });
 
-            await Promise.all([streamCliProcess({ child, controller, streamState, textState }), writePromptToCliProcess(child, prompt)]);
+            await Promise.all([
+              streamCliProcess({ child, controller, logFile: normalizedOptions.logFile, streamState, textState }),
+              writePromptToCliProcess(child, prompt),
+            ]);
           } catch (resumeError) {
             if (!resumeSessionId) {
               throw resumeError;
@@ -105,14 +108,19 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
             /* v8 ignore stop */
 
             await Promise.all([
-              streamCliProcess({ child, controller, streamState, textState }),
+              streamCliProcess({ child, controller, logFile: normalizedOptions.logFile, streamState, textState }),
               writePromptToCliProcess(child, fallbackPrompt),
             ]);
           }
 
           controller.enqueue({
             finishReason: toV3FinishReason(streamState.finishReason),
-            providerMetadata: buildProviderMetadata(currentModelId, streamState.sessionId, streamState.usage.cacheCreationInputTokens),
+            providerMetadata: buildProviderMetadata(
+              currentModelId,
+              streamState.sessionId,
+              streamState.usage.cacheCreationInputTokens,
+              streamState.costUsd,
+            ),
             type: 'finish',
             usage: toLanguageModelUsage(streamState.usage),
           });
@@ -120,7 +128,12 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
           controller.enqueue({ error, type: 'error' });
           controller.enqueue({
             finishReason: toV3FinishReason('error'),
-            providerMetadata: buildProviderMetadata(currentModelId, streamState.sessionId, streamState.usage.cacheCreationInputTokens),
+            providerMetadata: buildProviderMetadata(
+              currentModelId,
+              streamState.sessionId,
+              streamState.usage.cacheCreationInputTokens,
+              streamState.costUsd,
+            ),
             type: 'finish',
             usage: toLanguageModelUsage(streamState.usage),
           });
@@ -152,7 +165,12 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
   }
 }
 
-function buildProviderMetadata(modelId: string, sessionId: string | undefined, cacheCreationInputTokens: number | undefined) {
+function buildProviderMetadata(
+  modelId: string,
+  sessionId: string | undefined,
+  cacheCreationInputTokens: number | undefined,
+  costUsd: number | undefined,
+) {
   const providerName = 'claude-code';
 
   return {
@@ -166,6 +184,7 @@ function buildProviderMetadata(modelId: string, sessionId: string | undefined, c
     [providerName]: {
       modelId,
       ...(sessionId ? ({ sessionId } satisfies ProviderMetadataValue) : {}),
+      ...(typeof costUsd === 'number' ? { costUsd } : {}),
     },
   };
 }
