@@ -148,6 +148,7 @@ Cache is per-model. Switching models mid-session rebuilds the cache from scratch
 - Claude Code's own `CLAUDE.md` is not loaded; OpenCode provides its own context
 - Permission checks are bypassed (`--dangerously-skip-permissions`)
 - Context window size is determined by the CLI; use `[1m]` for the full 1M window
+- **No cross-model conversation continuity.** Unlike standard API providers that send the full conversation history on every request, this provider resumes a stateful CLI session. When switching to another model (e.g. GPT) mid-session and then switching back, Claude has no awareness of the messages exchanged with the other model. The AI SDK does not forward provider metadata on messages, so the provider cannot identify which messages belong to Claude and which were produced by other models.
 
 ## Failure handling
 
