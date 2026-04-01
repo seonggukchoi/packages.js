@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.7.1...@seonggukchoi/opencode-claude-code-provider@0.7.2) (2026-04-01)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** add v8 ignore for fallback abort listener coverage ([c8639df](https://github.com/seonggukchoi/packages.js/commit/c8639dfbea843ea4c9717f07d4cd60d4a8a7b735))
+- **opencode-claude-code-provider:** fall back to new session when resume fails ([9c14ddd](https://github.com/seonggukchoi/packages.js/commit/9c14ddd251083270491920b11ba79107d2ff5b70))
+
 ## [0.7.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.7.0...@seonggukchoi/opencode-claude-code-provider@0.7.1) (2026-03-31)
 
 ### Bug Fixes
