@@ -1,6 +1,7 @@
 import { normalizeClaudeCodeEffort } from './effort.js';
 
 type ChatParamsInput = {
+  agent: string;
   model: {
     providerID: string;
   };
@@ -21,7 +22,7 @@ export function normalizeChatParams(input: ChatParamsInput, output: ChatParamsOu
     effort: normalizeClaudeCodeEffort(output.options.effort),
     env: normalizeRecord(output.options.env) ?? {},
     pathToClaudeCodeExecutable: normalizeString(output.options.pathToClaudeCodeExecutable) ?? 'claude',
-    sessionId: input.sessionID,
+    sessionId: input.agent === 'title' ? `title-${input.sessionID}` : input.sessionID,
   };
 }
 
