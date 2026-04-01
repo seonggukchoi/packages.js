@@ -22,9 +22,7 @@ describe('prompt helpers', () => {
         '',
         'System B',
         '',
-        'Response instructions:',
-        "Respond with the assistant's next message only.",
-        'Do not repeat transcript headers, tool narration, or tool results unless the user explicitly asks for the raw transcript.',
+        'Respond as assistant only. Do not echo transcript markers or tool output.',
       ].join('\n'),
     );
   });
@@ -61,9 +59,9 @@ describe('prompt helpers', () => {
     ];
 
     expect(buildPrompt(prompt)).toContain('System instructions:');
-    expect(buildPrompt(prompt)).toContain('Conversation transcript (context only - do not repeat or continue it):');
+    expect(buildPrompt(prompt)).toContain('Transcript:');
     expect(buildPrompt(prompt)).toContain('Please inspect the workspace.');
-    expect(buildPrompt(prompt)).toContain("Respond with the assistant's next message only.");
+    expect(buildPrompt(prompt)).toContain('Respond as assistant only.');
   });
 
   it('reads the latest matching resume session id', () => {
@@ -147,9 +145,9 @@ describe('prompt helpers', () => {
     expect(output).toContain('url=https://example.com/file.txt');
     expect(output).toContain('stringLength=11');
     expect(output).not.toContain('[reasoning]');
-    expect(output).toContain('Assistant used the question tool with input: [object Object]');
-    expect(output).toContain('The question tool returned:');
-    expect(output).toContain('External tool results:');
+    expect(output).toContain('[tool-call:question] [object Object]');
+    expect(output).toContain('[tool-result:question]');
+    expect(output).toContain('Tool output:');
     expect(output).toContain('[file mediaType=application/json]');
   });
 
@@ -318,6 +316,6 @@ describe('prompt helpers', () => {
       },
     ] as unknown as LanguageModelV2Prompt);
 
-    expect(invalidJsonOutput).toContain('Assistant used the Read tool with input: "{"');
+    expect(invalidJsonOutput).toContain('[tool-call:Read] "{"');
   });
 });

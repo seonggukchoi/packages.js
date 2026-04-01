@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const spawnMock = vi.fn();
 const createInterfaceMock = vi.fn();
+const mkdirMock = vi.fn<(path: string, options?: { recursive?: boolean }) => Promise<string | undefined>>();
+const createWriteStreamMock = vi.fn();
 
 vi.mock('node:child_process', () => ({
   spawn: spawnMock,
@@ -14,6 +16,22 @@ vi.mock('node:child_process', () => ({
 vi.mock('node:readline', () => ({
   createInterface: createInterfaceMock,
 }));
+
+vi.mock('node:fs', async (importOriginal) => {
+  const original = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...original,
+    createWriteStream: createWriteStreamMock,
+  };
+});
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const original = await importOriginal<typeof import('node:fs/promises')>();
+  return {
+    ...original,
+    mkdir: mkdirMock,
+  };
+});
 
 describe('ClaudeCodeLanguageModel runtime', () => {
   beforeEach(() => {
@@ -651,6 +669,107 @@ describe('ClaudeCodeLanguageModel runtime', () => {
 
     expect(parts.some((part) => isErrorPart(part) && String(part.error).includes('spawn failed'))).toBe(true);
     expect(parts.some((part) => isFinishPart(part) && part.finishReason.unified === 'error')).toBe(true);
+  });
+
+  it('creates a log file when logFile option is provided', async () => {
+    const mockWriteStream = { end: vi.fn(), write: vi.fn() };
+    mkdirMock.mockResolvedValue(undefined);
+    createWriteStreamMock.mockReturnValue(mockWriteStream);
+
+    const { child, interfaceHandle } = createMockChild({
+      lines: [
+        JSON.stringify({ session_id: 'sess_log', subtype: 'init', type: 'system' }),
+        JSON.stringify({ event: { content_block: { type: 'text' }, index: 0, type: 'content_block_start' }, type: 'stream_event' }),
+        JSON.stringify({
+          event: { delta: { text: 'logged', type: 'text_delta' }, index: 0, type: 'content_block_delta' },
+          type: 'stream_event',
+        }),
+        JSON.stringify({ event: { index: 0, type: 'content_block_stop' }, type: 'stream_event' }),
+        JSON.stringify({ subtype: 'success', type: 'result', usage: { input_tokens: 1, output_tokens: 1 } }),
+      ],
+    });
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({
+      prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }],
+      providerOptions: { 'claude-code': { logFile: '/tmp/test-log.jsonl' } },
+      tools: [],
+    });
+
+    await readAllParts(result.stream);
+
+    expect(mkdirMock).toHaveBeenCalledWith('/tmp', { recursive: true });
+    expect(createWriteStreamMock).toHaveBeenCalledWith('/tmp/test-log.jsonl', { flags: 'a' });
+    expect(mockWriteStream.write).toHaveBeenCalled();
+    expect(mockWriteStream.end).toHaveBeenCalled();
+  });
+
+  it('includes costUsd in provider metadata when CLI reports cost', async () => {
+    const { child, interfaceHandle } = createMockChild({
+      lines: [
+        JSON.stringify({ session_id: 'sess_cost', subtype: 'init', type: 'system' }),
+        JSON.stringify({
+          subtype: 'success',
+          total_cost_usd: 0.0042,
+          type: 'result',
+          usage: { input_tokens: 5, output_tokens: 3 },
+        }),
+      ],
+    });
+    spawnMock.mockReturnValue(child);
+    createInterfaceMock.mockReturnValue(interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({
+      prompt: [{ content: [{ text: 'hello', type: 'text' }], role: 'user' }],
+      tools: [],
+    });
+    const parts = await readAllParts(result.stream);
+    const finish = parts.find((part) => isFinishPart(part));
+
+    expect(finish).toBeDefined();
+    expect(
+      (finish as unknown as { providerMetadata: Record<string, Record<string, unknown>> }).providerMetadata['claude-code'].costUsd,
+    ).toBe(0.0042);
+  });
+
+  it('registers abort listener on fallback session', async () => {
+    const failed = createMockChild({ exitCode: 1, lines: [], stderr: 'session not found' });
+    const success = createMockChild({
+      lines: [
+        JSON.stringify({ session_id: 'sess_abort_fallback', subtype: 'init', type: 'system' }),
+        JSON.stringify({ subtype: 'success', type: 'result', usage: { input_tokens: 1, output_tokens: 1 } }),
+      ],
+    });
+
+    spawnMock.mockReturnValueOnce(failed.child).mockReturnValueOnce(success.child);
+    createInterfaceMock.mockReturnValueOnce(failed.interfaceHandle).mockReturnValueOnce(success.interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const abortController = new AbortController();
+    const result = await model.doStream({
+      abortSignal: abortController.signal,
+      prompt: [
+        { content: [{ text: 'hello', type: 'text' }], role: 'user' },
+        { content: [{ text: 'hi!', type: 'text' }], role: 'assistant' },
+        { content: [{ text: 'continue', type: 'text' }], role: 'user' },
+      ] as never,
+      providerOptions: { 'claude-code': { sessionId: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d' } },
+      tools: [],
+    });
+
+    await readAllParts(result.stream);
+
+    // Trigger abort after stream completes to ensure the listener was registered
+    abortController.abort();
+
+    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(success.child.kill).toHaveBeenCalled();
   });
 });
 

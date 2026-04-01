@@ -10,7 +10,13 @@
       },
       "models": {
         "opus": {
-          "id": "claude-opus-4-6",
+          "id": "claude-opus-4-6[1m]",
+          "cost": {
+            "input": 5,
+            "output": 25,
+            "cache_read": 0.5,
+            "cache_write": 6.25
+          },
           "limit": {
             "context": 1000000,
             "output": 128000
@@ -37,7 +43,13 @@
           }
         },
         "sonnet": {
-          "id": "claude-sonnet-4-6",
+          "id": "claude-sonnet-4-6[1m]",
+          "cost": {
+            "input": 3,
+            "output": 15,
+            "cache_read": 0.3,
+            "cache_write": 3.75
+          },
           "limit": {
             "context": 1000000,
             "output": 64000
@@ -62,6 +74,12 @@
         },
         "haiku": {
           "id": "claude-haiku-4-5",
+          "cost": {
+            "input": 1,
+            "output": 5,
+            "cache_read": 0.1,
+            "cache_write": 1.25
+          },
           "limit": {
             "context": 200000,
             "output": 64000

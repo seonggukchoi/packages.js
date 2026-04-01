@@ -1233,4 +1233,24 @@ describe('processTextBuffer', () => {
       { id: 'text-invalid-json-object', type: 'text-end' },
     ] satisfies LanguageModelV2StreamPart[]);
   });
+
+  it('handles tool_call with missing name field gracefully', () => {
+    const streamState = createStreamState();
+    const textState = createToolCallTextState();
+
+    processTextBuffer({ id: 'text-no-name', type: 'text-start' }, streamState, textState);
+    processTextBuffer(
+      {
+        delta: '\n<tool_call>{"arguments":{}}</tool_call>',
+        id: 'text-no-name',
+        type: 'text-delta',
+      },
+      streamState,
+      textState,
+    );
+
+    const result = processTextBuffer({ id: 'text-no-name', type: 'text-end' }, streamState, textState);
+
+    expect(result.every((part) => part.type !== 'tool-call')).toBe(true);
+  });
 });
