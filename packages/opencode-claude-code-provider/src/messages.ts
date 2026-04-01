@@ -32,6 +32,7 @@ export type CliMessage = Record<string, unknown>;
 
 export type StreamState = {
   blocks: Map<number, BlockState>;
+  costUsd?: number;
   finishReason: LanguageModelV2FinishReason;
   sessionId?: string;
   stopReason?: string;
@@ -104,6 +105,7 @@ export function mapCliMessage(message: CliMessage, state: StreamState): Language
 
     state.finishReason = mapFinishReason(message, state.stopReason, state.toolCallCounter > 0);
     state.usage = mergeUsage(state.usage, mapUsageRecord(getRecord(message.usage)));
+    state.costUsd = getNumber(message.total_cost_usd) ?? extractModelUsageCost(getRecord(message.modelUsage));
     return [];
   }
 
@@ -360,6 +362,22 @@ function safeJsonStringify(value: Record<string, unknown>): string {
   } catch {
     return '{}';
   }
+}
+
+function extractModelUsageCost(modelUsage: Record<string, unknown> | undefined): number | undefined {
+  if (!modelUsage) {
+    return undefined;
+  }
+
+  for (const value of Object.values(modelUsage)) {
+    const cost = getNumber(isRecord(value) ? value.costUSD : undefined);
+
+    if (typeof cost === 'number') {
+      return cost;
+    }
+  }
+
+  return undefined;
 }
 
 function getString(value: unknown): string | undefined {
