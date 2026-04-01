@@ -439,15 +439,9 @@ function findJsonObjectEnd(text: string, from: number): number {
 }
 
 function createToolCallSequenceFromPayload(
-  payload: { arguments: Record<string, unknown>; name: string } | undefined,
+  payload: { arguments: Record<string, unknown>; name: string },
   streamState: StreamState,
 ): LanguageModelV3StreamPart[] {
-  /* v8 ignore start */
-  if (!payload) {
-    return [];
-  }
-  /* v8 ignore stop */
-
   streamState.toolCallCounter += 1;
   const toolCallId = `tool-call-${streamState.toolCallCounter}`;
   const input = safeJsonStringify(payload.arguments);

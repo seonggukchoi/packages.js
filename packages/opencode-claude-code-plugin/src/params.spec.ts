@@ -16,6 +16,7 @@ describe('normalizeChatParams', () => {
           providerID: 'claude-code',
         },
         sessionID: 'sess-123',
+        agent: 'coder',
       },
       output,
     );
@@ -41,6 +42,7 @@ describe('normalizeChatParams', () => {
           providerID: 'openai',
         },
         sessionID: 'sess-456',
+        agent: 'coder',
       },
       output,
     );
@@ -63,6 +65,7 @@ describe('normalizeChatParams', () => {
           providerID: 'claude-code',
         },
         sessionID: 'sess-123',
+        agent: 'coder',
       },
       output,
     );
@@ -90,6 +93,7 @@ describe('normalizeChatParams', () => {
           providerID: 'claude-code',
         },
         sessionID: 'sess-123',
+        agent: 'coder',
       },
       output,
     );
@@ -99,6 +103,23 @@ describe('normalizeChatParams', () => {
       env: { A: '1' },
       pathToClaudeCodeExecutable: '/usr/local/bin/claude',
       sessionId: 'sess-123',
+    });
+  });
+
+  it('prefixes sessionId with title- for the title agent', () => {
+    const output = { options: {} };
+
+    normalizeChatParams(
+      {
+        model: { providerID: 'claude-code' },
+        sessionID: 'sess-123',
+        agent: 'title',
+      },
+      output,
+    );
+
+    expect(output.options).toMatchObject({
+      sessionId: 'title-sess-123',
     });
   });
 });

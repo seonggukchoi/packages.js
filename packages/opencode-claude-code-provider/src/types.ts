@@ -9,6 +9,7 @@ export type ClaudeCodeEffort = 'low' | 'medium' | 'high' | 'max';
 
 export type ProviderMetadataValue = {
   cacheCreationInputTokens?: number;
+  costUsd?: number;
   modelId?: string;
   sessionId?: string;
 };
@@ -26,6 +27,7 @@ export type OpenCodeToolLike = LanguageModelV2FunctionTool & {
 export type ClaudeCodeProviderOptions = {
   effort?: ClaudeCodeEffort;
   env?: Record<string, string>;
+  logFile?: string;
   pathToClaudeCodeExecutable?: string;
   sessionId?: string;
 };
@@ -33,6 +35,7 @@ export type ClaudeCodeProviderOptions = {
 export type NormalizedClaudeCodeOptions = {
   effort?: ClaudeCodeEffort;
   env: Record<string, string>;
+  logFile?: string;
   pathToClaudeCodeExecutable: string;
   sessionId?: string;
 };
@@ -51,6 +54,7 @@ export function normalizeProviderOptions(
       ...(defaults.env ?? {}),
       ...(rawEnv ?? {}),
     },
+    logFile: getString(raw.logFile) ?? defaults.logFile,
     pathToClaudeCodeExecutable: getString(raw.pathToClaudeCodeExecutable) ?? defaults.pathToClaudeCodeExecutable ?? DEFAULT_EXECUTABLE_PATH,
     sessionId: getSessionId(raw.sessionId) ?? defaults.sessionId,
   };
