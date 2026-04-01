@@ -50,8 +50,6 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
       sessionId,
       system,
     });
-    const streamState = createStreamState();
-    const textState = createToolCallTextState();
     const currentModelId = this.modelId;
     let child: ReturnType<typeof spawn> | undefined;
 
@@ -59,18 +57,58 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
       async start(controller) {
         controller.enqueue({ type: 'stream-start', warnings: [] });
 
+        let streamState = createStreamState();
+        let textState = createToolCallTextState();
+
         try {
-          child = spawn(normalizedOptions.pathToClaudeCodeExecutable, cliArgs, {
-            cwd,
-            env: normalizedOptions.env,
-            stdio: ['pipe', 'pipe', 'pipe'],
-          });
+          try {
+            child = spawn(normalizedOptions.pathToClaudeCodeExecutable, cliArgs, {
+              cwd,
+              env: normalizedOptions.env,
+              stdio: ['pipe', 'pipe', 'pipe'],
+            });
 
-          options.abortSignal?.addEventListener('abort', () => {
+            options.abortSignal?.addEventListener('abort', () => {
+              child?.kill();
+            });
+
+            await Promise.all([streamCliProcess({ child, controller, streamState, textState }), writePromptToCliProcess(child, prompt)]);
+          } catch (resumeError) {
+            if (!resumeSessionId) {
+              throw resumeError;
+            }
+
+            // Resume failed (e.g. session does not exist); fall back to a new session.
             child?.kill();
-          });
+            streamState = createStreamState();
+            textState = createToolCallTextState();
 
-          await Promise.all([streamCliProcess({ child, controller, streamState, textState }), writePromptToCliProcess(child, prompt)]);
+            const fallbackArgs = buildCliArgs({
+              effort: normalizedOptions.effort,
+              maxTurns: DEFAULT_MAX_TURNS,
+              model: currentModelId,
+              sessionId,
+              system,
+            });
+            const fallbackPrompt = buildPrompt(promptMessages, {});
+
+            child = spawn(normalizedOptions.pathToClaudeCodeExecutable, fallbackArgs, {
+              cwd,
+              env: normalizedOptions.env,
+              stdio: ['pipe', 'pipe', 'pipe'],
+            });
+
+            /* v8 ignore start */
+            options.abortSignal?.addEventListener('abort', () => {
+              child?.kill();
+            });
+            /* v8 ignore stop */
+
+            await Promise.all([
+              streamCliProcess({ child, controller, streamState, textState }),
+              writePromptToCliProcess(child, fallbackPrompt),
+            ]);
+          }
 
           controller.enqueue({
             finishReason: toV3FinishReason(streamState.finishReason),
