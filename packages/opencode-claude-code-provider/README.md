@@ -28,15 +28,11 @@ The provider resumes the same Claude Code session across turns, so the Anthropic
 
 - **OpenCode** with plugin support
 
-## Installation
-
-```bash
-npm install @seonggukchoi/opencode-claude-code-provider @seonggukchoi/opencode-claude-code-plugin
-```
-
 ## Configuration
 
 ### Minimal
+
+The companion plugin [`@seonggukchoi/opencode-claude-code-plugin`](https://www.npmjs.com/package/@seonggukchoi/opencode-claude-code-plugin) must be registered together. Without it, session resume and title session isolation do not work.
 
 ```json
 {
@@ -63,13 +59,13 @@ See [`docs/config.example.json`](./docs/config.example.json) for a complete conf
 
 Append `[1m]` to the model ID to enable the **1-million-token context window**. Without it, Claude Code CLI defaults to 200k and may compact the conversation prematurely.
 
-| Model ID                  | Context window |
-| ------------------------- | -------------- |
-| `claude-opus-4-6`        | 200k           |
-| `claude-opus-4-6[1m]`    | **1M**         |
-| `claude-sonnet-4-6`      | 200k           |
-| `claude-sonnet-4-6[1m]`  | **1M**         |
-| `claude-haiku-4-5`       | 200k           |
+| Model ID                | Context window |
+| ----------------------- | -------------- |
+| `claude-opus-4-6`       | 200k           |
+| `claude-opus-4-6[1m]`   | **1M**         |
+| `claude-sonnet-4-6`     | 200k           |
+| `claude-sonnet-4-6[1m]` | **1M**         |
+| `claude-haiku-4-5`      | 200k           |
 
 Haiku does not support the 1M context window.
 
@@ -92,12 +88,12 @@ Current pricing: [platform.claude.com/docs/en/about-claude/pricing](https://plat
 
 Options can be set at the provider level (`options`) or per-model level (`models.*.options`).
 
-| Option                        | Type     | Default    | Description                                  |
-| ----------------------------- | -------- | ---------- | -------------------------------------------- |
-| `pathToClaudeCodeExecutable`  | `string` | `"claude"` | Path to the Claude Code CLI binary           |
-| `effort`                      | `string` | —          | Effort level: `low`, `medium`, `high`, `max` |
-| `logFile`                     | `string` | —          | File path to log raw CLI JSON stream (JSONL) |
-| `env`                         | `object` | —          | Extra environment variables for the CLI      |
+| Option                       | Type     | Default    | Description                                  |
+| ---------------------------- | -------- | ---------- | -------------------------------------------- |
+| `pathToClaudeCodeExecutable` | `string` | `"claude"` | Path to the Claude Code CLI binary           |
+| `effort`                     | `string` | —          | Effort level: `low`, `medium`, `high`, `max` |
+| `logFile`                    | `string` | —          | File path to log raw CLI JSON stream (JSONL) |
+| `env`                        | `object` | —          | Extra environment variables for the CLI      |
 
 ### Effort variants
 
@@ -140,25 +136,27 @@ Cache is per-model. Switching models mid-session rebuilds the cache from scratch
 - **`[1m]` suffix matters**. Without it, the CLI caps context at 200k and compacts early, even if OpenCode's `limit.context` is higher.
 - **Do not mix models in a session** for best cache efficiency. Each model has its own cache; switching forces a full rebuild.
 - **The plugin is effectively required**. Without it, session resume and title session isolation do not work.
+- **Streaming only.** Only streaming responses are supported; non-streaming calls are not available.
+- **Tools are routed through OpenCode.** The CLI does not execute tools directly; all tool calls are parsed and forwarded to OpenCode for execution.
+- **Claude Code's `CLAUDE.md` is not loaded.** OpenCode provides its own context (e.g. `AGENTS.md`) instead of Claude Code's native project instructions.
+- **Permission checks are bypassed** via `--dangerously-skip-permissions`. All tool executions are delegated to OpenCode, which handles its own permission model.
 
 ## Known limitations
 
-- Only streaming responses are supported
-- The CLI does not execute tools directly; all tools are routed through OpenCode
-- Claude Code's own `CLAUDE.md` is not loaded; OpenCode provides its own context
-- Permission checks are bypassed (`--dangerously-skip-permissions`)
+- **Companion plugin is required.** [`@seonggukchoi/opencode-claude-code-plugin`](https://www.npmjs.com/package/@seonggukchoi/opencode-claude-code-plugin) must be registered alongside this provider. Without it, session resume and title session isolation do not work correctly.
 - Context window size is determined by the CLI; use `[1m]` for the full 1M window
 - **No cross-model conversation continuity.** Unlike standard API providers that send the full conversation history on every request, this provider resumes a stateful CLI session. When switching to another model (e.g. GPT) mid-session and then switching back, Claude has no awareness of the messages exchanged with the other model. The AI SDK does not forward provider metadata on messages, so the provider cannot identify which messages belong to Claude and which were produced by other models.
+- **Undo does not rewind the Claude Code CLI session.** OpenCode's undo (`/undo`) removes messages from OpenCode's own history and reverts file changes via Git, but it cannot rewind the Claude Code CLI session. The CLI does not expose a programmatic API for its `/rewind` command — it is only available in interactive terminal mode. After an undo, the CLI session still retains the undone context internally, which may cause a history mismatch between OpenCode and Claude Code CLI.
 
 ## Failure handling
 
-| Scenario                    | Behavior                                                    |
-| --------------------------- | ----------------------------------------------------------- |
-| CLI not found               | Spawn error (`ENOENT`)                                      |
-| CLI not authenticated       | CLI exits with non-zero code; stderr surfaced as error      |
-| Invalid JSONL output        | Stream fails with a parsing error                           |
-| Invalid `<tool_call>` JSON  | Surfaced as plain text; tool is not executed                 |
-| Session resume fails        | Automatic fallback to a new session; no data loss           |
+| Scenario                   | Behavior                                               |
+| -------------------------- | ------------------------------------------------------ |
+| CLI not found              | Spawn error (`ENOENT`)                                 |
+| CLI not authenticated      | CLI exits with non-zero code; stderr surfaced as error |
+| Invalid JSONL output       | Stream fails with a parsing error                      |
+| Invalid `<tool_call>` JSON | Surfaced as plain text; tool is not executed           |
+| Session resume fails       | Automatic fallback to a new session; no data loss      |
 
 ## Development
 
