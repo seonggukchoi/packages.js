@@ -48,7 +48,7 @@ export class ClaudeCodeLanguageModel implements LanguageModelV3 {
       model: this.modelId,
       resumeSessionId,
       sessionId,
-      system: resumeSessionId ? undefined : system,
+      system,
     });
     const currentModelId = this.modelId;
     let child: ReturnType<typeof spawn> | undefined;
