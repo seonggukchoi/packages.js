@@ -10,10 +10,6 @@
 
 ## 설치
 
-```bash
-npm install @seonggukchoi/opencode-claude-code-plugin
-```
-
 `opencode.json`에서 프로바이더와 함께 등록합니다:
 
 ```json
