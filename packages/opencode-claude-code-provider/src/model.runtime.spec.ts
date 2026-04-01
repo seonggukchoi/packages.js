@@ -566,6 +566,79 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     expect(unknownParts.some((part) => isErrorPart(part) && String(part.error).includes('code unknown'))).toBe(true);
   });
 
+  it('falls back to a new session when resume fails', async () => {
+    // First spawn: resume attempt that fails with exit code 1
+    const failed = createMockChild({ exitCode: 1, lines: [], stderr: 'session not found' });
+    // Second spawn: fallback new session that succeeds
+    const success = createMockChild({
+      lines: [
+        JSON.stringify({ session_id: 'sess_fallback', subtype: 'init', type: 'system' }),
+        JSON.stringify({ event: { content_block: { type: 'text' }, index: 0, type: 'content_block_start' }, type: 'stream_event' }),
+        JSON.stringify({
+          event: { delta: { text: 'recovered', type: 'text_delta' }, index: 0, type: 'content_block_delta' },
+          type: 'stream_event',
+        }),
+        JSON.stringify({ event: { index: 0, type: 'content_block_stop' }, type: 'stream_event' }),
+        JSON.stringify({ subtype: 'success', type: 'result', usage: { input_tokens: 1, output_tokens: 1 } }),
+      ],
+    });
+
+    spawnMock.mockReturnValueOnce(failed.child).mockReturnValueOnce(success.child);
+    createInterfaceMock.mockReturnValueOnce(failed.interfaceHandle).mockReturnValueOnce(success.interfaceHandle);
+
+    const { ClaudeCodeLanguageModel } = await import('./model.js');
+    const model = new ClaudeCodeLanguageModel('claude-haiku-4-5');
+    const result = await model.doStream({
+      prompt: [
+        { content: [{ text: 'hello', type: 'text' }], role: 'user' },
+        { content: [{ text: 'hi!', type: 'text' }], role: 'assistant' },
+        { content: [{ text: 'continue', type: 'text' }], role: 'user' },
+      ] as never,
+      providerOptions: { 'claude-code': { sessionId: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d' } },
+      tools: [],
+    });
+
+    const parts = await readAllParts(result.stream);
+
+    // spawn should have been called twice: first resume attempt, then fallback
+    expect(spawnMock).toHaveBeenCalledTimes(2);
+
+    // First call should have --resume
+    const firstCallArgs = spawnMock.mock.calls[0]![1] as string[];
+    expect(firstCallArgs).toContain('--resume');
+
+    // Second call (fallback) should NOT have --resume but should have --session-id
+    const secondCallArgs = spawnMock.mock.calls[1]![1] as string[];
+    expect(secondCallArgs).not.toContain('--resume');
+    expect(secondCallArgs).toContain('--session-id');
+
+    // The first child should have been killed during fallback
+    expect(failed.child.kill).toHaveBeenCalled();
+
+    // Stream should have successful output from the fallback session
+    expect(parts).toEqual([
+      { type: 'stream-start', warnings: [] },
+      { id: 'text-0', type: 'text-start' },
+      { delta: 'recovered', id: 'text-0', type: 'text-delta' },
+      { id: 'text-0', type: 'text-end' },
+      {
+        finishReason: { unified: 'other', raw: undefined },
+        providerMetadata: {
+          anthropic: {},
+          'claude-code': {
+            modelId: 'claude-haiku-4-5',
+            sessionId: 'sess_fallback',
+          },
+        },
+        type: 'finish',
+        usage: {
+          inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
+          outputTokens: { total: 1, text: undefined, reasoning: undefined },
+        },
+      },
+    ]);
+  });
+
   it('emits an error finish when the child process errors before close', async () => {
     const { child, interfaceHandle } = createErrorMockChild('spawn failed');
     spawnMock.mockReturnValue(child);
