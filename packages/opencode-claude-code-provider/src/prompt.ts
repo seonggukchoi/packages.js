@@ -1,3 +1,5 @@
+import { hasClaudeCodeMetadata } from './resume.js';
+
 import type {
   LanguageModelV2FilePart,
   LanguageModelV2Prompt,
@@ -68,19 +70,87 @@ export function getLatestUserText(prompt: LanguageModelV2Prompt): string | undef
 }
 
 function buildResumePrompt(prompt: LanguageModelV2Prompt): string {
+  const gapMessages = collectGapMessages(prompt);
   const resumeMessages = collectMessagesForResume(prompt);
   const hasToolResults = resumeMessages.some(
     (message) => message.role === 'tool' || (message.role === 'assistant' && message.content.some((part) => part.type === 'tool-result')),
   );
 
-  if (hasToolResults) {
-    return [
-      serializeConversation(resumeMessages),
-      'If you have sufficient information, respond with text. Otherwise, call another tool.',
-    ].join('\n\n');
+  const sections: string[] = [];
+
+  if (gapMessages.length > 0) {
+    sections.push(
+      [
+        'The following conversation happened with a different model while your session was paused:',
+        serializeConversation(gapMessages),
+      ].join('\n'),
+    );
   }
 
-  return getLatestUserText(prompt) ?? serializeConversation(prompt.slice(-1));
+  if (hasToolResults) {
+    sections.push(serializeConversation(resumeMessages));
+    sections.push('If you have sufficient information, respond with text. Otherwise, call another tool.');
+  } else {
+    const currentText = getLatestUserText(prompt) ?? serializeConversation(prompt.slice(-1));
+
+    if (gapMessages.length > 0) {
+      sections.push(['Continue from here:', currentText].join('\n'));
+    } else {
+      sections.push(currentText);
+    }
+  }
+
+  return sections.join('\n\n');
+}
+
+function collectGapMessages(prompt: LanguageModelV2Prompt): LanguageModelV2Prompt {
+  const lastClaudeIndex = findLastClaudeAssistantIndex(prompt);
+
+  if (lastClaudeIndex === -1) {
+    return [];
+  }
+
+  const tailBoundary = findTailBoundary(prompt);
+
+  if (tailBoundary <= lastClaudeIndex + 1) {
+    return [];
+  }
+
+  return prompt.slice(lastClaudeIndex + 1, tailBoundary).filter((message) => message.role !== 'system');
+}
+
+function findLastClaudeAssistantIndex(prompt: LanguageModelV2Prompt): number {
+  for (let index = prompt.length - 1; index >= 0; index -= 1) {
+    if (hasClaudeCodeMetadata(prompt[index])) {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function findTailBoundary(prompt: LanguageModelV2Prompt): number {
+  for (let index = prompt.length - 1; index >= 0; index -= 1) {
+    const message = prompt[index];
+
+    if (message.role === 'system') {
+      continue;
+    }
+
+    if (message.role === 'user' || message.role === 'tool') {
+      continue;
+    }
+
+    const hasToolInteraction = message.content.some((part) => part.type === 'tool-result' || part.type === 'tool-call');
+
+    if (hasToolInteraction) {
+      continue;
+    }
+
+    return index + 1;
+  }
+
+  return 0;
 }
 
 function collectMessagesForResume(prompt: LanguageModelV2Prompt): LanguageModelV2Prompt {

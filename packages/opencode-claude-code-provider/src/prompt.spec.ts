@@ -153,6 +153,143 @@ describe('prompt helpers', () => {
     expect(output).toContain('[file mediaType=application/json]');
   });
 
+  it('injects gap context when resuming after messages to another model', () => {
+    const prompt = [
+      {
+        content: [{ text: 'Claude response', type: 'text' as const }],
+        providerOptions: { 'claude-code': { modelId: 'claude-haiku-4-5', sessionId: 'sess_abc' } },
+        role: 'assistant' as const,
+      },
+      {
+        content: [{ text: 'user asks GPT', type: 'text' as const }],
+        role: 'user' as const,
+      },
+      {
+        content: [{ text: 'GPT response', type: 'text' as const }],
+        role: 'assistant' as const,
+      },
+      {
+        content: [{ text: 'back to Claude', type: 'text' as const }],
+        role: 'user' as const,
+      },
+    ];
+
+    const output = buildPrompt(prompt as unknown as LanguageModelV2Prompt, { resumeSessionId: 'sess_abc' });
+
+    expect(output).toContain('The following conversation happened with a different model while your session was paused:');
+    expect(output).toContain('user asks GPT');
+    expect(output).toContain('GPT response');
+    expect(output).toContain('Continue from here:');
+    expect(output).toContain('back to Claude');
+  });
+
+  it('does not inject gap context when no Claude assistant message exists', () => {
+    const prompt = [
+      {
+        content: [{ text: 'GPT response', type: 'text' as const }],
+        role: 'assistant' as const,
+      },
+      {
+        content: [{ text: 'new question', type: 'text' as const }],
+        role: 'user' as const,
+      },
+    ];
+
+    const output = buildPrompt(prompt as unknown as LanguageModelV2Prompt, { resumeSessionId: 'sess_abc' });
+
+    expect(output).not.toContain('different model');
+    expect(output).toBe('new question');
+  });
+
+  it('does not inject gap context when no messages exist between Claude and resume tail', () => {
+    const prompt = [
+      {
+        content: [{ text: 'Claude response', type: 'text' as const }],
+        providerOptions: { 'claude-code': { modelId: 'claude-haiku-4-5', sessionId: 'sess_abc' } },
+        role: 'assistant' as const,
+      },
+      {
+        content: [{ text: 'follow up', type: 'text' as const }],
+        role: 'user' as const,
+      },
+    ];
+
+    const output = buildPrompt(prompt as unknown as LanguageModelV2Prompt, { resumeSessionId: 'sess_abc' });
+
+    expect(output).not.toContain('different model');
+    expect(output).toBe('follow up');
+  });
+
+  it('skips system messages in the tail when detecting gap boundary', () => {
+    const prompt = [
+      {
+        content: [{ text: 'Claude response', type: 'text' as const }],
+        providerOptions: { 'claude-code': { modelId: 'claude-haiku-4-5', sessionId: 'sess_abc' } },
+        role: 'assistant' as const,
+      },
+      {
+        content: [{ text: 'user asks GPT', type: 'text' as const }],
+        role: 'user' as const,
+      },
+      {
+        content: [{ text: 'GPT response', type: 'text' as const }],
+        role: 'assistant' as const,
+      },
+      { content: 'injected system note', role: 'system' as const },
+      {
+        content: [{ text: 'back to Claude', type: 'text' as const }],
+        role: 'user' as const,
+      },
+    ];
+
+    const output = buildPrompt(prompt as unknown as LanguageModelV2Prompt, { resumeSessionId: 'sess_abc' });
+
+    expect(output).toContain('The following conversation happened with a different model while your session was paused:');
+    expect(output).toContain('user asks GPT');
+    expect(output).toContain('GPT response');
+    expect(output).not.toContain('injected system note');
+    expect(output).toContain('Continue from here:');
+    expect(output).toContain('back to Claude');
+  });
+
+  it('injects gap context alongside tool results when resuming with pending tools', () => {
+    const prompt = [
+      {
+        content: [{ text: 'Claude response', type: 'text' as const }],
+        providerOptions: { 'claude-code': { modelId: 'claude-haiku-4-5', sessionId: 'sess_abc' } },
+        role: 'assistant' as const,
+      },
+      {
+        content: [{ text: 'user asks GPT', type: 'text' as const }],
+        role: 'user' as const,
+      },
+      {
+        content: [{ text: 'GPT response', type: 'text' as const }],
+        role: 'assistant' as const,
+      },
+      {
+        content: [{ text: 'use tool now', type: 'text' as const }],
+        role: 'user' as const,
+      },
+      {
+        content: [{ input: {}, toolCallId: 'tc1', toolName: 'Read', type: 'tool-call' as const }],
+        role: 'assistant' as const,
+      },
+      {
+        content: [{ output: { data: 'file content' }, toolCallId: 'tc1', toolName: 'Read', type: 'tool-result' as const }],
+        role: 'tool' as const,
+      },
+    ];
+
+    const output = buildPrompt(prompt as unknown as LanguageModelV2Prompt, { resumeSessionId: 'sess_abc' });
+
+    expect(output).toContain('different model while your session was paused');
+    expect(output).toContain('user asks GPT');
+    expect(output).toContain('GPT response');
+    expect(output).toContain('The Read tool returned:');
+    expect(output).toContain('If you have sufficient information');
+  });
+
   it('normalizes stringified tool inputs during prompt serialization', () => {
     const prompt = [
       {

@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { getResume } from './resume.js';
+import { getResume, hasClaudeCodeMetadata } from './resume.js';
 
 describe('getResume', () => {
   it('returns undefined when no session metadata exists', () => {
@@ -80,6 +80,48 @@ describe('getResume', () => {
         'claude-haiku-4-5',
       ),
     ).toBeUndefined();
+  });
+
+  it('returns false for non-assistant messages via hasClaudeCodeMetadata', () => {
+    expect(hasClaudeCodeMetadata({ content: [{ text: 'hi', type: 'text' }], role: 'user' } as never)).toBe(false);
+  });
+
+  it('returns true for assistant messages with claude-code session metadata via providerOptions', () => {
+    expect(
+      hasClaudeCodeMetadata({
+        content: [{ text: 'done', type: 'text' }],
+        providerOptions: { 'claude-code': { sessionId: 'sess_abc' } },
+        role: 'assistant',
+      } as never),
+    ).toBe(true);
+  });
+
+  it('returns true for assistant messages with claude-code session metadata via providerMetadata', () => {
+    expect(
+      hasClaudeCodeMetadata({
+        content: [{ text: 'done', type: 'text' }],
+        providerMetadata: { 'claude-code': { sessionId: 'sess_meta' } },
+        role: 'assistant',
+      } as never),
+    ).toBe(true);
+  });
+
+  it('returns true for assistant messages with claude-code session metadata via part providerOptions', () => {
+    expect(
+      hasClaudeCodeMetadata({
+        content: [{ providerOptions: { 'claude-code': { sessionId: 'sess_part' } }, text: 'chunk', type: 'text' }],
+        role: 'assistant',
+      } as never),
+    ).toBe(true);
+  });
+
+  it('returns false for assistant messages without session metadata', () => {
+    expect(
+      hasClaudeCodeMetadata({
+        content: [{ text: 'no metadata', type: 'text' }],
+        role: 'assistant',
+      } as never),
+    ).toBe(false);
   });
 
   it('ignores invalid metadata containers', () => {

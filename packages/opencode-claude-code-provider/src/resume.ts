@@ -11,6 +11,21 @@ type ResumeMetadata = {
   sessionId?: string;
 };
 
+export function hasClaudeCodeMetadata(message: LanguageModelV2Prompt[number]): boolean {
+  const msg = message as PromptMessageWithMetadata;
+
+  if (msg.role !== 'assistant') {
+    return false;
+  }
+
+  const metadata =
+    readResumeMetadata(msg.providerOptions?.['claude-code']) ??
+    readResumeMetadata(msg.providerMetadata?.['claude-code']) ??
+    getAssistantPartResumeMetadata(msg);
+
+  return Boolean(metadata?.sessionId);
+}
+
 export function getResume(prompt: LanguageModelV2Prompt, modelId: string): string | undefined {
   for (let index = prompt.length - 1; index >= 0; index -= 1) {
     const message = prompt[index] as PromptMessageWithMetadata;
