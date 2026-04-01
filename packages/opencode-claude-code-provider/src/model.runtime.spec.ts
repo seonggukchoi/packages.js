@@ -732,7 +732,9 @@ describe('ClaudeCodeLanguageModel runtime', () => {
     const finish = parts.find((part) => isFinishPart(part));
 
     expect(finish).toBeDefined();
-    expect((finish as { providerMetadata: Record<string, Record<string, unknown>> }).providerMetadata['claude-code'].costUsd).toBe(0.0042);
+    expect(
+      (finish as unknown as { providerMetadata: Record<string, Record<string, unknown>> }).providerMetadata['claude-code'].costUsd,
+    ).toBe(0.0042);
   });
 
   it('registers abort listener on fallback session', async () => {
