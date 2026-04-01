@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.3](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.7.2...@seonggukchoi/opencode-claude-code-provider@0.7.3) (2026-04-01)
+
+### Bug Fixes
+
+- **opencode-claude-code-provider:** skip --system-prompt when resuming a session ([55c95f5](https://github.com/seonggukchoi/packages.js/commit/55c95f51ec3d75c80b33799a59d6a0d517b17b06))
+
 ## [0.7.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-claude-code-provider@0.7.1...@seonggukchoi/opencode-claude-code-provider@0.7.2) (2026-04-01)
 
 ### Bug Fixes
