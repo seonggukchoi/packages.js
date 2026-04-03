@@ -2,6 +2,8 @@
   "conventionalCommits.scopes": [
     "address",
     "config",
+    "class-transformer-extends",
+    "claude-code-notifier",
     "datee",
     "nestjs-contextual-pino",
     "nestjs-transactional-typeorm",
