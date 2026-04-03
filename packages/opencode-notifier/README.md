@@ -1,5 +1,7 @@
 # @seonggukchoi/opencode-notifier
 
+[한국어](./docs/README_KO.md)
+
 Multi-channel notification plugin for [OpenCode](https://opencode.ai). Sends notifications via macOS native notifications ([terminal-notifier](https://github.com/julienXX/terminal-notifier)) and/or Telegram Bot API when sessions start, complete, error out, or when tool executions occur.
 
 ## Prerequisites
