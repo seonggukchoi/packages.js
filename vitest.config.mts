@@ -16,6 +16,7 @@ export const createVitestConfig = (dir: string) =>
         '@seonggukchoi/datee': resolve(__dirname, 'packages/datee/src'),
         '@seonggukchoi/nestjs-contextual-pino': resolve(__dirname, 'packages/nestjs-contextual-pino/src'),
         '@seonggukchoi/nestjs-transactional-typeorm': resolve(__dirname, 'packages/nestjs-transactional-typeorm/src'),
+        '@seonggukchoi/claude-code-notifier': resolve(__dirname, 'packages/claude-code-notifier/src'),
         '@seonggukchoi/opencode-notifier': resolve(__dirname, 'packages/opencode-notifier/src'),
         '@seonggukchoi/phone': resolve(__dirname, 'packages/phone/src'),
         '@seonggukchoi/regex': resolve(__dirname, 'packages/regex/src'),
