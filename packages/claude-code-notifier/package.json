@@ -1,0 +1,51 @@
+{
+  "name": "@seonggukchoi/claude-code-notifier",
+  "version": "0.1.0",
+  "description": "Claude Code terminal notification plugin for macOS using terminal-notifier and Telegram",
+  "author": "seonggukchoi",
+  "license": "MIT",
+  "type": "module",
+  "engineStrict": true,
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seonggukchoi/packages.js",
+    "directory": "packages/claude-code-notifier"
+  },
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "notification",
+    "terminal-notifier",
+    "macos",
+    "telegram"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    ".claude-plugin",
+    "hooks"
+  ],
+  "scripts": {
+    "build": "rimraf dist .tsbuildinfo && tsc -p tsconfig.build.json",
+    "lint": "eslint --fix .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:typecheck": "tsc -p tsconfig.check.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.1"
+  }
+}
