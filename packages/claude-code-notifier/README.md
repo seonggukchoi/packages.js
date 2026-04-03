@@ -1,5 +1,7 @@
 # @seonggukchoi/claude-code-notifier
 
+[한국어](./docs/README_KO.md)
+
 Multi-channel notification plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Sends notifications via macOS native notifications ([terminal-notifier](https://github.com/julienXX/terminal-notifier)) and/or Telegram Bot API when sessions start, complete, error out, or when subagent/tool executions occur.
 
 ## Prerequisites
