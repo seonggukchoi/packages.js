@@ -35,8 +35,7 @@
   },
   "files": [
     "dist",
-    ".claude-plugin",
-    "hooks"
+    ".claude-plugin"
   ],
   "scripts": {
     "build": "rimraf dist .tsbuildinfo && tsc -p tsconfig.build.json",
