@@ -82,13 +82,16 @@ describe('createMacOSChannel', () => {
   });
 
   it('handles async spawn error event gracefully without crashing', () => {
-    const unrefMock = vi.fn();
     const onMock = vi.fn();
+    const unrefMock = vi.fn();
     mockedSpawn.mockReturnValue({ unref: unrefMock, on: onMock } as never);
 
     const channel = createMacOSChannel('my-project', '');
     channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
 
     expect(onMock).toHaveBeenCalledWith('error', expect.any(Function));
+
+    const errorHandler = onMock.mock.calls[0]![1] as () => void;
+    expect(() => errorHandler()).not.toThrow();
   });
 });
