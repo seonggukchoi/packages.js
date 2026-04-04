@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.6.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.6.0...@seonggukchoi/opencode-notifier@0.6.1) (2026-04-04)
+
+### Bug Fixes
+
+- **opencode-notifier:** isolate channel errors to prevent cascading failures ([#74](https://github.com/seonggukchoi/packages.js/issues/74)) ([cdceee1](https://github.com/seonggukchoi/packages.js/commit/cdceee1f3aaca13f1b52e346aae4189a3ea02737))
+
 # [0.6.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.5.2...@seonggukchoi/opencode-notifier@0.6.0) (2026-03-20)
 
 ### Features

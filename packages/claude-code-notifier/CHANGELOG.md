@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.2.1...@seonggukchoi/claude-code-notifier@0.2.2) (2026-04-04)
+
+### Bug Fixes
+
+- **claude-code-notifier:** isolate channel errors to prevent cascading failures ([#73](https://github.com/seonggukchoi/packages.js/issues/73)) ([39bd730](https://github.com/seonggukchoi/packages.js/commit/39bd730a9432e7541518852761b4de0ed2cd9f6b))
+
 ## [0.2.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.2.0...@seonggukchoi/claude-code-notifier@0.2.1) (2026-04-03)
 
 ### Bug Fixes
