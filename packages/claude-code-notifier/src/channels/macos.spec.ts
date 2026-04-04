@@ -17,7 +17,8 @@ describe('createMacOSChannel', () => {
 
   it('spawns terminal-notifier with correct arguments', () => {
     const unrefMock = vi.fn();
-    mockedSpawn.mockReturnValue({ unref: unrefMock } as never);
+    const onMock = vi.fn();
+    mockedSpawn.mockReturnValue({ unref: unrefMock, on: onMock } as never);
 
     const channel = createMacOSChannel('my-project', '');
     channel.send({ title: 'Test Title', message: 'Test message', context: 'ctx', sound: 'Pop' });
@@ -32,7 +33,8 @@ describe('createMacOSChannel', () => {
 
   it('adds contentImage when icon is provided', () => {
     const unrefMock = vi.fn();
-    mockedSpawn.mockReturnValue({ unref: unrefMock } as never);
+    const onMock = vi.fn();
+    mockedSpawn.mockReturnValue({ unref: unrefMock, on: onMock } as never);
 
     const channel = createMacOSChannel('my-project', '/path/to/icon.png');
     channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
@@ -44,7 +46,8 @@ describe('createMacOSChannel', () => {
 
   it('does not add contentImage when icon is empty string', () => {
     const unrefMock = vi.fn();
-    mockedSpawn.mockReturnValue({ unref: unrefMock } as never);
+    const onMock = vi.fn();
+    mockedSpawn.mockReturnValue({ unref: unrefMock, on: onMock } as never);
 
     const channel = createMacOSChannel('my-project', '');
     channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
@@ -55,7 +58,8 @@ describe('createMacOSChannel', () => {
 
   it('uses default sound when not specified', () => {
     const unrefMock = vi.fn();
-    mockedSpawn.mockReturnValue({ unref: unrefMock } as never);
+    const onMock = vi.fn();
+    mockedSpawn.mockReturnValue({ unref: unrefMock, on: onMock } as never);
 
     const channel = createMacOSChannel('my-project', '');
     channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
@@ -75,5 +79,19 @@ describe('createMacOSChannel', () => {
     expect(() => {
       channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
     }).not.toThrow();
+  });
+
+  it('handles async spawn error event gracefully without crashing', () => {
+    const onMock = vi.fn();
+    const unrefMock = vi.fn();
+    mockedSpawn.mockReturnValue({ unref: unrefMock, on: onMock } as never);
+
+    const channel = createMacOSChannel('my-project', '');
+    channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
+
+    expect(onMock).toHaveBeenCalledWith('error', expect.any(Function));
+
+    const errorHandler = onMock.mock.calls[0]![1] as () => void;
+    expect(() => errorHandler()).not.toThrow();
   });
 });
