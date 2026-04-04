@@ -41,7 +41,14 @@ export const OpencodeNotifier: Plugin = async ({ directory }) => {
       if (!events[eventKey].enabled) {
         continue;
       }
-      channel.send({ title, message, context, icon: termInfo.icon, sound });
+      try {
+        const result = channel.send({ title, message, context, icon: termInfo.icon, sound });
+        if (result instanceof Promise) {
+          result.catch(() => {});
+        }
+      } catch {
+        // Continue to next channel
+      }
     }
   };
 
