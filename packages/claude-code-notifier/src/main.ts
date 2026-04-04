@@ -68,13 +68,20 @@ async function main(): Promise<void> {
     if (!events[eventKey].enabled) {
       continue;
     }
-    channel.send({
-      title: notification.title,
-      message: notification.message,
-      context,
-      icon: termInfo.icon,
-      sound: notification.sound,
-    });
+    try {
+      const result = channel.send({
+        title: notification.title,
+        message: notification.message,
+        context,
+        icon: termInfo.icon,
+        sound: notification.sound,
+      });
+      if (result instanceof Promise) {
+        result.catch(() => {});
+      }
+    } catch {
+      // Continue to next channel
+    }
   }
 }
 
