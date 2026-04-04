@@ -86,5 +86,8 @@ describe('createMacOSChannel', () => {
     channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
 
     expect(onMock).toHaveBeenCalledWith('error', expect.any(Function));
+
+    const errorHandler = onMock.mock.calls[0]![1] as () => void;
+    expect(() => errorHandler()).not.toThrow();
   });
 });
