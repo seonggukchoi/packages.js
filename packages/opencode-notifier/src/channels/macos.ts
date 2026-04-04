@@ -12,7 +12,9 @@ export function createMacOSChannel(context: string, icon: string): NotificationC
         args.push('-contentImage', `"${icon}"`);
       }
       try {
-        spawn('terminal-notifier', args, { detached: true, stdio: 'ignore' }).unref();
+        const child = spawn('terminal-notifier', args, { detached: true, stdio: 'ignore' });
+        child.on('error', () => {});
+        child.unref();
       } catch {
         // Ignore terminal-notifier execution failures
       }
