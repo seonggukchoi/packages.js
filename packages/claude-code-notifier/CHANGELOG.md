@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.4](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.2.3...@seonggukchoi/claude-code-notifier@0.2.4) (2026-04-05)
+
+### Bug Fixes
+
+- **claude-code-notifier:** sync plugin.json version with package.json on release ([f0b51c1](https://github.com/seonggukchoi/packages.js/commit/f0b51c1ae85a88517c0f30eca6bfd5ccbf01cbc7))
+
 ## [0.2.3](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.2.2...@seonggukchoi/claude-code-notifier@0.2.3) (2026-04-05)
 
 ### Bug Fixes
