@@ -87,5 +87,8 @@ export interface HookData {
   agent_type?: string;
   tool_name?: string;
   tool_input?: Record<string, unknown>;
+  notification_type?: string;
+  message?: string;
+  title?: string;
   [key: string]: unknown;
 }

@@ -2,7 +2,7 @@
 
 import { createChannels } from './channels/index.js';
 import { loadConfig } from './config.js';
-import { buildNotification } from './handlers/hook-handler.js';
+import { buildNotification, shouldSendNotification } from './handlers/hook-handler.js';
 import { getMessages } from './i18n/index.js';
 import { ensureIconCache } from './icon.js';
 import { detectTerminal } from './terminal.js';
@@ -52,6 +52,10 @@ async function main(): Promise<void> {
   }
 
   const hookData = await readStdin();
+  if (!shouldSendNotification(eventKey, hookData)) {
+    return;
+  }
+
   const config = loadConfig();
   const messages = getMessages(config.locale, config.events);
 

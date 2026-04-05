@@ -152,7 +152,7 @@ This plugin uses Claude Code's [hooks system](https://docs.anthropic.com/en/docs
 | `StopFailure`       | `sessionError`      | An error occurred               |
 | `PostCompact`       | `sessionCompacted`  | Session compacted               |
 | `PermissionRequest` | `permissionRequested` | Permission approval requested |
-| `Notification`      | `decisionNeeded`    | Idle prompt (decision needed)   |
+| `Notification`      | `decisionNeeded`    | Decision needed from user       |
 | `SubagentStart`     | `subagentStarted`   | Subagent task started           |
 | `SubagentStop`      | `subagentCompleted` | Subagent task completed         |
 | `PreToolUse`        | `toolExecuting`     | MCP tool executing (`mcp__*`)   |
