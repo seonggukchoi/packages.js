@@ -20,6 +20,26 @@ const EVENT_DEFS: Record<EventKey, { emoji: string; sound: string }> = {
   toolCompleted: { emoji: '\u2713', sound: 'Blow' },
 };
 
+// Claude Code's `Notification` hook fires for several notification types. The
+// `idle_prompt` type is known to fire whenever Claude finishes responding —
+// even for normal completions — which duplicates the `Stop` hook's
+// `sessionCompleted` notification. We skip it here so users don't get two
+// alerts per turn. See anthropics/claude-code#12048.
+const NOISY_NOTIFICATION_TYPES: ReadonlySet<string> = new Set(['idle_prompt']);
+
+export function shouldSendNotification(eventKey: EventKey, hookData: HookData): boolean {
+  if (eventKey !== 'decisionNeeded') {
+    return true;
+  }
+
+  const notificationType = hookData.notification_type;
+  if (typeof notificationType === 'string' && NOISY_NOTIFICATION_TYPES.has(notificationType)) {
+    return false;
+  }
+
+  return true;
+}
+
 export function buildNotification(eventKey: EventKey, messages: Messages, hookData: HookData): NotificationData {
   const def = EVENT_DEFS[eventKey];
   const title = `${def.emoji} Claude Code`;

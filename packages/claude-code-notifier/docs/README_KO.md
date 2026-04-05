@@ -152,7 +152,7 @@ Claude Code가 플러그인을 설치하고 훅을 자동으로 등록합니다.
 | `StopFailure`       | `sessionError`        | 오류 발생                  |
 | `PostCompact`       | `sessionCompacted`    | 세션 압축됨                |
 | `PermissionRequest` | `permissionRequested` | 권한 승인 요청됨           |
-| `Notification`      | `decisionNeeded`      | 유휴 프롬프트 (결정 필요)  |
+| `Notification`      | `decisionNeeded`      | 사용자 결정 필요           |
 | `SubagentStart`     | `subagentStarted`     | 서브에이전트 작업 시작됨   |
 | `SubagentStop`      | `subagentCompleted`   | 서브에이전트 작업 완료됨   |
 | `PreToolUse`        | `toolExecuting`       | MCP 도구 실행 중 (`mcp__*`) |

@@ -1,6 +1,6 @@
-import { buildNotification } from './hook-handler.js';
+import { buildNotification, shouldSendNotification } from './hook-handler.js';
 
-import type { HookData, Messages } from '../types.js';
+import type { EventKey, HookData, Messages } from '../types.js';
 
 function createMockMessages(): Messages {
   return {
@@ -122,5 +122,53 @@ describe('buildNotification', () => {
     const result = buildNotification('toolCompleted', messages, hookData);
 
     expect(result.message).toBe('server__action completed.');
+  });
+});
+
+describe('shouldSendNotification', () => {
+  it('skips decisionNeeded when notification_type is idle_prompt', () => {
+    const hookData: HookData = { notification_type: 'idle_prompt' };
+
+    expect(shouldSendNotification('decisionNeeded', hookData)).toBe(false);
+  });
+
+  it('allows decisionNeeded when notification_type is elicitation_dialog', () => {
+    const hookData: HookData = { notification_type: 'elicitation_dialog' };
+
+    expect(shouldSendNotification('decisionNeeded', hookData)).toBe(true);
+  });
+
+  it('allows decisionNeeded when notification_type is permission_prompt', () => {
+    const hookData: HookData = { notification_type: 'permission_prompt' };
+
+    expect(shouldSendNotification('decisionNeeded', hookData)).toBe(true);
+  });
+
+  it('allows decisionNeeded when notification_type is missing', () => {
+    const hookData: HookData = {};
+
+    expect(shouldSendNotification('decisionNeeded', hookData)).toBe(true);
+  });
+
+  it('allows decisionNeeded when notification_type is not a string', () => {
+    const hookData: HookData = { notification_type: undefined };
+
+    expect(shouldSendNotification('decisionNeeded', hookData)).toBe(true);
+  });
+
+  it.each<EventKey>([
+    'sessionStarted',
+    'sessionCompleted',
+    'sessionError',
+    'sessionCompacted',
+    'permissionRequested',
+    'subagentStarted',
+    'subagentCompleted',
+    'toolExecuting',
+    'toolCompleted',
+  ])('always allows %s even when notification_type is idle_prompt', (eventKey) => {
+    const hookData: HookData = { notification_type: 'idle_prompt' };
+
+    expect(shouldSendNotification(eventKey, hookData)).toBe(true);
   });
 });
