@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.3](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.2.2...@seonggukchoi/claude-code-notifier@0.2.3) (2026-04-05)
+
+### Bug Fixes
+
+- **claude-code-notifier:** suppress duplicate idle_prompt notifications ([a350a20](https://github.com/seonggukchoi/packages.js/commit/a350a200631de61393db8a735ef578708d26c4fe)), closes [anthropics/claude-code#12048](https://github.com/anthropics/claude-code/issues/12048)
+
 ## [0.2.2](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.2.1...@seonggukchoi/claude-code-notifier@0.2.2) (2026-04-04)
 
 ### Bug Fixes
