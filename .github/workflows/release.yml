@@ -9,8 +9,20 @@ on:
       comment:
         description: "Release Comment"
         required: false
+      mode:
+        description: "Publish mode. Set to 'from-package' to publish versions present in package.json but missing from the registry (recovery)."
+        required: false
+        default: ""
 
-permissions: write-all
+# id-token is intentionally NOT granted: npm CLI (>=11.5.1) auto-attempts OIDC
+# trusted publishing when an id-token is available, which fails with E404 for
+# packages that have no trusted publisher configured on npmjs. Withholding the
+# id-token permission keeps npm on token-based auth (NODE_AUTH_TOKEN).
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: none
 
 env:
   CI: true
@@ -41,6 +53,7 @@ jobs:
         uses: actions/setup-node@v6.0.0
         with:
           node-version: 24
+          registry-url: "https://registry.npmjs.org"
           cache: "pnpm"
           cache-dependency-path: "**/pnpm-lock.yaml"
 
@@ -89,8 +102,12 @@ jobs:
           git config --global user.name "seonggukchoi"
 
       - name: Publish
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' && inputs.mode != 'from-package' }}
         run: pnpm lerna publish --yes
+
+      - name: Publish (Recovery, from-package)
+        if: ${{ github.ref == 'refs/heads/main' && inputs.mode == 'from-package' }}
+        run: pnpm lerna publish from-package --yes
 
       - name: Publish (Beta)
         if: ${{ github.ref == 'refs/heads/beta' }}
