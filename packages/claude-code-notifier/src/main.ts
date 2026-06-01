@@ -5,6 +5,7 @@ import { loadConfig } from './config.js';
 import { buildNotification } from './handlers/hook-handler.js';
 import { getMessages } from './i18n/index.js';
 import { ensureIconCache } from './icon.js';
+import { resolveSessionName } from './session.js';
 import { detectTerminal } from './terminal.js';
 
 import type { EventKey, HookData } from './types.js';
@@ -59,7 +60,7 @@ async function main(): Promise<void> {
 
   const directory = hookData.cwd || process.cwd();
   const termInfo = detectTerminal(directory);
-  const context = termInfo.projectName;
+  const context = resolveSessionName(hookData) ?? termInfo.projectName;
 
   const notification = buildNotification(eventKey, messages, hookData);
 

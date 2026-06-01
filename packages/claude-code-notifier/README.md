@@ -190,6 +190,15 @@ This plugin uses Claude Code's [hooks system](https://docs.anthropic.com/en/docs
 | `toolExecuting` | 🔧 Claude Code    | Tink  | MCP tool executing |
 | `toolCompleted` | ✓ Claude Code     | Blow  | MCP tool completed |
 
+## Notification context
+
+Every notification message is prefixed with a context label so you can tell sessions apart at a glance:
+
+- **Session name** — if the session has a custom name (e.g. set via `/rename`), that name is used.
+- **Working directory** — otherwise, the current directory name is used as a fallback.
+
+The context is resolved per hook event, so renaming a session is reflected on subsequent notifications without restarting it.
+
 ## Telegram setup
 
 1. Create a bot via [@BotFather](https://t.me/BotFather) and copy the bot token.
