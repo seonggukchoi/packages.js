@@ -83,6 +83,7 @@ export type NotifyFunction = (eventKey: EventKey, title: string, message: string
 export interface HookData {
   cwd?: string;
   session_id?: string;
+  session_title?: string;
   hook_event_name?: string;
   agent_type?: string;
   tool_name?: string;
