@@ -84,6 +84,7 @@ export interface HookData {
   cwd?: string;
   session_id?: string;
   session_title?: string;
+  transcript_path?: string;
   hook_event_name?: string;
   agent_type?: string;
   tool_name?: string;
