@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.3.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.3.0...@seonggukchoi/claude-code-notifier@0.3.1) (2026-06-10)
+
+### Bug Fixes
+
+- **claude-code-notifier:** resolve session name from the session transcript ([66e3a35](https://github.com/seonggukchoi/packages.js/commit/66e3a3572ac953e9521628f8f731853210878f7c))
+
 # [0.3.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.2.4...@seonggukchoi/claude-code-notifier@0.3.0) (2026-06-01)
 
 ### Features
