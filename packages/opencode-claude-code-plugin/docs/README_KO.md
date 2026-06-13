@@ -2,6 +2,13 @@
 
 [English](../README.md)
 
+> [!CAUTION]
+> **지원 종료(Deprecated) — 더 이상 유지보수하지 않으며, npm에서 내렸습니다.**
+>
+> 이 플러그인은 [`@seonggukchoi/opencode-claude-code-provider`](https://www.npmjs.com/package/@seonggukchoi/opencode-claude-code-provider)의 컴패니언으로, 해당 프로바이더는 Claude **구독** 로그인으로 Claude Code를 실행해 서드파티 도구(OpenCode)의 백엔드로 사용합니다. **2026년 6월 15일부터** Anthropic은 `claude -p` 및 Claude Agent SDK 사용량을 — **Claude 구독으로 인증하는 서드파티 앱을 포함하여** — 구독 사용량 한도에 포함하지 않고, 표준 API 요율이 적용되는 별도의 월간 _Agent SDK 크레딧_에서 차감합니다. 프로바이더가 지원 종료되면서 이 플러그인도 존재 이유가 사라졌으므로, 지원을 종료하고 npm에서 패키지를 내렸으며 이후 업데이트도 제공하지 않습니다.
+>
+> 근거: [Use the Claude Agent SDK with your Claude plan](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan) · [Claude Code legal & compliance](https://code.claude.com/docs/en/legal-and-compliance)
+
 [`@seonggukchoi/opencode-claude-code-provider`](https://www.npmjs.com/package/@seonggukchoi/opencode-claude-code-provider)를 위한 [OpenCode](https://opencode.ai) 컴패니언 플러그인입니다.
 
 ## 개요

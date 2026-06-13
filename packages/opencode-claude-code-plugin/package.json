@@ -1,7 +1,9 @@
 {
   "name": "@seonggukchoi/opencode-claude-code-plugin",
   "version": "0.3.1",
-  "description": "OpenCode plugin helpers for the Claude Code CLI provider",
+  "private": true,
+  "deprecated": "Deprecated and unmaintained. Companion to @seonggukchoi/opencode-claude-code-provider, which is deprecated because as of 2026-06-15 Anthropic bills `claude -p` / Claude Agent SDK usage — including third-party apps that authenticate with a Claude subscription — against a separate monthly Agent SDK credit at standard API rates instead of subscription usage limits. See https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan",
+  "description": "[DEPRECATED] OpenCode plugin helpers for the Claude Code CLI provider — unmaintained; see deprecation notice",
   "author": "seonggukchoi",
   "license": "MIT",
   "type": "module",

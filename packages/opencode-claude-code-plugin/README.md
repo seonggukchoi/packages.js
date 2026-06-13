@@ -2,6 +2,13 @@
 
 [한국어](./docs/README_KO.md)
 
+> [!CAUTION]
+> **Deprecated and no longer maintained. Unpublished from npm.**
+>
+> This is the companion plugin for [`@seonggukchoi/opencode-claude-code-provider`](https://www.npmjs.com/package/@seonggukchoi/opencode-claude-code-provider), which runs Claude Code through a Claude **subscription** login to back a third-party tool (OpenCode). As of **June 15, 2026**, Anthropic bills `claude -p` and Claude Agent SDK usage — **including third-party apps that authenticate with a Claude subscription** — against a separate monthly _Agent SDK credit_ at standard API rates, instead of counting it toward your Claude plan's usage limits. With the provider deprecated, this plugin no longer has a purpose, so it is deprecated, unpublished from npm, and will not receive further updates.
+>
+> Reference: [Use the Claude Agent SDK with your Claude plan](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan) · [Claude Code legal & compliance](https://code.claude.com/docs/en/legal-and-compliance)
+
 Companion [OpenCode](https://opencode.ai) plugin for [`@seonggukchoi/opencode-claude-code-provider`](https://www.npmjs.com/package/@seonggukchoi/opencode-claude-code-provider).
 
 ## Overview

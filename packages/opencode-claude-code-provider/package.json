@@ -1,7 +1,9 @@
 {
   "name": "@seonggukchoi/opencode-claude-code-provider",
   "version": "0.8.0",
-  "description": "OpenCode provider backed by Claude Code CLI",
+  "private": true,
+  "deprecated": "Deprecated and unmaintained. As of 2026-06-15 Anthropic bills `claude -p` / Claude Agent SDK usage — including third-party apps that authenticate with a Claude subscription — against a separate monthly Agent SDK credit at standard API rates instead of subscription usage limits, which removes this provider's reason to exist. See https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan",
+  "description": "[DEPRECATED] OpenCode provider backed by Claude Code CLI — unmaintained; see deprecation notice",
   "author": "seonggukchoi",
   "license": "MIT",
   "type": "module",
