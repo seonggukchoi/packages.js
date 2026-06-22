@@ -1,6 +1,6 @@
 {
   "name": "@seonggukchoi/claude-code-notifier",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Claude Code terminal notification plugin for macOS using terminal-notifier and Telegram",
   "author": "seonggukchoi",
   "license": "MIT",

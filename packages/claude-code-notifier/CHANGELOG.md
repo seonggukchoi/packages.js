@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.4.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.3.1...@seonggukchoi/claude-code-notifier@0.4.0) (2026-06-22)
+
+### Features
+
+- **claude-code-notifier:** add workspace label to Telegram notification titles ([d1f7f0b](https://github.com/seonggukchoi/packages.js/commit/d1f7f0b57f44a58ff54d4f83da91c179a40d1a83))
+
 ## [0.3.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.3.0...@seonggukchoi/claude-code-notifier@0.3.1) (2026-06-10)
 
 ### Bug Fixes
