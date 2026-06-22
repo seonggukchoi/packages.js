@@ -77,7 +77,26 @@ describe('createChannels', () => {
 
     expect(entries).toHaveLength(1);
     expect(entries[0]!.channel.type).toBe('telegram');
-    expect(mockedCreateTelegram).toHaveBeenCalledWith(telegramConfig);
+    expect(mockedCreateTelegram).toHaveBeenCalledWith(telegramConfig, undefined);
+  });
+
+  it('passes the workspace label to the telegram channel', () => {
+    const telegramConfig = {
+      enabled: true,
+      botToken: 'tok',
+      chatId: '123',
+    };
+    const config = buildConfig({
+      workspace: 'home-workspace',
+      channels: {
+        macos: { enabled: false },
+        telegram: telegramConfig,
+      },
+    });
+    const entries = createChannels(config, 'project', '/icon.png');
+
+    expect(entries).toHaveLength(1);
+    expect(mockedCreateTelegram).toHaveBeenCalledWith(telegramConfig, 'home-workspace');
   });
 
   it('creates both channels when both are enabled', () => {

@@ -31,6 +31,7 @@ Claude Code가 플러그인을 설치하고 훅을 자동으로 등록합니다.
 ```json
 {
   "locale": "ko",
+  "workspace": "home-workspace",
   "events": {
     "toolExecuting": { "enabled": false },
     "toolCompleted": { "enabled": false },
@@ -50,11 +51,12 @@ Claude Code가 플러그인을 설치하고 훅을 자동으로 등록합니다.
 }
 ```
 
-| 옵션       | 타입     | 기본값  | 설명                                   |
-| ---------- | -------- | ------- | -------------------------------------- |
-| `locale`   | `string` | `"en"`  | 알림 언어 (`"en"`, `"ko"`)             |
-| `events`   | `object` | —       | 전역 이벤트별 설정 (아래 참고)         |
-| `channels` | `object` | —       | 알림 채널 설정                         |
+| 옵션        | 타입     | 기본값      | 설명                                                            |
+| ----------- | -------- | ----------- | --------------------------------------------------------------- |
+| `locale`    | `string` | `"en"`      | 알림 언어 (`"en"`, `"ko"`)                                      |
+| `workspace` | `string` | OS hostname | Telegram 알림 타이틀에 `[workspace]`로 덧붙는 기기 라벨 (아래 참고) |
+| `events`    | `object` | —           | 전역 이벤트별 설정 (아래 참고)                                  |
+| `channels`  | `object` | —           | 알림 채널 설정                                                  |
 
 설정 파일이 없거나 유효하지 않은 locale이면 영어로 폴백합니다.
 
@@ -198,6 +200,15 @@ Claude Code가 플러그인을 설치하고 훅을 자동으로 등록합니다.
 - **작업 디렉토리** — 그렇지 않으면 현재 디렉토리 이름을 폴백으로 사용합니다.
 
 컨텍스트는 훅 이벤트마다 해석되므로, 세션 이름을 변경하면 재시작 없이 이후 알림에 반영됩니다.
+
+## 워크스페이스 라벨 (Telegram)
+
+Telegram 알림은 원격으로 전달되므로 어느 기기에서 온 알림인지 한눈에 알기 어렵습니다. 이를 구분할 수 있도록 Telegram 알림 타이틀에 워크스페이스 라벨이 덧붙습니다 — 예: `⚡ Claude Code [home-workspace]`.
+
+- `config.json`의 `workspace`에 원하는 라벨을 지정합니다.
+- `workspace`를 생략하면 OS hostname이 폴백으로 사용됩니다.
+
+이 라벨은 **Telegram에만** 적용됩니다. macOS 알림은 로컬에 표시되므로 타이틀이 그대로 유지됩니다.
 
 ## Telegram 설정
 

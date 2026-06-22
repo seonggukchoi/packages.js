@@ -182,6 +182,7 @@ export function loadConfig(): NotifierConfig {
 
     return {
       locale: SUPPORTED_LOCALES.has((parsed.locale as string) ?? '') ? (parsed.locale as Locale) : 'en',
+      ...(typeof parsed.workspace === 'string' ? { workspace: parsed.workspace } : {}),
       events: parseEvents(parsed.events as Record<string, unknown> | undefined),
       channels: parseChannels(parsed.channels as Record<string, unknown> | undefined),
     };

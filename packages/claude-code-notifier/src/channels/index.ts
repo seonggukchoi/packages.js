@@ -17,7 +17,7 @@ export function createChannels(config: NotifierConfig, context: string, icon: st
 
   if (config.channels.telegram?.enabled) {
     entries.push({
-      channel: createTelegramChannel(config.channels.telegram),
+      channel: createTelegramChannel(config.channels.telegram, config.workspace),
       events: resolveChannelEvents(config.events, config.channels.telegram.events),
     });
   }

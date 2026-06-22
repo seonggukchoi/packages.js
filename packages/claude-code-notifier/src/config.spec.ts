@@ -71,6 +71,35 @@ describe('loadConfig', () => {
     expect(config.channels.telegram?.chatId).toBe('456');
   });
 
+  it('parses the workspace label when provided', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({ locale: 'en', workspace: 'home-workspace', channels: { macos: { enabled: true } } }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.workspace).toBe('home-workspace');
+  });
+
+  it('leaves workspace undefined when not provided', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(JSON.stringify({ locale: 'en', channels: { macos: { enabled: true } } }));
+
+    const config = loadConfig();
+
+    expect(config.workspace).toBeUndefined();
+  });
+
+  it('ignores a non-string workspace value', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(JSON.stringify({ locale: 'en', workspace: 123, channels: { macos: { enabled: true } } }));
+
+    const config = loadConfig();
+
+    expect(config.workspace).toBeUndefined();
+  });
+
   it('falls back to en locale for unsupported locale', () => {
     mockedExistsSync.mockReturnValue(true);
     mockedReadFileSync.mockReturnValue(JSON.stringify({ locale: 'fr', channels: { macos: { enabled: true } } }));
