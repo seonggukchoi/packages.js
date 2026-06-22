@@ -31,6 +31,7 @@ Create a configuration file at `~/.claude/plugins/claude-code-notifier/config.js
 ```json
 {
   "locale": "ko",
+  "workspace": "home-workspace",
   "events": {
     "toolExecuting": { "enabled": false },
     "toolCompleted": { "enabled": false },
@@ -50,11 +51,12 @@ Create a configuration file at `~/.claude/plugins/claude-code-notifier/config.js
 }
 ```
 
-| Option     | Type     | Default | Description                                |
-| ---------- | -------- | ------- | ------------------------------------------ |
-| `locale`   | `string` | `"en"`  | Notification language (`"en"`, `"ko"`)     |
-| `events`   | `object` | —       | Global per-event configuration (see below) |
-| `channels` | `object` | —       | Notification channel configuration         |
+| Option      | Type     | Default     | Description                                                                          |
+| ----------- | -------- | ----------- | ------------------------------------------------------------------------------------ |
+| `locale`    | `string` | `"en"`      | Notification language (`"en"`, `"ko"`)                                               |
+| `workspace` | `string` | OS hostname | Device label appended to Telegram notification titles as `[workspace]` (see below)   |
+| `events`    | `object` | —           | Global per-event configuration (see below)                                          |
+| `channels`  | `object` | —           | Notification channel configuration                                                  |
 
 If the config file is missing or contains an invalid locale, the plugin falls back to English.
 
@@ -198,6 +200,15 @@ Every notification message is prefixed with a context label so you can tell sess
 - **Working directory** — otherwise, the current directory name is used as a fallback.
 
 The context is resolved per hook event, so renaming a session is reflected on subsequent notifications without restarting it.
+
+## Workspace label (Telegram)
+
+Telegram notifications are delivered remotely, so it is not always obvious which machine a notification came from. To make this clear, a workspace label is appended to the Telegram notification title — for example, `⚡ Claude Code [home-workspace]`.
+
+- Set `workspace` in `config.json` to use a custom label.
+- When `workspace` is omitted, the OS hostname is used as a fallback.
+
+The label is applied to **Telegram only**. macOS notifications are shown locally, so their titles are left unchanged.
 
 ## Telegram setup
 

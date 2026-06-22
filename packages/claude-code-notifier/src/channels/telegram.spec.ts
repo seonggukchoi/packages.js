@@ -1,4 +1,6 @@
-import { createTelegramChannel, formatTelegramMessage } from './telegram.js';
+import { hostname } from 'node:os';
+
+import { createTelegramChannel, formatTelegramMessage, resolveWorkspaceLabel } from './telegram.js';
 
 import type { TelegramChannelConfig } from '../types.js';
 
@@ -22,6 +24,24 @@ describe('formatTelegramMessage', () => {
   });
 });
 
+describe('resolveWorkspaceLabel', () => {
+  it('returns the provided workspace label', () => {
+    expect(resolveWorkspaceLabel('home-workspace')).toBe('home-workspace');
+  });
+
+  it('trims surrounding whitespace from the label', () => {
+    expect(resolveWorkspaceLabel('  home-workspace  ')).toBe('home-workspace');
+  });
+
+  it('falls back to the OS hostname when the workspace is undefined', () => {
+    expect(resolveWorkspaceLabel()).toBe(hostname());
+  });
+
+  it('falls back to the OS hostname when the workspace is blank', () => {
+    expect(resolveWorkspaceLabel('   ')).toBe(hostname());
+  });
+});
+
 describe('createTelegramChannel', () => {
   const baseConfig: TelegramChannelConfig = {
     enabled: true,
@@ -39,7 +59,7 @@ describe('createTelegramChannel', () => {
     const mockFetch = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', mockFetch);
 
-    const channel = createTelegramChannel(baseConfig);
+    const channel = createTelegramChannel(baseConfig, 'home-workspace');
     await channel.send({ title: 'Test', message: 'Hello', context: 'project' });
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -48,7 +68,7 @@ describe('createTelegramChannel', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: '987654',
-        text: '*Test*\nproject: Hello',
+        text: formatTelegramMessage('Test [home-workspace]', 'Hello', 'project'),
         parse_mode: 'MarkdownV2',
       }),
     });
@@ -60,11 +80,11 @@ describe('createTelegramChannel', () => {
     const mockFetch = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', mockFetch);
 
-    const channel = createTelegramChannel(baseConfig);
+    const channel = createTelegramChannel(baseConfig, 'home-workspace');
     await channel.send({ title: 'My_Title', message: 'test (1)', context: 'my-project' });
 
     const body = JSON.parse(mockFetch.mock.calls[0]![1].body as string) as { text: string };
-    expect(body.text).toBe('*My\\_Title*\nmy\\-project: test \\(1\\)');
+    expect(body.text).toBe(formatTelegramMessage('My_Title [home-workspace]', 'test (1)', 'my-project'));
 
     vi.unstubAllGlobals();
   });
@@ -87,6 +107,32 @@ describe('createTelegramChannel', () => {
     const channel = createTelegramChannel(baseConfig);
 
     await expect(channel.send({ title: 'T', message: 'M', context: 'C' })).resolves.toBeUndefined();
+
+    vi.unstubAllGlobals();
+  });
+
+  it('appends the configured workspace label to the title', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const channel = createTelegramChannel(baseConfig, 'home-workspace');
+    await channel.send({ title: '⚡ Claude Code', message: 'Session started.', context: 'project' });
+
+    const body = JSON.parse(mockFetch.mock.calls[0]![1].body as string) as { text: string };
+    expect(body.text).toBe(formatTelegramMessage('⚡ Claude Code [home-workspace]', 'Session started.', 'project'));
+
+    vi.unstubAllGlobals();
+  });
+
+  it('falls back to the OS hostname in the title when no workspace is configured', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const channel = createTelegramChannel(baseConfig);
+    await channel.send({ title: '⚡ Claude Code', message: 'Session started.', context: 'project' });
+
+    const body = JSON.parse(mockFetch.mock.calls[0]![1].body as string) as { text: string };
+    expect(body.text).toBe(formatTelegramMessage(`⚡ Claude Code [${hostname()}]`, 'Session started.', 'project'));
 
     vi.unstubAllGlobals();
   });
