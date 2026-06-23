@@ -9,7 +9,7 @@ vi.mock('node:os', () => ({
 
 import { readdirSync, readFileSync } from 'node:fs';
 
-import { resolveSessionName } from './session.js';
+import { resolveSessionContext, resolveSessionName } from './session.js';
 
 const mockedReaddirSync = vi.mocked(readdirSync);
 const mockedReadFileSync = vi.mocked(readFileSync);
@@ -162,6 +162,16 @@ describe('resolveSessionName', () => {
       expect(result).toBeUndefined();
       expect(mockedReadFileSync).not.toHaveBeenCalled();
     });
+
+    it('rewrites a subagent transcript path to the parent transcript before the title lookup', () => {
+      const subagentPath = '/mock-home/.claude/projects/project/parent-sid/subagents/agent-abc.jsonl';
+      mockedReadFileSync.mockReturnValueOnce(transcript(titleRecord('Main Project')));
+
+      const result = resolveSessionName({ session_id: 'parent-sid', transcript_path: subagentPath });
+
+      expect(result).toBe('Main Project');
+      expect(mockedReadFileSync).toHaveBeenCalledWith('/mock-home/.claude/projects/project/parent-sid.jsonl', 'utf-8');
+    });
   });
 
   describe('registry lookup', () => {
@@ -259,5 +269,80 @@ describe('resolveSessionName', () => {
     expect(result).toBeUndefined();
     expect(mockedReadFileSync).not.toHaveBeenCalled();
     expect(mockedReaddirSync).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolveSessionContext', () => {
+  it('returns the session name unchanged for non-subagent events', () => {
+    const result = resolveSessionContext('sessionCompleted', { session_id: 'sid-1', session_title: 'Main' }, 'fallback');
+
+    expect(result).toBe('Main');
+  });
+
+  it('appends the agent_type for subagentCompleted events', () => {
+    const result = resolveSessionContext(
+      'subagentCompleted',
+      { session_id: 'sid-1', session_title: 'Main', agent_type: 'Explore' },
+      'fallback',
+    );
+
+    expect(result).toBe('Main(Explore)');
+  });
+
+  it('appends the agent_type for subagentStarted events', () => {
+    const result = resolveSessionContext(
+      'subagentStarted',
+      { session_id: 'sid-1', session_title: 'Main', agent_type: 'general-purpose' },
+      'fallback',
+    );
+
+    expect(result).toBe('Main(general-purpose)');
+  });
+
+  it('trims the agent_type before appending it', () => {
+    const result = resolveSessionContext(
+      'subagentCompleted',
+      { session_id: 'sid-1', session_title: 'Main', agent_type: '  Explore  ' },
+      'fallback',
+    );
+
+    expect(result).toBe('Main(Explore)');
+  });
+
+  it('omits the suffix on a subagent event when agent_type is missing', () => {
+    const result = resolveSessionContext('subagentCompleted', { session_id: 'sid-1', session_title: 'Main' }, 'fallback');
+
+    expect(result).toBe('Main');
+  });
+
+  it('omits the suffix on a subagent event when agent_type is blank', () => {
+    const result = resolveSessionContext(
+      'subagentCompleted',
+      { session_id: 'sid-1', session_title: 'Main', agent_type: '   ' },
+      'fallback',
+    );
+
+    expect(result).toBe('Main');
+  });
+
+  it('uses the fallback name when the session name cannot be resolved', () => {
+    mockedReaddirSync.mockReturnValue([] as never);
+
+    const result = resolveSessionContext('subagentCompleted', { session_id: 'sid-1', agent_type: 'Explore' }, 'my-project');
+
+    expect(result).toBe('my-project(Explore)');
+  });
+
+  it('combines the resolved parent session name with the agent label for a subagent transcript', () => {
+    const subagentPath = '/mock-home/.claude/projects/project/parent-sid/subagents/agent-abc.jsonl';
+    mockedReadFileSync.mockReturnValueOnce(transcript(titleRecord('Main Project')));
+
+    const result = resolveSessionContext(
+      'subagentCompleted',
+      { session_id: 'parent-sid', transcript_path: subagentPath, agent_type: 'Explore' },
+      'fallback',
+    );
+
+    expect(result).toBe('Main Project(Explore)');
   });
 });

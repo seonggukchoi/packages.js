@@ -198,6 +198,7 @@ Every notification message is prefixed with a context label so you can tell sess
 
 - **Session name** — if the session has a custom name (e.g. set via `/rename`), that name is used.
 - **Working directory** — otherwise, the current directory name is used as a fallback.
+- **Delegated agent** — for subagent events (`subagentStarted` / `subagentCompleted`), the agent type is appended to the parent session's context as `session(agent-type)` — for example, `my-project(Explore)`. Agents delegated through the Agent/Task tool or a workflow run under the parent session, so this makes it clear which session, and which delegated agent, the alert came from instead of showing a bare hash.
 
 The context is resolved per hook event, so renaming a session is reflected on subsequent notifications without restarting it.
 

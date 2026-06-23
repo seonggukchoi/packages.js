@@ -2,10 +2,15 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-import type { HookData } from './types.js';
+import type { EventKey, HookData } from './types.js';
 
 const SESSIONS_DIR = join(homedir(), '.claude', 'sessions');
 const CUSTOM_TITLE_MARKER = '"custom-title"';
+const SUBAGENT_TRANSCRIPT_MARKER = '/subagents/';
+
+// Subagent events fire with the parent session's context, so the agent label is
+// appended to the resolved (parent) session name when building their context.
+const SUBAGENT_EVENT_KEYS: ReadonlySet<EventKey> = new Set<EventKey>(['subagentStarted', 'subagentCompleted']);
 
 interface SessionRecord {
   sessionId?: unknown;
@@ -31,6 +36,22 @@ function normalizeSessionName(name: unknown, sessionId: string): string | undefi
   }
 
   return trimmed;
+}
+
+function resolveParentTranscriptPath(transcriptPath: string): string {
+  // Subagent transcripts are stored under the parent session directory as
+  //   <project>/<parentSessionId>/subagents/agent-<id>.jsonl
+  // while the parent session transcript sits beside that directory as
+  //   <project>/<parentSessionId>.jsonl
+  // Subagent hook payloads carry the parent session id, but `transcript_path`
+  // points at the (title-less) subagent transcript. Rewriting it to the parent
+  // transcript lets the custom-title lookup resolve the main session name.
+  const markerIndex = transcriptPath.indexOf(SUBAGENT_TRANSCRIPT_MARKER);
+  if (markerIndex === -1) {
+    return transcriptPath;
+  }
+
+  return `${transcriptPath.slice(0, markerIndex)}.jsonl`;
 }
 
 function lookupTranscriptTitle(transcriptPath: string, sessionId: string): string | undefined {
@@ -97,6 +118,14 @@ function lookupSessionName(sessionId: string): string | undefined {
   return undefined;
 }
 
+function resolveAgentLabel(hookData: HookData): string | undefined {
+  // `agent_type` is the human-readable kind of the delegated agent (e.g.
+  // "Explore", "general-purpose"), which is far more recognizable than the
+  // opaque `agent_id` hash.
+  const agentType = typeof hookData.agent_type === 'string' ? hookData.agent_type.trim() : '';
+  return agentType || undefined;
+}
+
 /**
  * Resolves the custom session name for the current Claude Code session.
  *
@@ -106,7 +135,8 @@ function lookupSessionName(sessionId: string): string | undefined {
  *      and only when a name was already set).
  *   2. The most recent `custom-title` record in the session transcript.
  *      `transcript_path` is part of every hook payload, so this covers every
- *      event and every session kind.
+ *      event and every session kind. For subagent events the path is rewritten
+ *      to the parent session transcript (see `resolveParentTranscriptPath`).
  *   3. The `name` field of the matching record under `~/.claude/sessions/*.json`.
  *      This registry is only populated for some session kinds, so it is kept as
  *      a last resort.
@@ -123,7 +153,8 @@ export function resolveSessionName(hookData: HookData): string | undefined {
   }
 
   if (typeof hookData.transcript_path === 'string' && hookData.transcript_path) {
-    const transcriptName = lookupTranscriptTitle(hookData.transcript_path, sessionId);
+    const transcriptPath = resolveParentTranscriptPath(hookData.transcript_path);
+    const transcriptName = lookupTranscriptTitle(transcriptPath, sessionId);
     if (transcriptName) {
       return transcriptName;
     }
@@ -134,4 +165,25 @@ export function resolveSessionName(hookData: HookData): string | undefined {
   }
 
   return undefined;
+}
+
+/**
+ * Builds the session display context shown in notifications.
+ *
+ * Subagent events (`subagentStarted` / `subagentCompleted`) fire with the
+ * parent session's context — `session_id` and `transcript_path` both point at
+ * the main session — so the resolved name is the MAIN session. The delegated
+ * agent's `agent_type` is appended as `main(agent)` so a remote notification
+ * makes clear which session, and which delegated agent, the alert came from.
+ * Every other event returns the resolved session name unchanged.
+ */
+export function resolveSessionContext(eventKey: EventKey, hookData: HookData, fallbackName: string): string {
+  const sessionName = resolveSessionName(hookData) ?? fallbackName;
+
+  if (!SUBAGENT_EVENT_KEYS.has(eventKey)) {
+    return sessionName;
+  }
+
+  const agentLabel = resolveAgentLabel(hookData);
+  return agentLabel ? `${sessionName}(${agentLabel})` : sessionName;
 }
