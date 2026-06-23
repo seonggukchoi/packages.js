@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.5.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.4.0...@seonggukchoi/claude-code-notifier@0.5.0) (2026-06-23)
+
+### Features
+
+- **claude-code-notifier:** label subagent notifications with session and agent ([1f59c37](https://github.com/seonggukchoi/packages.js/commit/1f59c37f7821ee489e26204a6128997911726f31))
+
 # [0.4.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.3.1...@seonggukchoi/claude-code-notifier@0.4.0) (2026-06-22)
 
 ### Features
