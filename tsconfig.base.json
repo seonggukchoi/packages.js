@@ -12,6 +12,11 @@
     "moduleResolution": "NodeNext",
     "target": "ESNext",
 
+    // TypeScript 6.0 defaults `types` to [], so ambient packages no longer load
+    // implicitly. Every package targets Node, making it the shared baseline;
+    // tsconfig.check.json overrides this to add vitest globals.
+    "types": ["node"],
+
     "sourceMap": true,
     "declaration": true,
     "removeComments": true,
