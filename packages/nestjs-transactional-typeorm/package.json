@@ -31,18 +31,18 @@
     "typeorm-transactional": "^0.5.0"
   },
   "devDependencies": {
-    "@nestjs/cli": "^11.0.10",
-    "@nestjs/common": "^11.1.6",
-    "@nestjs/core": "^11.1.6",
-    "@nestjs/testing": "^11.1.6",
-    "@nestjs/typeorm": "^11.0.0",
+    "@nestjs/cli": "^11.0.24",
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/testing": "^11.1.28",
+    "@nestjs/typeorm": "^11.0.3",
     "@seonggukchoi/types": "workspace:*",
-    "mysql2": "^3.15.1",
-    "pg": "^8.16.3",
+    "mysql2": "^3.23.2",
+    "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "sqlite3": "^5.1.7",
-    "typeorm": "^0.3.27"
+    "sqlite3": "^6.0.1",
+    "typeorm": "^0.3.31"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.1.6",
@@ -53,6 +53,6 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "sqlite3": "^5.1.7",
-    "typeorm": "^0.3.27"
+    "typeorm": "^0.3.31"
   }
 }
