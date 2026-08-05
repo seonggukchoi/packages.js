@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.6.2](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Fopencode-notifier%400.6.1...%40seonggukchoi%2Fopencode-notifier%400.6.2) (2026-08-05)
+
+**Note:** Version bump only for package @seonggukchoi/opencode-notifier
+
 ## [0.6.1](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/opencode-notifier@0.6.0...@seonggukchoi/opencode-notifier@0.6.1) (2026-04-04)
 
 ### Bug Fixes

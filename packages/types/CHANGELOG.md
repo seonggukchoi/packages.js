@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.5](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Ftypes%400.2.4...%40seonggukchoi%2Ftypes%400.2.5) (2026-08-05)
+
+**Note:** Version bump only for package @seonggukchoi/types
+
 ## [0.2.4](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/types@0.2.3...@seonggukchoi/types@0.2.4) (2026-03-13)
 
 **Note:** Version bump only for package @seonggukchoi/types

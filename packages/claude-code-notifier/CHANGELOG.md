@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.1](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Fclaude-code-notifier%400.5.0...%40seonggukchoi%2Fclaude-code-notifier%400.5.1) (2026-08-05)
+
+**Note:** Version bump only for package @seonggukchoi/claude-code-notifier
+
 # [0.5.0](https://github.com/seonggukchoi/packages.js/compare/@seonggukchoi/claude-code-notifier@0.4.0...@seonggukchoi/claude-code-notifier@0.5.0) (2026-06-23)
 
 ### Features
