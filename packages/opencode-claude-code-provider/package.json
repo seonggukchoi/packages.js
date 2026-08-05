@@ -49,9 +49,9 @@
     "@ai-sdk/provider": ">=3.0.0"
   },
   "dependencies": {
-    "@ai-sdk/provider": "^3.0.8"
+    "@ai-sdk/provider": "^4.0.5"
   },
   "devDependencies": {
-    "@types/node": "^24.9.1"
+    "@types/node": "^24.13.3"
   }
 }

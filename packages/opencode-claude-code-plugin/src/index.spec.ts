@@ -13,6 +13,7 @@ describe('ClaudeCodePlugin', () => {
     const chatParamsHook = plugin['chat.params'];
     const systemTransformHook = plugin['experimental.chat.system.transform'];
     const paramsOutput = {
+      maxOutputTokens: undefined as number | undefined,
       options: {} as Record<string, unknown>,
       temperature: 0,
       topK: 0,

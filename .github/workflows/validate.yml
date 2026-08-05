@@ -17,15 +17,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.3.0
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4.2.0
+        uses: pnpm/action-setup@v6.0.10
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v6.0.0
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: 24
           cache: 'pnpm'
@@ -33,7 +33,7 @@ jobs:
 
       - name: Cache Pnpm and node_modules
         id: pnpm-cache
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v6.1.0
         env:
           cache-name: pnpm
         with:
@@ -46,7 +46,7 @@ jobs:
 
       - name: Cache Nx
         id: nx-cache
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v6.1.0
         env:
           cache-name: nx-cache
         with:
@@ -56,7 +56,7 @@ jobs:
             ${{ runner.os }}-${{ env.cache-name }}
 
       - name: Set Nx SHA Hash
-        uses: nrwl/nx-set-shas@v4.3.3
+        uses: nrwl/nx-set-shas@v5.0.1
 
       - name: Install dependencies
         if: steps.pnpm-cache.outputs.cache-hit != 'true'
@@ -72,15 +72,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4.2.0
+        uses: pnpm/action-setup@v6.0.10
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v6.0.0
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: 24
           cache: 'pnpm'
@@ -88,7 +88,7 @@ jobs:
 
       - name: Cache Pnpm and node_modules
         id: pnpm-cache
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v6.1.0
         env:
           cache-name: pnpm
         with:
@@ -101,7 +101,7 @@ jobs:
 
       - name: Cache Nx
         id: nx-cache
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v6.1.0
         env:
           cache-name: nx-cache
         with:
@@ -111,7 +111,7 @@ jobs:
             ${{ runner.os }}-${{ env.cache-name }}
 
       - name: Set Nx SHA Hash
-        uses: nrwl/nx-set-shas@v4.3.3
+        uses: nrwl/nx-set-shas@v5.0.1
 
       - name: Install dependencies
         if: steps.pnpm-cache.outputs.cache-hit != 'true'
@@ -130,15 +130,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4.2.0
+        uses: pnpm/action-setup@v6.0.10
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v6.0.0
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: 24
           cache: 'pnpm'
@@ -146,7 +146,7 @@ jobs:
 
       - name: Cache Pnpm and node_modules
         id: pnpm-cache
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v6.1.0
         env:
           cache-name: pnpm
         with:
@@ -159,7 +159,7 @@ jobs:
 
       - name: Cache Nx
         id: nx-cache
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v6.1.0
         env:
           cache-name: nx-cache
         with:
@@ -169,7 +169,7 @@ jobs:
             ${{ runner.os }}-${{ env.cache-name }}
 
       - name: Set Nx SHA Hash
-        uses: nrwl/nx-set-shas@v4.3.3
+        uses: nrwl/nx-set-shas@v5.0.1
 
       - name: Install dependencies
         if: steps.pnpm-cache.outputs.cache-hit != 'true'

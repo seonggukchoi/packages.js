@@ -46,6 +46,6 @@
     "version": "node scripts/sync-plugin-version.mjs && git add .claude-plugin/plugin.json"
   },
   "devDependencies": {
-    "@types/node": "^24.9.1"
+    "@types/node": "^24.13.3"
   }
 }

@@ -2,9 +2,14 @@ packages:
   - 'packages/*'
   - 'templates/*'
 
-onlyBuiltDependencies:
-  - '@swc/core'
-  - esbuild
-  - nx
-  - sqlite3
-  - unrs-resolver
+# pnpm 11 replaced onlyBuiltDependencies with this map and made unlisted
+# packages an error (strictDepBuilds defaults to true).
+# msgpackr-extract is denied to keep the pre-upgrade behaviour: it was never in
+# onlyBuiltDependencies, and nx falls back to its JS implementation without it.
+allowBuilds:
+  '@swc/core': true
+  esbuild: true
+  msgpackr-extract: false
+  nx: true
+  sqlite3: true
+  unrs-resolver: true
