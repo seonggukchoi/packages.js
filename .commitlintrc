@@ -23,6 +23,7 @@
         "regex",
         "strict-class-transformer",
         "templates",
+        "toolkit",
         "types",
         "utility",
         "workflow"

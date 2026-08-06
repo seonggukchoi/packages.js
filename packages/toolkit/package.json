@@ -1,0 +1,59 @@
+{
+  "name": "@seonggukchoi/toolkit",
+  "version": "1.3.0",
+  "description": "Toolkit for simplify conversions and value generation",
+  "author": "seonggukchoi",
+  "license": "MIT",
+  "type": "module",
+  "engineStrict": true,
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seonggukchoi/packages.js",
+    "directory": "packages/toolkit"
+  },
+  "keywords": [
+    "cli",
+    "encode",
+    "hash",
+    "jwt",
+    "otp",
+    "random"
+  ],
+  "main": "dist/main.js",
+  "bin": {
+    "tk": "dist/main.js",
+    "toolkit": "dist/main.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rimraf dist .tsbuildinfo && tsc -p tsconfig.build.json && chmod 755 dist/main.js",
+    "lint": "eslint --fix .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:typecheck": "tsc -p tsconfig.check.json --noEmit"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/core": "^11.1.28",
+    "clipboardy": "^5.3.2",
+    "dayjs": "^1.11.21",
+    "jsonwebtoken": "^9.0.3",
+    "nest-commander": "^3.20.1",
+    "otplib": "^13.4.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.1.28",
+    "@types/jsonwebtoken": "^9.0.10",
+    "nest-commander-testing": "^3.5.1"
+  }
+}
