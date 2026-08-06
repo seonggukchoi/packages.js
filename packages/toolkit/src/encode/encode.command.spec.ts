@@ -5,9 +5,11 @@ import { EncodeModule } from './encode.module.js';
 
 describe('EncodeCommand', () => {
   let log: ReturnType<typeof vi.spyOn>;
+  let error: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
   describe('encoding', () => {
@@ -66,7 +68,9 @@ describe('EncodeCommand', () => {
     it('should reject using base64, URL and hex together', async () => {
       await runCommand(EncodeModule, ['encode', '-b', '-u', '-x', 'hello']);
 
-      expect(log).toHaveBeenCalledExactlyOnceWith('The options cannot be used together.');
+      expect(error).toHaveBeenCalledExactlyOnceWith('The --base64, --url and --hex options cannot be used together.');
+      expect(log).not.toHaveBeenCalled();
+      expect(process.exitCode).toBe(1);
     });
 
     it('should print nothing when options are missing', async () => {

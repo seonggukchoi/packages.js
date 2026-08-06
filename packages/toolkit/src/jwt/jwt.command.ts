@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { Command, Option } from 'nest-commander';
 
+import { CommandFailureError } from '../command-failure/index.js';
 import { CopyableCommandRunner } from '../copyable/index.js';
 
 import { JwtCommandOptions } from './jwt-command-options.interface.js';
@@ -8,14 +9,18 @@ import { JwtCommandOptions } from './jwt-command-options.interface.js';
 @Command({ name: 'jwt', description: 'Sign or decode a JWT token.' })
 export class JwtCommand extends CopyableCommandRunner<JwtCommandOptions> {
   public override async run(passedParams: string[], options?: JwtCommandOptions | undefined): Promise<void> {
-    if (!this.validateOptions(options)) {
+    if (!options) {
       return;
     }
 
-    if (options!.decode) {
-      await this.print(jwt.decode(passedParams.at(0) ?? ''), options!.copy);
+    if (!options.decode && !options.secret) {
+      throw new CommandFailureError('The --secret option is required when signing a token.');
+    }
+
+    if (options.decode) {
+      await this.print(jwt.decode(passedParams.at(0) ?? ''), options.copy);
     } else {
-      await this.print(jwt.sign(passedParams.at(0) ?? '', options!.secret), options!.copy);
+      await this.print(jwt.sign(passedParams.at(0) ?? '', options.secret), options.copy);
     }
 
     return;
@@ -28,20 +33,6 @@ export class JwtCommand extends CopyableCommandRunner<JwtCommandOptions> {
 
   @Option({ flags: '-d, --decode', description: 'Decode the token instead of signing it.' })
   private applyDecodeOption(): boolean {
-    return true;
-  }
-
-  private validateOptions(options?: JwtCommandOptions | undefined): boolean {
-    if (!options) {
-      return false;
-    }
-
-    if (!options.decode && !options.secret) {
-      this.print('A secret is required when signing a token.', options.copy);
-
-      return false;
-    }
-
     return true;
   }
 }

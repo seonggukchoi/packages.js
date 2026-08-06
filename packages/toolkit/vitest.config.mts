@@ -16,6 +16,7 @@ export default mergeConfig(createVitestConfig(__dirname), {
     }),
   ],
   test: {
+    setupFiles: ['./test/reset-exit-code.ts'],
     coverage: {
       exclude: [
         'src/**/index.ts',

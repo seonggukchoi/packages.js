@@ -5,9 +5,11 @@ import { HashModule } from './hash.module.js';
 
 describe('HashCommand', () => {
   let log: ReturnType<typeof vi.spyOn>;
+  let error: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
   it('should hash the input as MD5', async () => {
@@ -34,7 +36,9 @@ describe('HashCommand', () => {
   it('should reject using MD5 and SHA-256 together', async () => {
     await runCommand(HashModule, ['hash', '--md5', '--sha256', 'test']);
 
-    expect(log).toHaveBeenCalledExactlyOnceWith('The options cannot be used together.');
+    expect(error).toHaveBeenCalledExactlyOnceWith('The --md5 and --sha256 options cannot be used together.');
+    expect(log).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
   });
 
   it('should print nothing when options are missing', async () => {
