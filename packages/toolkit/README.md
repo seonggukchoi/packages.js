@@ -18,23 +18,24 @@ npm install -g @seonggukchoi/toolkit
 
 ## How to Use
 
-In the shell, run the `tk` command (an alias for the `toolkit` command)
-with the `--help` option to see the available options.
+In the shell, run the `tk` command (an alias for the `toolkit` command).
+Pass `--help` to list the commands, or to list the options of one of them.
 
 ```bash
-tk --help
-
-# --- Result ---
-# Usage: tk [options] [command]
-#
-# Options:
-#   -h, --help        display help for command
-#
-# Commands:
-#   random [options]  Generate a random string.
-#   encode [options]  Encode the input.
-#   ...
+tk --help          # every command
+tk random --help   # the options of a single command
 ```
+
+| Command  | What it does                                          |
+| -------- | ----------------------------------------------------- |
+| `random` | Generate a UUID, a random string, or a random number. |
+| `encode` | Encode or decode Base64, URL and hex.                 |
+| `jwt`    | Sign a JWT, or decode one.                            |
+| `hash`   | Hash the input as MD5 or SHA-256.                     |
+| `otp`    | Generate an OTP code from a Base32 secret.            |
+| `date`   | Format a date.                                        |
+
+Every command takes `-c` to copy its result to the clipboard.
 
 For example, if you want to create a strong password with 32 characters,
 you can simply input like this.
