@@ -5,6 +5,7 @@ import { Command, Option } from 'nest-commander';
 import { CopyableCommandRunner } from '../copyable/index.js';
 
 import { RandomCommandOptions } from './random-command-options.interface.js';
+import { randomBigInt } from './random-integer.js';
 
 const PASSWORD_CHARACTERS = ''
   .concat('abcdefghijklmnopqrstuvwxyz')
@@ -13,11 +14,12 @@ const PASSWORD_CHARACTERS = ''
   .concat('~!@#$%^&*()_+-=|[]{};:,./<>?')
   .split('');
 
-// `randomInt` draws from a cryptographically secure source but rejects spans wider
-// than 2^48, so the default range is capped there instead of the safe-integer range.
-const MAXIMUM_RANGE_SPAN = 2 ** 48 - 1;
-const DEFAULT_MINIMUM = 0;
-const DEFAULT_MAXIMUM = MAXIMUM_RANGE_SPAN;
+// Matches what `BigInt` accepts as a decimal integer, so a value that passes here
+// cannot make the conversion throw.
+const INTEGER_PATTERN = /^-?\d+$/;
+
+const DEFAULT_MINIMUM = BigInt(Number.MIN_SAFE_INTEGER);
+const DEFAULT_MAXIMUM = BigInt(Number.MAX_SAFE_INTEGER);
 
 @Command({ name: 'random', description: 'Generate a random string.' })
 export class RandomCommand extends CopyableCommandRunner<RandomCommandOptions> {
@@ -35,7 +37,11 @@ export class RandomCommand extends CopyableCommandRunner<RandomCommandOptions> {
     }
 
     if (options!.number) {
-      await this.print(randomInt(options!.min ?? DEFAULT_MINIMUM, options!.max ?? DEFAULT_MAXIMUM), options!.copy);
+      const minimum = options!.min === undefined ? DEFAULT_MINIMUM : BigInt(options!.min);
+      const maximum = options!.max === undefined ? DEFAULT_MAXIMUM : BigInt(options!.max);
+
+      // Printed as a string because `console.log` renders a bigint with an `n` suffix.
+      await this.print(randomBigInt(minimum, maximum).toString(), options!.copy);
     }
   }
 
@@ -60,13 +66,13 @@ export class RandomCommand extends CopyableCommandRunner<RandomCommandOptions> {
   }
 
   @Option({ flags: '--min <value>', description: 'Set a mininum value of range.' })
-  private applyMinOption(value: string): number {
-    return Number(value);
+  private applyMinOption(value: string): string {
+    return value;
   }
 
   @Option({ flags: '--max <value>', description: 'Set a maximum value of range.' })
-  private applyMaxOption(value: string): number {
-    return Number(value);
+  private applyMaxOption(value: string): string {
+    return value;
   }
 
   private validateOptions(options?: RandomCommandOptions | undefined): boolean {
@@ -98,28 +104,37 @@ export class RandomCommand extends CopyableCommandRunner<RandomCommandOptions> {
       return false;
     }
 
-    if (!options.number && (typeof options.min === 'number' || typeof options.max === 'number')) {
+    if (!options.number && (options.min !== undefined || options.max !== undefined)) {
       this.print('The --min and --max options can only be used with the --number option.');
 
       return false;
     }
 
-    if (options.number && !this.validateRange(options.min ?? DEFAULT_MINIMUM, options.max ?? DEFAULT_MAXIMUM)) {
+    if (options.number && !this.validateRange(options.min, options.max)) {
       return false;
     }
 
     return true;
   }
 
-  private validateRange(minimum: number, maximum: number): boolean {
-    if (minimum >= maximum) {
-      this.print('The --min option must be smaller than the --max option.');
+  private validateRange(min?: string, max?: string): boolean {
+    if (min !== undefined && !INTEGER_PATTERN.test(min)) {
+      this.print('The --min option must be an integer.');
 
       return false;
     }
 
-    if (maximum - minimum > MAXIMUM_RANGE_SPAN) {
-      this.print(`The range between --min and --max must not exceed ${MAXIMUM_RANGE_SPAN}.`);
+    if (max !== undefined && !INTEGER_PATTERN.test(max)) {
+      this.print('The --max option must be an integer.');
+
+      return false;
+    }
+
+    const minimum = min === undefined ? DEFAULT_MINIMUM : BigInt(min);
+    const maximum = max === undefined ? DEFAULT_MAXIMUM : BigInt(max);
+
+    if (minimum >= maximum) {
+      this.print('The --min option must be smaller than the --max option.');
 
       return false;
     }

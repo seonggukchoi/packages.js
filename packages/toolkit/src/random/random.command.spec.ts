@@ -52,17 +52,33 @@ describe('RandomCommand', () => {
     it('should generate a number inside the requested range', async () => {
       await runCommand(RandomModule, ['random', '-n', '--min', '10', '--max', '11']);
 
-      expect(log).toHaveBeenCalledWith(10);
+      expect(log).toHaveBeenCalledWith('10');
     });
 
-    it('should generate a number without an explicit range', async () => {
+    it('should generate a number across the safe integer range without an explicit range', async () => {
       await runCommand(RandomModule, ['random', '--number']);
 
       const [generated] = log.mock.calls.at(0) ?? [];
 
-      expect(generated).toBeTypeOf('number');
-      expect(generated as number).toBeGreaterThanOrEqual(0);
-      expect(generated as number).toBeLessThan(2 ** 48);
+      expect(generated).toBeTypeOf('string');
+      expect(BigInt(generated as string)).toBeGreaterThanOrEqual(BigInt(Number.MIN_SAFE_INTEGER));
+      expect(BigInt(generated as string)).toBeLessThan(BigInt(Number.MAX_SAFE_INTEGER));
+    });
+
+    it('should accept a range beyond Number.MAX_SAFE_INTEGER', async () => {
+      const minimum = 10n ** 30n;
+
+      await runCommand(RandomModule, ['random', '-n', '--min', String(minimum), '--max', String(minimum + 2n)]);
+
+      const [generated] = log.mock.calls.at(0) ?? [];
+
+      expect([minimum, minimum + 1n]).toContain(BigInt(generated as string));
+    });
+
+    it('should not render the bigint suffix', async () => {
+      await runCommand(RandomModule, ['random', '-n']);
+
+      expect(log).toHaveBeenCalledWith(expect.stringMatching(/^-?\d+$/));
     });
   });
 
@@ -103,10 +119,16 @@ describe('RandomCommand', () => {
       expect(log).toHaveBeenCalledExactlyOnceWith('The --min option must be smaller than the --max option.');
     });
 
-    it('should reject a range wider than the supported span', async () => {
-      await runCommand(RandomModule, ['random', '-n', '--min', '0', '--max', String(Number.MAX_SAFE_INTEGER)]);
+    it('should reject a minimum that is not an integer', async () => {
+      await runCommand(RandomModule, ['random', '-n', '--min', '1.5']);
 
-      expect(log).toHaveBeenCalledExactlyOnceWith('The range between --min and --max must not exceed 281474976710655.');
+      expect(log).toHaveBeenCalledExactlyOnceWith('The --min option must be an integer.');
+    });
+
+    it('should reject a maximum that is not an integer', async () => {
+      await runCommand(RandomModule, ['random', '-n', '--max', 'ten']);
+
+      expect(log).toHaveBeenCalledExactlyOnceWith('The --max option must be an integer.');
     });
 
     it('should print nothing when options are missing', async () => {

@@ -29,10 +29,10 @@ describe('CopyableCommandRunner', () => {
     expect(log).toHaveBeenCalledWith('\nCopied to clipboard!');
   });
 
-  it('should serialise a non-string value before copying it', async () => {
+  it('should copy a generated number without the bigint suffix', async () => {
     await runCommand(RandomModule, ['random', '--number', '--min', '10', '--max', '11', '--copy']);
 
-    expect(log).toHaveBeenCalledWith(10);
+    expect(log).toHaveBeenCalledWith('10');
     expect(writeSync).toHaveBeenCalledExactlyOnceWith('10');
   });
 
