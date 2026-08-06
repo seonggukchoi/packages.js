@@ -30,7 +30,8 @@ describe('CopyableCommandRunner', () => {
   });
 
   it('should copy a generated number without the bigint suffix', async () => {
-    await runCommand(RandomModule, ['random', '--number', '--min', '10', '--max', '11', '--copy']);
+    // A range of one so that the copied value is fixed rather than drawn.
+    await runCommand(RandomModule, ['random', '--number', '--min', '10', '--max', '10', '--copy']);
 
     expect(log).toHaveBeenCalledWith('10');
     expect(writeSync).toHaveBeenCalledExactlyOnceWith('10');
