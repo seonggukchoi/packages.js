@@ -2,6 +2,7 @@ import { randomInt, randomUUID } from 'node:crypto';
 
 import { Command, Option } from 'nest-commander';
 
+import { CommandFailureError } from '../command-failure/index.js';
 import { CopyableCommandRunner } from '../copyable/index.js';
 
 import { RandomCommandOptions } from './random-command-options.interface.js';
@@ -24,24 +25,26 @@ const DEFAULT_MAXIMUM = BigInt(Number.MAX_SAFE_INTEGER);
 @Command({ name: 'random', description: 'Generate a random string.' })
 export class RandomCommand extends CopyableCommandRunner<RandomCommandOptions> {
   public override async run(passedParams: string[], options?: RandomCommandOptions | undefined): Promise<void> {
-    if (!this.validateOptions(options)) {
+    if (!options) {
       return;
     }
 
-    if (options!.uuid) {
-      await this.print(randomUUID(), options!.copy);
+    this.assertValidOptions(options);
+
+    if (options.uuid) {
+      await this.print(randomUUID(), options.copy);
     }
 
-    if (options!.string && options!.length) {
-      await this.print(this.generateString(options!.length), options!.copy);
+    if (options.string && options.length) {
+      await this.print(this.generateString(options.length), options.copy);
     }
 
-    if (options!.number) {
-      const minimum = options!.min === undefined ? DEFAULT_MINIMUM : BigInt(options!.min);
-      const maximum = options!.max === undefined ? DEFAULT_MAXIMUM : BigInt(options!.max);
+    if (options.number) {
+      const minimum = options.min === undefined ? DEFAULT_MINIMUM : BigInt(options.min);
+      const maximum = options.max === undefined ? DEFAULT_MAXIMUM : BigInt(options.max);
 
       // Printed as a string because `console.log` renders a bigint with an `n` suffix.
-      await this.print(randomBigInt(minimum, maximum).toString(), options!.copy);
+      await this.print(randomBigInt(minimum, maximum).toString(), options.copy);
     }
   }
 
@@ -75,71 +78,47 @@ export class RandomCommand extends CopyableCommandRunner<RandomCommandOptions> {
     return value;
   }
 
-  private validateOptions(options?: RandomCommandOptions | undefined): boolean {
-    if (!options) {
-      return false;
-    }
-
+  private assertValidOptions(options: RandomCommandOptions): void {
     if (options.uuid && options.string) {
-      this.print('The --uuid and --string options cannot be used together.');
-
-      return false;
+      throw new CommandFailureError('The --uuid and --string options cannot be used together.');
     }
 
     if (options.uuid && options.number) {
-      this.print('The --uuid and --number options cannot be used together.');
-
-      return false;
+      throw new CommandFailureError('The --uuid and --number options cannot be used together.');
     }
 
     if (options.string && options.number) {
-      this.print('The --string and --number options cannot be used together.');
-
-      return false;
+      throw new CommandFailureError('The --string and --number options cannot be used together.');
     }
 
     if (options.string && !options.length) {
-      this.print('The --string option requires the --length option.');
-
-      return false;
+      throw new CommandFailureError('The --string option requires the --length option.');
     }
 
     if (!options.number && (options.min !== undefined || options.max !== undefined)) {
-      this.print('The --min and --max options can only be used with the --number option.');
-
-      return false;
+      throw new CommandFailureError('The --min and --max options can only be used with the --number option.');
     }
 
-    if (options.number && !this.validateRange(options.min, options.max)) {
-      return false;
+    if (options.number) {
+      this.assertValidRange(options.min, options.max);
     }
-
-    return true;
   }
 
-  private validateRange(min?: string, max?: string): boolean {
+  private assertValidRange(min?: string, max?: string): void {
     if (min !== undefined && !INTEGER_PATTERN.test(min)) {
-      this.print('The --min option must be an integer.');
-
-      return false;
+      throw new CommandFailureError('The --min option must be an integer.');
     }
 
     if (max !== undefined && !INTEGER_PATTERN.test(max)) {
-      this.print('The --max option must be an integer.');
-
-      return false;
+      throw new CommandFailureError('The --max option must be an integer.');
     }
 
     const minimum = min === undefined ? DEFAULT_MINIMUM : BigInt(min);
     const maximum = max === undefined ? DEFAULT_MAXIMUM : BigInt(max);
 
     if (minimum >= maximum) {
-      this.print('The --min option must be smaller than the --max option.');
-
-      return false;
+      throw new CommandFailureError('The --min option must be smaller than the --max option.');
     }
-
-    return true;
   }
 
   private generateString(length: number): string {

@@ -9,9 +9,11 @@ const SECRET = 'a-test-secret';
 
 describe('JwtCommand', () => {
   let log: ReturnType<typeof vi.spyOn>;
+  let error: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
   it('should sign the payload with the given secret', async () => {
@@ -51,7 +53,9 @@ describe('JwtCommand', () => {
   it('should reject signing without a secret', async () => {
     await runCommand(JwtModule, ['jwt', 'a-payload']);
 
-    expect(log).toHaveBeenCalledExactlyOnceWith('A secret is required when signing a token.');
+    expect(error).toHaveBeenCalledExactlyOnceWith('The --secret option is required when signing a token.');
+    expect(log).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
   });
 
   it('should print nothing when options are missing', async () => {

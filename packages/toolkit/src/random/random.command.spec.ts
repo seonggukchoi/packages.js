@@ -11,9 +11,11 @@ const CHARACTER_SAMPLE_LENGTH = 40_000;
 
 describe('RandomCommand', () => {
   let log: ReturnType<typeof vi.spyOn>;
+  let error: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
   describe('uuid', () => {
@@ -86,49 +88,61 @@ describe('RandomCommand', () => {
     it('should reject combining uuid with string', async () => {
       await runCommand(RandomModule, ['random', '-u', '-s', '-l', '8']);
 
-      expect(log).toHaveBeenCalledExactlyOnceWith('The --uuid and --string options cannot be used together.');
+      expect(error).toHaveBeenCalledExactlyOnceWith('The --uuid and --string options cannot be used together.');
     });
 
     it('should reject combining uuid with number', async () => {
       await runCommand(RandomModule, ['random', '-u', '-n']);
 
-      expect(log).toHaveBeenCalledExactlyOnceWith('The --uuid and --number options cannot be used together.');
+      expect(error).toHaveBeenCalledExactlyOnceWith('The --uuid and --number options cannot be used together.');
     });
 
     it('should reject combining string with number', async () => {
       await runCommand(RandomModule, ['random', '-s', '-n']);
 
-      expect(log).toHaveBeenCalledExactlyOnceWith('The --string and --number options cannot be used together.');
+      expect(error).toHaveBeenCalledExactlyOnceWith('The --string and --number options cannot be used together.');
     });
 
     it('should reject string without a length', async () => {
       await runCommand(RandomModule, ['random', '-s']);
 
-      expect(log).toHaveBeenCalledExactlyOnceWith('The --string option requires the --length option.');
+      expect(error).toHaveBeenCalledExactlyOnceWith('The --string option requires the --length option.');
     });
 
     it('should reject a range without number', async () => {
       await runCommand(RandomModule, ['random', '-u', '--min', '1']);
 
-      expect(log).toHaveBeenCalledExactlyOnceWith('The --min and --max options can only be used with the --number option.');
+      expect(error).toHaveBeenCalledExactlyOnceWith('The --min and --max options can only be used with the --number option.');
     });
 
     it('should reject a maximum that is not above the minimum', async () => {
       await runCommand(RandomModule, ['random', '-n', '--min', '10', '--max', '10']);
 
-      expect(log).toHaveBeenCalledExactlyOnceWith('The --min option must be smaller than the --max option.');
+      expect(error).toHaveBeenCalledExactlyOnceWith('The --min option must be smaller than the --max option.');
     });
 
     it('should reject a minimum that is not an integer', async () => {
       await runCommand(RandomModule, ['random', '-n', '--min', '1.5']);
 
-      expect(log).toHaveBeenCalledExactlyOnceWith('The --min option must be an integer.');
+      expect(error).toHaveBeenCalledExactlyOnceWith('The --min option must be an integer.');
     });
 
     it('should reject a maximum that is not an integer', async () => {
       await runCommand(RandomModule, ['random', '-n', '--max', 'ten']);
 
-      expect(log).toHaveBeenCalledExactlyOnceWith('The --max option must be an integer.');
+      expect(error).toHaveBeenCalledExactlyOnceWith('The --max option must be an integer.');
+    });
+
+    it('should keep a rejection off stdout so that a pipe carries no output', async () => {
+      await runCommand(RandomModule, ['random', '-u', '-n']);
+
+      expect(log).not.toHaveBeenCalled();
+    });
+
+    it('should exit non-zero on a rejection', async () => {
+      await runCommand(RandomModule, ['random', '-u', '-n']);
+
+      expect(process.exitCode).toBe(1);
     });
 
     it('should print nothing when options are missing', async () => {
