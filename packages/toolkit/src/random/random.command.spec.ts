@@ -8,6 +8,9 @@ const EXPECTED_CHARACTER_COUNT = 90;
 // Large enough that every character of the set is drawn with overwhelming probability:
 // missing one has odds of (89/90)^40000, which is far below any realistic flake rate.
 const CHARACTER_SAMPLE_LENGTH = 40_000;
+// Over a range of two the upper bound comes up half the time, so never seeing it across
+// this many draws has odds of 2^-25 — far below any realistic flake rate.
+const INCLUSIVE_SAMPLE_COUNT = 25;
 
 describe('RandomCommand', () => {
   let log: ReturnType<typeof vi.spyOn>;
@@ -54,7 +57,23 @@ describe('RandomCommand', () => {
     it('should generate a number inside the requested range', async () => {
       await runCommand(RandomModule, ['random', '-n', '--min', '10', '--max', '11']);
 
-      expect(log).toHaveBeenCalledWith('10');
+      const [generated] = log.mock.calls.at(0) ?? [];
+
+      expect(['10', '11']).toContain(generated);
+    });
+
+    it('should draw the value passed to --max', async () => {
+      for (let draw = 0; draw < INCLUSIVE_SAMPLE_COUNT; draw++) {
+        await runCommand(RandomModule, ['random', '-n', '--min', '10', '--max', '11']);
+      }
+
+      expect(log.mock.calls.flat()).toContain('11');
+    });
+
+    it('should return the only value a range of one allows', async () => {
+      await runCommand(RandomModule, ['random', '-n', '--min', '10', '--max', '10']);
+
+      expect(log).toHaveBeenCalledExactlyOnceWith('10');
     });
 
     it('should generate a number across the safe integer range without an explicit range', async () => {
@@ -64,7 +83,7 @@ describe('RandomCommand', () => {
 
       expect(generated).toBeTypeOf('string');
       expect(BigInt(generated as string)).toBeGreaterThanOrEqual(BigInt(Number.MIN_SAFE_INTEGER));
-      expect(BigInt(generated as string)).toBeLessThan(BigInt(Number.MAX_SAFE_INTEGER));
+      expect(BigInt(generated as string)).toBeLessThanOrEqual(BigInt(Number.MAX_SAFE_INTEGER));
     });
 
     it('should accept a range beyond Number.MAX_SAFE_INTEGER', async () => {
@@ -74,7 +93,7 @@ describe('RandomCommand', () => {
 
       const [generated] = log.mock.calls.at(0) ?? [];
 
-      expect([minimum, minimum + 1n]).toContain(BigInt(generated as string));
+      expect([minimum, minimum + 1n, minimum + 2n]).toContain(BigInt(generated as string));
     });
 
     it('should not render the bigint suffix', async () => {
@@ -115,10 +134,10 @@ describe('RandomCommand', () => {
       expect(error).toHaveBeenCalledExactlyOnceWith('The --min and --max options can only be used with the --number option.');
     });
 
-    it('should reject a maximum that is not above the minimum', async () => {
-      await runCommand(RandomModule, ['random', '-n', '--min', '10', '--max', '10']);
+    it('should reject a maximum below the minimum', async () => {
+      await runCommand(RandomModule, ['random', '-n', '--min', '11', '--max', '10']);
 
-      expect(error).toHaveBeenCalledExactlyOnceWith('The --min option must be smaller than the --max option.');
+      expect(error).toHaveBeenCalledExactlyOnceWith('The --min option must not be greater than the --max option.');
     });
 
     it('should reject a minimum that is not an integer', async () => {

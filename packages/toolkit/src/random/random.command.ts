@@ -43,8 +43,10 @@ export class RandomCommand extends CopyableCommandRunner<RandomCommandOptions> {
       const minimum = options.min === undefined ? DEFAULT_MINIMUM : BigInt(options.min);
       const maximum = options.max === undefined ? DEFAULT_MAXIMUM : BigInt(options.max);
 
+      // `randomBigInt` excludes its upper bound, while `--max` names a value the user
+      // expects to be drawn, so the bound is raised by one to cover it.
       // Printed as a string because `console.log` renders a bigint with an `n` suffix.
-      await this.print(randomBigInt(minimum, maximum).toString(), options.copy);
+      await this.print(randomBigInt(minimum, maximum + 1n).toString(), options.copy);
     }
   }
 
@@ -68,12 +70,12 @@ export class RandomCommand extends CopyableCommandRunner<RandomCommandOptions> {
     return true;
   }
 
-  @Option({ flags: '--min <value>', description: 'Set a mininum value of range.' })
+  @Option({ flags: '--min <value>', description: 'Set the lowest value that can be drawn.' })
   private applyMinOption(value: string): string {
     return value;
   }
 
-  @Option({ flags: '--max <value>', description: 'Set a maximum value of range.' })
+  @Option({ flags: '--max <value>', description: 'Set the highest value that can be drawn.' })
   private applyMaxOption(value: string): string {
     return value;
   }
@@ -116,8 +118,8 @@ export class RandomCommand extends CopyableCommandRunner<RandomCommandOptions> {
     const minimum = min === undefined ? DEFAULT_MINIMUM : BigInt(min);
     const maximum = max === undefined ? DEFAULT_MAXIMUM : BigInt(max);
 
-    if (minimum >= maximum) {
-      throw new CommandFailureError('The --min option must be smaller than the --max option.');
+    if (minimum > maximum) {
+      throw new CommandFailureError('The --min option must not be greater than the --max option.');
     }
   }
 
