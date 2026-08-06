@@ -14,6 +14,10 @@ on:
         required: false
         default: ""
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 # id-token is intentionally NOT granted: npm CLI (>=11.5.1) auto-attempts OIDC
 # trusted publishing when an id-token is available, which fails with E404 for
 # packages that have no trusted publisher configured on npmjs. Withholding the
