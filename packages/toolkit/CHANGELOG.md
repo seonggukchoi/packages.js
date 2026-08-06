@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.1](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Ftoolkit%401.4.0...%40seonggukchoi%2Ftoolkit%401.4.1) (2026-08-06)
+
+### Bug Fixes
+
+- **toolkit:** report a non-zero exit code when a command fails ([38de0d4](https://github.com/seonggukchoi/packages.js/commit/38de0d4db7973fcea96fa88735a03bb81eec15a6)), closes [#87](https://github.com/seonggukchoi/packages.js/issues/87)
+
 # 1.4.0 (2026-08-06)
 
 ### Features
