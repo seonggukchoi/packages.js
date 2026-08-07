@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Ftoolkit%401.4.1...%40seonggukchoi%2Ftoolkit%402.0.0) (2026-08-07)
+
+### Features
+
+- **toolkit:** draw the value passed to random --max ([8dc4415](https://github.com/seonggukchoi/packages.js/commit/8dc4415567b0d825ad71c6d4d898309114b87028)), closes [#89](https://github.com/seonggukchoi/packages.js/issues/89)
+
+### BREAKING CHANGES
+
+- **toolkit:** `random --number --max <value>` now includes `<value>` in the
+  range it draws from. A caller relying on `--min 1 --max 10` yielding 1 through 9
+  has to pass `--max 9` to keep that range.
+
 ## [1.4.1](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Ftoolkit%401.4.0...%40seonggukchoi%2Ftoolkit%401.4.1) (2026-08-06)
 
 ### Bug Fixes
