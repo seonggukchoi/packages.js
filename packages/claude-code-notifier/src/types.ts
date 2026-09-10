@@ -34,6 +34,12 @@ export type MacOSChannelConfig = ChannelConfig;
 export interface TelegramChannelConfig extends ChannelConfig {
   botToken: string;
   chatId: string;
+  /**
+   * Milliseconds Node waits for a single address family before falling back to the next one while
+   * connecting to the Telegram API. Must be an integer from 1 to 2147483647, the range Node
+   * accepts; Node raises anything below 10 up to 10. Omitted means the channel default.
+   */
+  connectAttemptTimeoutMs?: number;
 }
 
 export interface ChannelsConfig {

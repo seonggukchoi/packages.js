@@ -75,12 +75,15 @@ If your config file does not have a `channels` key (v1 format), the plugin will 
 
 #### Telegram (`telegram`)
 
-| Property   | Type      | Default | Description                           |
-| ---------- | --------- | ------- | ------------------------------------- |
-| `enabled`  | `boolean` | `false` | Enable/disable Telegram notifications |
-| `botToken` | `string`  | —       | **Required.** Telegram Bot API token  |
-| `chatId`   | `string`  | —       | **Required.** Target chat/group ID    |
-| `events`   | `object`  | —       | Per-event overrides for this channel  |
+| Property                  | Type      | Default | Description                                                         |
+| ------------------------- | --------- | ------- | ------------------------------------------------------------------- |
+| `enabled`                 | `boolean` | `false` | Enable/disable Telegram notifications                               |
+| `botToken`                | `string`  | —       | **Required.** Telegram Bot API token                                |
+| `chatId`                  | `string`  | —       | **Required.** Target chat/group ID                                  |
+| `connectAttemptTimeoutMs` | `number`  | `2000`  | Milliseconds allowed per address family when connecting (see below) |
+| `events`                  | `object`  | —       | Per-event overrides for this channel                                |
+
+> **Slow networks**: `api.telegram.org` resolves to both an IPv4 and an IPv6 address, and Node tries them one after another. Node's own budget for each attempt is 250 ms, which is short enough to abandon a working IPv4 connection on a slow link; if the host has no global IPv6 route, the fallback attempt fails too and no notification is delivered. This plugin raises the budget to 2000 ms by default. Increase `connectAttemptTimeoutMs` further if delivery still fails on a very slow link. Accepted values are integers from 1 to 2147483647; a value outside that range, or one that is not an integer, is ignored and the 2000 ms default applies, while Node raises any accepted value below 10 ms up to 10 ms.
 
 > **Security note**: Your `botToken` is stored in a local config file. Make sure the file has appropriate permissions and is not committed to version control.
 
