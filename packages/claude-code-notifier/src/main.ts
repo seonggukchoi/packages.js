@@ -69,6 +69,8 @@ async function main(): Promise<void> {
   const notification = buildNotification(eventKey, messages, hookData);
 
   const channelEntries = createChannels(config, context, termInfo.icon);
+  const deliveries: Promise<void>[] = [];
+
   for (const { channel, events } of channelEntries) {
     if (!events[eventKey].enabled) {
       continue;
@@ -82,12 +84,17 @@ async function main(): Promise<void> {
         sound: notification.sound,
       });
       if (result instanceof Promise) {
-        result.catch(() => {});
+        deliveries.push(result);
       }
     } catch {
       // Continue to next channel
     }
   }
+
+  // Without this the process may exit while a channel is still delivering: nothing else keeps the
+  // event loop alive once the loop ends. allSettled also absorbs per-channel rejections, so one
+  // failing channel does not cancel the others.
+  await Promise.allSettled(deliveries);
 }
 
 main().catch(() => process.exit(0));
