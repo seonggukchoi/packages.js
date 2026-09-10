@@ -18,15 +18,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
-# id-token is intentionally NOT granted: npm CLI (>=11.5.1) auto-attempts OIDC
-# trusted publishing when an id-token is available, which fails with E404 for
-# packages that have no trusted publisher configured on npmjs. Withholding the
-# id-token permission keeps npm on token-based auth (NODE_AUTH_TOKEN).
+# id-token is required for npm trusted publishing (OIDC): a trusted publisher is
+# configured on npmjs for this repository and workflow file, and Lerna exchanges
+# the GitHub-issued id-token for a short-lived npm token at publish time.
+# Lerna's OIDC exchange never throws - when it fails it falls back to the
+# existing token-based auth (NODE_AUTH_TOKEN), so packages that do not have a
+# trusted publisher configured yet still publish.
+# contents: write stays because `lerna publish` pushes version commits and tags.
 permissions:
   contents: write
   issues: write
   pull-requests: write
-  id-token: none
+  id-token: write
 
 env:
   CI: true
