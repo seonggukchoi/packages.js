@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Fclaude-code-notifier%400.5.1...%40seonggukchoi%2Fclaude-code-notifier%400.6.0) (2026-09-10)
+
+### Bug Fixes
+
+- **claude-code-notifier:** await channel deliveries before the process exits ([dc4b14c](https://github.com/seonggukchoi/packages.js/commit/dc4b14c17685dec96629269fcf71a93472d8627e))
+
+### Features
+
+- **claude-code-notifier:** make the connection attempt timeout configurable ([08715bc](https://github.com/seonggukchoi/packages.js/commit/08715bcbf61f335ed3862b67d109bf1a251c5c1f))
+
 ## [0.5.1](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Fclaude-code-notifier%400.5.0...%40seonggukchoi%2Fclaude-code-notifier%400.5.1) (2026-08-05)
 
 **Note:** Version bump only for package @seonggukchoi/claude-code-notifier
