@@ -81,10 +81,26 @@ function parseChannelEvents(raw: Record<string, unknown> | undefined): Partial<R
   return hasEntries ? result : undefined;
 }
 
+// The end of the range Node's setDefaultAutoSelectFamilyAttemptTimeout accepts: it raises
+// ERR_OUT_OF_RANGE above this, stating the bound as ">= 1 && <= 2147483647".
+const MAX_CONNECT_ATTEMPT_TIMEOUT_MS = 2_147_483_647;
+
+// That rejection would surface as a lost notification rather than a config error, since the call
+// happens while delivering, so an unusable value falls back to the channel default here instead.
+// No lower bound is enforced: Node silently raises an accepted value below 10 up to 10.
+function parseConnectAttemptTimeoutMs(raw: unknown): number | undefined {
+  if (typeof raw !== 'number' || !Number.isInteger(raw) || raw <= 0 || raw > MAX_CONNECT_ATTEMPT_TIMEOUT_MS) {
+    return undefined;
+  }
+
+  return raw;
+}
+
 function parseTelegramConfig(raw: Record<string, unknown>): TelegramChannelConfig | undefined {
   const enabled = typeof raw.enabled === 'boolean' ? raw.enabled : false;
   const botToken = typeof raw.botToken === 'string' ? raw.botToken : '';
   const chatId = typeof raw.chatId === 'string' ? raw.chatId : String(raw.chatId ?? '');
+  const connectAttemptTimeoutMs = parseConnectAttemptTimeoutMs(raw.connectAttemptTimeoutMs);
 
   if (!botToken || !chatId) {
     return undefined;
@@ -94,6 +110,7 @@ function parseTelegramConfig(raw: Record<string, unknown>): TelegramChannelConfi
     enabled,
     botToken,
     chatId,
+    ...(connectAttemptTimeoutMs === undefined ? {} : { connectAttemptTimeoutMs }),
     events: parseChannelEvents(raw.events as Record<string, unknown> | undefined),
   };
 }

@@ -385,6 +385,152 @@ describe('loadConfig', () => {
     expect(config.channels.telegram?.enabled).toBe(false);
   });
 
+  it('parses a positive integer connectAttemptTimeoutMs', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: {
+          telegram: {
+            enabled: true,
+            botToken: 'tok',
+            chatId: '123',
+            connectAttemptTimeoutMs: 5000,
+          },
+        },
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.telegram?.connectAttemptTimeoutMs).toBe(5000);
+  });
+
+  it('leaves connectAttemptTimeoutMs undefined when it is not provided', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: {
+          telegram: {
+            enabled: true,
+            botToken: 'tok',
+            chatId: '123',
+          },
+        },
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.telegram?.connectAttemptTimeoutMs).toBeUndefined();
+  });
+
+  it('ignores a non-numeric connectAttemptTimeoutMs', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: {
+          telegram: {
+            enabled: true,
+            botToken: 'tok',
+            chatId: '123',
+            connectAttemptTimeoutMs: '5000',
+          },
+        },
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.telegram?.connectAttemptTimeoutMs).toBeUndefined();
+  });
+
+  it('ignores a fractional connectAttemptTimeoutMs, which Node rejects', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: {
+          telegram: {
+            enabled: true,
+            botToken: 'tok',
+            chatId: '123',
+            connectAttemptTimeoutMs: 1500.5,
+          },
+        },
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.telegram?.connectAttemptTimeoutMs).toBeUndefined();
+  });
+
+  it('parses the largest connectAttemptTimeoutMs Node accepts', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: {
+          telegram: {
+            enabled: true,
+            botToken: 'tok',
+            chatId: '123',
+            connectAttemptTimeoutMs: 2_147_483_647,
+          },
+        },
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.telegram?.connectAttemptTimeoutMs).toBe(2_147_483_647);
+  });
+
+  it('ignores a connectAttemptTimeoutMs beyond the range Node accepts', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: {
+          telegram: {
+            enabled: true,
+            botToken: 'tok',
+            chatId: '123',
+            connectAttemptTimeoutMs: 2_147_483_648,
+          },
+        },
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.telegram?.connectAttemptTimeoutMs).toBeUndefined();
+  });
+
+  it('ignores a zero or negative connectAttemptTimeoutMs', () => {
+    mockedExistsSync.mockReturnValue(true);
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({
+        locale: 'en',
+        channels: {
+          telegram: {
+            enabled: true,
+            botToken: 'tok',
+            chatId: '123',
+            connectAttemptTimeoutMs: 0,
+          },
+        },
+      }),
+    );
+
+    const config = loadConfig();
+
+    expect(config.channels.telegram?.connectAttemptTimeoutMs).toBeUndefined();
+  });
+
   it('ignores empty channel event objects', () => {
     mockedExistsSync.mockReturnValue(true);
     mockedReadFileSync.mockReturnValue(

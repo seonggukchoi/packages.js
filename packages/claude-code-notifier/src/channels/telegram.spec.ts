@@ -1,6 +1,7 @@
+import { getDefaultAutoSelectFamilyAttemptTimeout, setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
 import { hostname } from 'node:os';
 
-import { createTelegramChannel, formatTelegramMessage, resolveWorkspaceLabel } from './telegram.js';
+import { DEFAULT_CONNECT_ATTEMPT_TIMEOUT_MS, createTelegramChannel, formatTelegramMessage, resolveWorkspaceLabel } from './telegram.js';
 
 import type { TelegramChannelConfig } from '../types.js';
 
@@ -135,5 +136,44 @@ describe('createTelegramChannel', () => {
     expect(body.text).toBe(formatTelegramMessage(`⚡ Claude Code [${hostname()}]`, 'Session started.', 'project'));
 
     vi.unstubAllGlobals();
+  });
+});
+
+describe('connection attempt timeout', () => {
+  const nodeDefaultTimeout = getDefaultAutoSelectFamilyAttemptTimeout();
+
+  const baseConfig: TelegramChannelConfig = {
+    enabled: true,
+    botToken: 'test-token-123',
+    chatId: '987654',
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+  });
+
+  afterEach(() => {
+    setDefaultAutoSelectFamilyAttemptTimeout(nodeDefaultTimeout);
+    vi.unstubAllGlobals();
+  });
+
+  it('raises the attempt timeout to the channel default when none is configured', async () => {
+    const channel = createTelegramChannel(baseConfig);
+
+    await channel.send({ title: 'T', message: 'M', context: 'C' });
+
+    expect(getDefaultAutoSelectFamilyAttemptTimeout()).toBe(DEFAULT_CONNECT_ATTEMPT_TIMEOUT_MS);
+  });
+
+  it('applies the configured attempt timeout instead of the channel default', async () => {
+    const channel = createTelegramChannel({ ...baseConfig, connectAttemptTimeoutMs: 5000 });
+
+    await channel.send({ title: 'T', message: 'M', context: 'C' });
+
+    expect(getDefaultAutoSelectFamilyAttemptTimeout()).toBe(5000);
+  });
+
+  it('keeps the channel default higher than the Node default it replaces', () => {
+    expect(DEFAULT_CONNECT_ATTEMPT_TIMEOUT_MS).toBeGreaterThan(nodeDefaultTimeout);
   });
 });
