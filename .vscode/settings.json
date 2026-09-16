@@ -4,6 +4,7 @@
     "config",
     "class-transformer-extends",
     "claude-code-notifier",
+    "codex-notifier",
     "datee",
     "nestjs-contextual-pino",
     "nestjs-transactional-typeorm",

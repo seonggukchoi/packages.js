@@ -1,0 +1,11 @@
+{
+  "name": "seonggukchoi",
+  "plugins": [
+    {
+      "name": "codex-notifier",
+      "source": "./",
+      "description": "Codex CLI terminal notification plugin for macOS using terminal-notifier and Telegram",
+      "category": "monitoring"
+    }
+  ]
+}
