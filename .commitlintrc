@@ -11,6 +11,7 @@
         "address",
         "class-transformer-extends",
         "claude-code-notifier",
+        "codex-notifier",
         "config",
         "datee",
         "nestjs-contextual-pino",
