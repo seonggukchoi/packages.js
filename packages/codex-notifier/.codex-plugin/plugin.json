@@ -1,7 +1,7 @@
 {
   "name": "codex-notifier",
   "description": "Codex CLI terminal notification plugin for macOS using terminal-notifier and Telegram",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "author": {
     "name": "seonggukchoi"
   },
