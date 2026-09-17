@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.0.0](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Fopencode-notifier%400.7.0...%40seonggukchoi%2Fopencode-notifier%401.0.0) (2026-09-17)
+
+**Note:** Version bump only for package @seonggukchoi/opencode-notifier
+
 # [0.7.0](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Fopencode-notifier%400.6.2...%40seonggukchoi%2Fopencode-notifier%400.7.0) (2026-09-17)
 
 - feat(opencode-notifier)!: resolve notification context per event and label subagents ([345ef3d](https://github.com/seonggukchoi/packages.js/commit/345ef3d919efac9c38d9f336c6a03cd9e33676e7))
