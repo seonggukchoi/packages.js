@@ -1,7 +1,7 @@
 {
   "name": "@seonggukchoi/opencode-notifier",
   "version": "0.6.2",
-  "description": "OpenCode terminal notification plugin for macOS using terminal-notifier",
+  "description": "OpenCode terminal notification plugin for macOS using terminal-notifier and Telegram",
   "author": "seonggukchoi",
   "license": "MIT",
   "type": "module",
@@ -22,7 +22,8 @@
     "plugin",
     "notification",
     "terminal-notifier",
-    "macos"
+    "macos",
+    "telegram"
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
