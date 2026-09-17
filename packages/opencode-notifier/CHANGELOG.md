@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.7.0](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Fopencode-notifier%400.6.2...%40seonggukchoi%2Fopencode-notifier%400.7.0) (2026-09-17)
+
+- feat(opencode-notifier)!: resolve notification context per event and label subagents ([345ef3d](https://github.com/seonggukchoi/packages.js/commit/345ef3d919efac9c38d9f336c6a03cd9e33676e7))
+
+### Bug Fixes
+
+- **opencode-notifier:** await channel deliveries before the plugin is disposed ([480cfce](https://github.com/seonggukchoi/packages.js/commit/480cfcec82d81ad9e95e90e78f3a494c90d3df68))
+
+### Features
+
+- **opencode-notifier:** add workspace label to Telegram notification titles ([0e0378b](https://github.com/seonggukchoi/packages.js/commit/0e0378ba14e222b7e82a0c6b69e9a0a7595cba55))
+
+### BREAKING CHANGES
+
+- The notification context is now the session title when
+  OpenCode has generated or the user has set one, falling back to the
+  working-directory name; subagent notifications carry a `session(agent)`
+  context; session lifecycle notifications are no longer sent for subagent
+  child sessions. `createChannels` takes `(config, icon)`,
+  `createMacOSChannel` takes `(icon)`, and `NotifyFunction` takes
+  `(notification, context)`. The major bump is requested to mark the
+  behavior alignment with claude-code-notifier.
+
 ## [0.6.2](https://github.com/seonggukchoi/packages.js/compare/%40seonggukchoi%2Fopencode-notifier%400.6.1...%40seonggukchoi%2Fopencode-notifier%400.6.2) (2026-08-05)
 
 **Note:** Version bump only for package @seonggukchoi/opencode-notifier
