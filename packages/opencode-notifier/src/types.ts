@@ -50,6 +50,7 @@ export interface ChannelEntry {
 
 export interface NotifierConfig {
   locale: Locale;
+  workspace?: string;
   events: Record<EventKey, EventOptions>;
   channels: ChannelsConfig;
 }
