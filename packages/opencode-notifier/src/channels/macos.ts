@@ -2,10 +2,12 @@ import { spawn } from 'node:child_process';
 
 import type { NotificationChannel } from '../types.js';
 
-export function createMacOSChannel(context: string, icon: string): NotificationChannel {
+// The context is taken per send rather than at creation: the plugin lives as long as the OpenCode
+// server, and the session a notification belongs to is only known when the event arrives.
+export function createMacOSChannel(icon: string): NotificationChannel {
   return {
     type: 'macos',
-    send({ title, message, sound = 'default' }) {
+    send({ title, message, context, sound = 'default' }) {
       const fullMessage = `${context}: ${message}`;
       const args = ['-title', `"${title}"`, '-message', `"${fullMessage}"`, '-sound', `"${sound}"`];
       if (icon) {
@@ -16,7 +18,7 @@ export function createMacOSChannel(context: string, icon: string): NotificationC
         child.on('error', () => {});
         child.unref();
       } catch {
-        // Ignore terminal-notifier execution failures
+        // Ignore terminal-notifier synchronous execution failures
       }
     },
   };

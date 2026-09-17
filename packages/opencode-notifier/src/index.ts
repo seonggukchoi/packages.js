@@ -4,9 +4,10 @@ import { createEventHandler } from './handlers/event-handler.js';
 import { createToolAfterHandler, createToolBeforeHandler } from './handlers/tool-handler.js';
 import { getMessages } from './i18n/index.js';
 import { ensureIconCache } from './icon.js';
+import { createNotifier } from './notifier.js';
+import { createSessionRegistry } from './session.js';
 import { detectTerminal } from './terminal.js';
 
-import type { EventKey } from './types.js';
 import type { Plugin } from '@opencode-ai/plugin';
 
 export type {
@@ -19,42 +20,32 @@ export type {
   MacOSChannelConfig,
   Messages,
   NotificationChannel,
+  NotificationData,
   NotifierConfig,
   NotifyFunction,
+  SessionInfo,
   TelegramChannelConfig,
   TerminalInfo,
 } from './types.js';
 
-export const OpencodeNotifier: Plugin = async ({ directory }) => {
+export type { NotificationDetail } from './handlers/notification.js';
+export type { Notifier } from './notifier.js';
+export type { SessionClient, SessionEvent, SessionRegistry } from './session.js';
+
+export const OpencodeNotifier: Plugin = async ({ client, directory }) => {
   const config = loadConfig();
   const messages = getMessages(config.locale, config.events);
 
   ensureIconCache();
 
   const termInfo = detectTerminal(directory);
-  const context = termInfo.projectName;
-
-  const channelEntries = createChannels(config, context, termInfo.icon);
-
-  const notify = (eventKey: EventKey, title: string, message: string, sound?: string): void => {
-    for (const { channel, events } of channelEntries) {
-      if (!events[eventKey].enabled) {
-        continue;
-      }
-      try {
-        const result = channel.send({ title, message, context, icon: termInfo.icon, sound });
-        if (result instanceof Promise) {
-          result.catch(() => {});
-        }
-      } catch {
-        // Continue to next channel
-      }
-    }
-  };
+  const sessions = createSessionRegistry(client, termInfo.projectName);
+  const { notify, flush } = createNotifier(createChannels(config, termInfo.icon), termInfo.icon);
 
   return {
-    event: createEventHandler(notify, messages),
-    'tool.execute.before': createToolBeforeHandler(notify, messages),
-    'tool.execute.after': createToolAfterHandler(notify, messages),
+    event: createEventHandler(notify, messages, sessions),
+    'tool.execute.before': createToolBeforeHandler(notify, messages, sessions),
+    'tool.execute.after': createToolAfterHandler(notify, messages, sessions),
+    dispose: flush,
   };
 };

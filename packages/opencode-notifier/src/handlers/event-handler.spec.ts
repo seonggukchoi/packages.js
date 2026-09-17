@@ -1,5 +1,6 @@
 import { createEventHandler } from './event-handler.js';
 
+import type { SessionRegistry } from '../session.js';
 import type { Messages, NotifyFunction } from '../types.js';
 
 function createMockMessages(): Messages {
@@ -18,43 +19,90 @@ function createMockMessages(): Messages {
   };
 }
 
+function createMockSessions(childSessions: string[] = []) {
+  return {
+    observe: vi.fn(),
+    isChildSession: vi.fn(async (sessionID?: string) => childSessions.includes(sessionID ?? '')),
+    resolveContext: vi.fn(async (sessionID?: string) => (sessionID ? `ctx:${sessionID}` : 'ctx:none')),
+  } satisfies SessionRegistry;
+}
+
 describe('createEventHandler', () => {
   let notify: NotifyFunction;
+  let sessions: ReturnType<typeof createMockSessions>;
   let handler: ReturnType<typeof createEventHandler>;
 
   beforeEach(() => {
     notify = vi.fn();
-    handler = createEventHandler(notify, createMockMessages());
+    sessions = createMockSessions(['child']);
+    handler = createEventHandler(notify, createMockMessages(), sessions);
+  });
+
+  it('feeds every event to the session registry', async () => {
+    const event = { type: 'session.updated', properties: { info: { id: 's1', title: 'T' } } };
+
+    await handler({ event });
+
+    expect(sessions.observe).toHaveBeenCalledWith(event);
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('handles session.status with busy status', async () => {
-    await handler({ event: { type: 'session.status', properties: { status: { type: 'busy' } } } });
+    await handler({ event: { type: 'session.status', properties: { sessionID: 's1', status: { type: 'busy' } } } });
 
-    expect(notify).toHaveBeenCalledWith('sessionStarted', '⚡ OpenCode', 'Session started.', 'Pop');
+    expect(notify).toHaveBeenCalledWith(
+      { eventKey: 'sessionStarted', title: '⚡ OpenCode', message: 'Session started.', sound: 'Pop' },
+      'ctx:s1',
+    );
   });
 
   it('handles session.idle', async () => {
-    await handler({ event: { type: 'session.idle' } });
+    await handler({ event: { type: 'session.idle', properties: { sessionID: 's1' } } });
 
-    expect(notify).toHaveBeenCalledWith('sessionCompleted', '✅ OpenCode', 'Session completed.', 'Hero');
+    expect(notify).toHaveBeenCalledWith(
+      { eventKey: 'sessionCompleted', title: '✅ OpenCode', message: 'Session completed.', sound: 'Hero' },
+      'ctx:s1',
+    );
   });
 
-  it('handles session.error', async () => {
+  it('handles session.error, including one without a session id', async () => {
     await handler({ event: { type: 'session.error' } });
 
-    expect(notify).toHaveBeenCalledWith('sessionError', '❌ OpenCode', 'An error occurred.', 'Basso');
+    expect(notify).toHaveBeenCalledWith(
+      { eventKey: 'sessionError', title: '❌ OpenCode', message: 'An error occurred.', sound: 'Basso' },
+      'ctx:none',
+    );
   });
 
   it('handles session.compacted', async () => {
-    await handler({ event: { type: 'session.compacted' } });
+    await handler({ event: { type: 'session.compacted', properties: { sessionID: 's1' } } });
 
-    expect(notify).toHaveBeenCalledWith('sessionCompacted', '📦 OpenCode', 'Session compacted.', 'Purr');
+    expect(notify).toHaveBeenCalledWith(
+      { eventKey: 'sessionCompacted', title: '📦 OpenCode', message: 'Session compacted.', sound: 'Purr' },
+      'ctx:s1',
+    );
   });
 
   it('handles permission.asked', async () => {
-    await handler({ event: { type: 'permission.asked' } });
+    await handler({ event: { type: 'permission.asked', properties: { sessionID: 's1' } } });
 
-    expect(notify).toHaveBeenCalledWith('permissionRequested', '🔐 OpenCode', 'Permission requested.', 'Glass');
+    expect(notify).toHaveBeenCalledWith(
+      { eventKey: 'permissionRequested', title: '🔐 OpenCode', message: 'Permission requested.', sound: 'Glass' },
+      'ctx:s1',
+    );
+  });
+
+  it.each(['session.status', 'session.idle', 'session.error', 'session.compacted'])('skips %s from a subagent session', async (type) => {
+    await handler({ event: { type, properties: { sessionID: 'child', status: { type: 'busy' } } } });
+
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('still reports permission.asked from a subagent session', async () => {
+    await handler({ event: { type: 'permission.asked', properties: { sessionID: 'child' } } });
+
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(sessions.isChildSession).not.toHaveBeenCalled();
   });
 
   it('ignores unknown event types', async () => {
@@ -64,7 +112,8 @@ describe('createEventHandler', () => {
   });
 
   it('handles session.status without busy status', async () => {
-    await handler({ event: { type: 'session.status', properties: { status: { type: 'idle' } } } });
+    await handler({ event: { type: 'session.status', properties: { sessionID: 's1', status: { type: 'idle' } } } });
+    await handler({ event: { type: 'session.status', properties: { sessionID: 's1' } } });
 
     expect(notify).not.toHaveBeenCalled();
   });

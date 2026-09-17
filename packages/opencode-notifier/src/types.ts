@@ -50,6 +50,7 @@ export interface ChannelEntry {
 
 export interface NotifierConfig {
   locale: Locale;
+  workspace?: string;
   events: Record<EventKey, EventOptions>;
   channels: ChannelsConfig;
 }
@@ -76,4 +77,21 @@ export interface TerminalInfo {
   icon: string;
 }
 
-export type NotifyFunction = (eventKey: EventKey, title: string, message: string, sound?: string) => void;
+// --- Notifications ---
+
+export interface NotificationData {
+  eventKey: EventKey;
+  title: string;
+  message: string;
+  sound: string;
+}
+
+export type NotifyFunction = (notification: NotificationData, context: string) => void;
+
+// --- Sessions ---
+
+export interface SessionInfo {
+  id: string;
+  title?: string;
+  parentID?: string;
+}
