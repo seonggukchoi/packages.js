@@ -5,12 +5,12 @@ import { createTelegramChannel } from './telegram.js';
 
 import type { ChannelEntry, NotifierConfig } from '../types.js';
 
-export function createChannels(config: NotifierConfig, context: string, icon: string): ChannelEntry[] {
+export function createChannels(config: NotifierConfig, icon: string): ChannelEntry[] {
   const entries: ChannelEntry[] = [];
 
   if (config.channels.macos?.enabled) {
     entries.push({
-      channel: createMacOSChannel(context, icon),
+      channel: createMacOSChannel(icon),
       events: resolveChannelEvents(config.events, config.channels.macos.events),
     });
   }

@@ -10,7 +10,7 @@ const mockedSpawn = vi.mocked(spawn);
 
 describe('createMacOSChannel', () => {
   it('returns a channel with type macos', () => {
-    const channel = createMacOSChannel('my-project', '/path/icon.png');
+    const channel = createMacOSChannel('/path/icon.png');
 
     expect(channel.type).toBe('macos');
   });
@@ -19,8 +19,8 @@ describe('createMacOSChannel', () => {
     const unrefMock = vi.fn();
     mockedSpawn.mockReturnValue({ unref: unrefMock, on: vi.fn() } as never);
 
-    const channel = createMacOSChannel('my-project', '');
-    channel.send({ title: 'Test Title', message: 'Test message', context: 'ctx', sound: 'Pop' });
+    const channel = createMacOSChannel('');
+    channel.send({ title: 'Test Title', message: 'Test message', context: 'my-project', sound: 'Pop' });
 
     expect(mockedSpawn).toHaveBeenCalledWith(
       'terminal-notifier',
@@ -30,11 +30,23 @@ describe('createMacOSChannel', () => {
     expect(unrefMock).toHaveBeenCalled();
   });
 
+  it('prefixes the message with the context given to each send', () => {
+    const unrefMock = vi.fn();
+    mockedSpawn.mockReturnValue({ unref: unrefMock, on: vi.fn() } as never);
+
+    const channel = createMacOSChannel('');
+    channel.send({ title: 'Title', message: 'First', context: 'session-a' });
+    channel.send({ title: 'Title', message: 'Second', context: 'session-b(explore)' });
+
+    expect(mockedSpawn.mock.calls[0]![1]).toContain('"session-a: First"');
+    expect(mockedSpawn.mock.calls[1]![1]).toContain('"session-b(explore): Second"');
+  });
+
   it('adds contentImage when icon is provided', () => {
     const unrefMock = vi.fn();
     mockedSpawn.mockReturnValue({ unref: unrefMock, on: vi.fn() } as never);
 
-    const channel = createMacOSChannel('my-project', '/path/to/icon.png');
+    const channel = createMacOSChannel('/path/to/icon.png');
     channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
 
     const args = mockedSpawn.mock.calls[0]![1] as string[];
@@ -46,7 +58,7 @@ describe('createMacOSChannel', () => {
     const unrefMock = vi.fn();
     mockedSpawn.mockReturnValue({ unref: unrefMock, on: vi.fn() } as never);
 
-    const channel = createMacOSChannel('my-project', '');
+    const channel = createMacOSChannel('');
     channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
 
     const args = mockedSpawn.mock.calls[0]![1] as string[];
@@ -57,7 +69,7 @@ describe('createMacOSChannel', () => {
     const unrefMock = vi.fn();
     mockedSpawn.mockReturnValue({ unref: unrefMock, on: vi.fn() } as never);
 
-    const channel = createMacOSChannel('my-project', '');
+    const channel = createMacOSChannel('');
     channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
 
     const args = mockedSpawn.mock.calls[0]![1] as string[];
@@ -70,7 +82,7 @@ describe('createMacOSChannel', () => {
       throw new Error('spawn failed');
     });
 
-    const channel = createMacOSChannel('my-project', '');
+    const channel = createMacOSChannel('');
 
     expect(() => {
       channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
@@ -82,7 +94,7 @@ describe('createMacOSChannel', () => {
     const unrefMock = vi.fn();
     mockedSpawn.mockReturnValue({ unref: unrefMock, on: onMock } as never);
 
-    const channel = createMacOSChannel('my-project', '');
+    const channel = createMacOSChannel('');
     channel.send({ title: 'Title', message: 'Message', context: 'ctx' });
 
     expect(onMock).toHaveBeenCalledWith('error', expect.any(Function));

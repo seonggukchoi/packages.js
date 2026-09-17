@@ -47,16 +47,16 @@ function buildConfig(overrides?: Partial<NotifierConfig>): NotifierConfig {
 describe('createChannels', () => {
   it('creates macOS channel when macos is enabled', () => {
     const config = buildConfig();
-    const entries = createChannels(config, 'project', '/icon.png');
+    const entries = createChannels(config, '/icon.png');
 
     expect(entries).toHaveLength(1);
     expect(entries[0]!.channel.type).toBe('macos');
-    expect(mockedCreateMacOS).toHaveBeenCalledWith('project', '/icon.png');
+    expect(mockedCreateMacOS).toHaveBeenCalledWith('/icon.png');
   });
 
   it('does not create macOS channel when macos is disabled', () => {
     const config = buildConfig({ channels: { macos: { enabled: false } } });
-    const entries = createChannels(config, 'project', '/icon.png');
+    const entries = createChannels(config, '/icon.png');
 
     expect(entries).toHaveLength(0);
   });
@@ -73,7 +73,7 @@ describe('createChannels', () => {
         telegram: telegramConfig,
       },
     });
-    const entries = createChannels(config, 'project', '/icon.png');
+    const entries = createChannels(config, '/icon.png');
 
     expect(entries).toHaveLength(1);
     expect(entries[0]!.channel.type).toBe('telegram');
@@ -87,7 +87,7 @@ describe('createChannels', () => {
         telegram: { enabled: true, botToken: 'tok', chatId: '123' },
       },
     });
-    const entries = createChannels(config, 'project', '/icon.png');
+    const entries = createChannels(config, '/icon.png');
 
     expect(entries).toHaveLength(2);
     expect(entries[0]!.channel.type).toBe('macos');
@@ -101,7 +101,7 @@ describe('createChannels', () => {
         telegram: { enabled: false, botToken: 'tok', chatId: '123' },
       },
     });
-    const entries = createChannels(config, 'project', '/icon.png');
+    const entries = createChannels(config, '/icon.png');
 
     expect(entries).toHaveLength(1);
     expect(entries[0]!.channel.type).toBe('macos');
@@ -115,14 +115,14 @@ describe('createChannels', () => {
       },
     });
 
-    createChannels(config, 'project', '/icon.png');
+    createChannels(config, '/icon.png');
 
     expect(mockedResolveChannelEvents).toHaveBeenCalledWith(config.events, channelEvents);
   });
 
   it('returns empty array when no channels are configured', () => {
     const config = buildConfig({ channels: {} });
-    const entries = createChannels(config, 'project', '/icon.png');
+    const entries = createChannels(config, '/icon.png');
 
     expect(entries).toHaveLength(0);
   });
