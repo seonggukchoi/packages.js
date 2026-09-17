@@ -33,6 +33,7 @@ OpenCode 설정 파일(`~/.config/opencode/opencode.json`)에 플러그인을 �
 ```json
 {
   "locale": "ko",
+  "workspace": "home-workspace",
   "events": {
     "toolExecuting": { "enabled": false },
     "toolCompleted": { "enabled": false },
@@ -52,11 +53,12 @@ OpenCode 설정 파일(`~/.config/opencode/opencode.json`)에 플러그인을 �
 }
 ```
 
-| 옵션       | 타입     | 기본값  | 설명                               |
-| ---------- | -------- | ------- | ---------------------------------- |
-| `locale`   | `string` | `"en"`  | 알림 언어 (`"en"`, `"ko"`)         |
-| `events`   | `object` | —       | 전역 이벤트별 설정 (아래 참고)     |
-| `channels` | `object` | —       | 알림 채널 설정                     |
+| 옵션        | 타입     | 기본값      | 설명                                                                |
+| ----------- | -------- | ----------- | ------------------------------------------------------------------- |
+| `locale`    | `string` | `"en"`      | 알림 언어 (`"en"`, `"ko"`)                                          |
+| `workspace` | `string` | OS hostname | Telegram 알림 타이틀에 `[workspace]`로 덧붙는 기기 라벨 (아래 참고) |
+| `events`    | `object` | —           | 전역 이벤트별 설정 (아래 참고)                                      |
+| `channels`  | `object` | —           | 알림 채널 설정                                                      |
 
 설정 파일이 없거나 유효하지 않은 locale이면 영어로 폴백합니다.
 
@@ -128,47 +130,92 @@ OpenCode 설정 파일(`~/.config/opencode/opencode.json`)에 플러그인을 �
 
 사용 가능한 이벤트 키:
 
-| 키                    | 설명                        | 템플릿 변수       |
-| --------------------- | --------------------------- | ----------------- |
-| `sessionStarted`      | 세션 시작됨 (작업 중)       | —                 |
-| `sessionCompleted`    | 세션 완료됨                 | —                 |
-| `sessionError`        | 오류 발생                   | —                 |
-| `sessionCompacted`    | 세션 압축됨                 | —                 |
-| `permissionRequested` | 권한 승인 요청됨            | —                 |
-| `decisionNeeded`      | 질문 도구 (결정 필요)       | `{{question}}`    |
-| `subagentStarted`     | 서브에이전트 작업 시작됨    | `{{description}}` |
-| `subagentCompleted`   | 서브에이전트 작업 완료됨    | —                 |
-| `toolExecuting`       | MCP 도구 실행 중            | `{{toolName}}`    |
-| `toolCompleted`       | MCP 도구 완료됨             | `{{toolName}}`    |
+| 키                    | 설명                     | 템플릿 변수       |
+| --------------------- | ------------------------ | ----------------- |
+| `sessionStarted`      | 세션 시작됨 (작업 중)    | —                 |
+| `sessionCompleted`    | 세션 완료됨              | —                 |
+| `sessionError`        | 오류 발생                | —                 |
+| `sessionCompacted`    | 세션 압축됨              | —                 |
+| `permissionRequested` | 권한 승인 요청됨         | —                 |
+| `decisionNeeded`      | 질문 도구 (결정 필요)    | `{{question}}`    |
+| `subagentStarted`     | 서브에이전트 작업 시작됨 | `{{description}}` |
+| `subagentCompleted`   | 서브에이전트 작업 완료됨 | —                 |
+| `toolExecuting`       | MCP 도구 실행 중         | `{{toolName}}`    |
+| `toolCompleted`       | MCP 도구 완료됨          | `{{toolName}}`    |
 
 생략된 이벤트는 `{ "enabled": true }`와 i18n 메시지가 기본값입니다.
+
+## 플러그인 훅
+
+이 플러그인은 OpenCode의 [플러그인 API](https://opencode.ai/docs/plugins/)를 사용합니다. 훅과 이벤트 키의 대응은 다음과 같습니다:
+
+| 훅                                  | 이벤트 키             | 설명                     |
+| ----------------------------------- | --------------------- | ------------------------ |
+| `event` (`session.status` = `busy`) | `sessionStarted`      | 세션 시작됨              |
+| `event` (`session.idle`)            | `sessionCompleted`    | 세션 완료됨              |
+| `event` (`session.error`)           | `sessionError`        | 오류 발생                |
+| `event` (`session.compacted`)       | `sessionCompacted`    | 세션 압축됨              |
+| `event` (`permission.asked`)        | `permissionRequested` | 권한 승인 요청됨         |
+| `tool.execute.before` (`question`)  | `decisionNeeded`      | 사용자 결정 필요         |
+| `tool.execute.before` (`task`)      | `subagentStarted`     | 서브에이전트 작업 시작됨 |
+| `tool.execute.after` (`task`)       | `subagentCompleted`   | 서브에이전트 작업 완료됨 |
+| `tool.execute.before` (`mcp_*`)     | `toolExecuting`       | MCP 도구 실행 중         |
+| `tool.execute.after` (`mcp_*`)      | `toolCompleted`       | MCP 도구 완료됨          |
+
+세션 이벤트는 메인 세션에 대해서만 전송됩니다. `task` 도구는 서브에이전트를 자식 세션에서 실행하는데, 이 세션들은 서브에이전트 이벤트가 대신 다루므로 위임 한 건마다 시작 알림과 완료 알림이 하나씩만 전송됩니다.
+
+전송 중인 알림은 플러그인의 `dispose` 훅에서 완료를 기다리므로, 마지막 이벤트 직후 OpenCode 서버가 종료되어도 Telegram 알림이 유실되지 않습니다.
 
 ## 알림
 
 ### 세션 이벤트
 
-| 이벤트              | 타이틀       | 사운드 | 설명                  |
-| ------------------- | ------------ | ------ | --------------------- |
-| `session.status`    | ⚡ OpenCode  | Pop    | 세션 시작됨 (작업 중) |
-| `session.idle`      | ✅ OpenCode  | Hero   | 세션 완료됨           |
-| `session.error`     | ❌ OpenCode  | Basso  | 오류 발생             |
-| `session.compacted` | 📦 OpenCode  | Purr   | 세션 압축됨           |
+| 이벤트 키          | 타이틀      | 사운드 | 설명                  |
+| ------------------ | ----------- | ------ | --------------------- |
+| `sessionStarted`   | ⚡ OpenCode | Pop    | 세션 시작됨 (작업 중) |
+| `sessionCompleted` | ✅ OpenCode | Hero   | 세션 완료됨           |
+| `sessionError`     | ❌ OpenCode | Basso  | 오류 발생             |
+| `sessionCompacted` | 📦 OpenCode | Purr   | 세션 압축됨           |
 
 ### 권한 이벤트
 
-| 이벤트             | 타이틀       | 사운드 | 설명             |
-| ------------------ | ------------ | ------ | ---------------- |
-| `permission.asked` | 🔐 OpenCode  | Glass  | 권한 승인 요청됨 |
+| 이벤트 키             | 타이틀      | 사운드 | 설명             |
+| --------------------- | ----------- | ------ | ---------------- |
+| `permissionRequested` | 🔐 OpenCode | Glass  | 권한 승인 요청됨 |
+
+### 결정 및 서브에이전트 이벤트
+
+| 이벤트 키           | 타이틀      | 사운드    | 설명                     |
+| ------------------- | ----------- | --------- | ------------------------ |
+| `decisionNeeded`    | 🙋 OpenCode | Glass     | 질문 도구 (결정 필요)    |
+| `subagentStarted`   | 🤖 OpenCode | Submarine | 서브에이전트 작업 시작됨 |
+| `subagentCompleted` | 🤖 OpenCode | Hero      | 서브에이전트 작업 완료됨 |
 
 ### 도구 이벤트
 
-| 이벤트                | 타이틀       | 사운드    | 설명                       |
-| --------------------- | ------------ | --------- | -------------------------- |
-| `tool.execute.before` | 🙋 OpenCode  | Glass     | 질문 도구 (결정 필요)      |
-| `tool.execute.before` | 🤖 OpenCode  | Submarine | 서브에이전트 작업 시작됨   |
-| `tool.execute.before` | 🔧 OpenCode  | Tink      | MCP 도구 실행 중           |
-| `tool.execute.after`  | 🤖 OpenCode  | Hero      | 서브에이전트 작업 완료됨   |
-| `tool.execute.after`  | ✓ OpenCode   | Blow      | MCP 도구 완료됨            |
+| 이벤트 키       | 타이틀      | 사운드 | 설명             |
+| --------------- | ----------- | ------ | ---------------- |
+| `toolExecuting` | 🔧 OpenCode | Tink   | MCP 도구 실행 중 |
+| `toolCompleted` | ✓ OpenCode  | Blow   | MCP 도구 완료됨  |
+
+## 알림 컨텍스트
+
+모든 알림 메시지에는 세션을 한눈에 구분할 수 있도록 컨텍스트 라벨이 접두사로 붙습니다:
+
+- **세션 타이틀** — 세션에 타이틀이 있으면(첫 응답 후 OpenCode가 생성한 것, 또는 `/rename`으로 설정한 것) 해당 타이틀을 사용합니다.
+- **작업 디렉토리** — 그렇지 않으면 현재 디렉토리 이름을 폴백으로 사용합니다. OpenCode의 자리 표시 타이틀(`New session - <timestamp>`)만 있는 세션은 타이틀이 없는 것으로 취급합니다.
+- **위임된 에이전트** — 서브에이전트 이벤트(`subagentStarted` / `subagentCompleted`)에서는 `task` 도구에 전달된 `subagent_type`이 부모 세션 컨텍스트에 `세션(에이전트종류)` 형식으로 덧붙습니다(예: `my-project(explore)`). 권한 요청처럼 서브에이전트의 자식 세션 안에서 발생한 이벤트도 루트 세션의 타이틀로 해석됩니다.
+
+컨텍스트는 이벤트마다 해석되므로, 세션 이름을 변경하면 OpenCode를 재시작하지 않아도 이후 알림에 반영됩니다.
+
+## 워크스페이스 라벨 (Telegram)
+
+Telegram 알림은 원격으로 전달되므로 어느 기기에서 온 알림인지 한눈에 알기 어렵습니다. 이를 구분할 수 있도록 Telegram 알림 타이틀에 워크스페이스 라벨이 덧붙습니다 — 예: `⚡ OpenCode [home-workspace]`.
+
+- `opencode-notifier.json`의 `workspace`에 원하는 라벨을 지정합니다.
+- `workspace`를 생략하면 OS hostname이 폴백으로 사용됩니다.
+
+이 라벨은 **Telegram에만** 적용됩니다. macOS 알림은 로컬에 표시되므로 타이틀이 그대로 유지됩니다.
 
 ## Telegram 설정
 
@@ -198,6 +245,7 @@ OpenCode 설정 파일(`~/.config/opencode/opencode.json`)에 플러그인을 �
 - iTerm2
 - Cursor
 - VS Code
+- Zed
 - Terminal.app
 - Warp
 - Hyper

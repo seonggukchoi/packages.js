@@ -33,6 +33,7 @@ Create a configuration file at `~/.config/opencode/opencode-notifier.json`:
 ```json
 {
   "locale": "ko",
+  "workspace": "home-workspace",
   "events": {
     "toolExecuting": { "enabled": false },
     "toolCompleted": { "enabled": false },
@@ -52,11 +53,12 @@ Create a configuration file at `~/.config/opencode/opencode-notifier.json`:
 }
 ```
 
-| Option     | Type     | Default | Description                                |
-| ---------- | -------- | ------- | ------------------------------------------ |
-| `locale`   | `string` | `"en"`  | Notification language (`"en"`, `"ko"`)     |
-| `events`   | `object` | —       | Global per-event configuration (see below) |
-| `channels` | `object` | —       | Notification channel configuration         |
+| Option      | Type     | Default     | Description                                                                        |
+| ----------- | -------- | ----------- | ---------------------------------------------------------------------------------- |
+| `locale`    | `string` | `"en"`      | Notification language (`"en"`, `"ko"`)                                             |
+| `workspace` | `string` | OS hostname | Device label appended to Telegram notification titles as `[workspace]` (see below) |
+| `events`    | `object` | —           | Global per-event configuration (see below)                                         |
+| `channels`  | `object` | —           | Notification channel configuration                                                 |
 
 If the config file is missing or contains an invalid locale, the plugin falls back to English.
 
@@ -143,32 +145,77 @@ Available event keys:
 
 Omitted events default to `{ "enabled": true }` with the i18n message.
 
+## Plugin hooks
+
+This plugin uses OpenCode's [plugin API](https://opencode.ai/docs/plugins/). The following hooks map to event keys:
+
+| Hook                                | Event Key             | Description                   |
+| ----------------------------------- | --------------------- | ----------------------------- |
+| `event` (`session.status` = `busy`) | `sessionStarted`      | Session started               |
+| `event` (`session.idle`)            | `sessionCompleted`    | Session completed             |
+| `event` (`session.error`)           | `sessionError`        | An error occurred             |
+| `event` (`session.compacted`)       | `sessionCompacted`    | Session compacted             |
+| `event` (`permission.asked`)        | `permissionRequested` | Permission approval requested |
+| `tool.execute.before` (`question`)  | `decisionNeeded`      | Decision needed from user     |
+| `tool.execute.before` (`task`)      | `subagentStarted`     | Subagent task started         |
+| `tool.execute.after` (`task`)       | `subagentCompleted`   | Subagent task completed       |
+| `tool.execute.before` (`mcp_*`)     | `toolExecuting`       | MCP tool executing            |
+| `tool.execute.after` (`mcp_*`)      | `toolCompleted`       | MCP tool completed            |
+
+Session events are reported for the main session only. The `task` tool runs each subagent in a child session, and those are covered by the subagent events instead, so one delegation produces one start and one completion notification.
+
+Deliveries that are still in flight are awaited in the plugin's `dispose` hook, so a Telegram notification is not lost when the OpenCode server shuts down right after the last event.
+
 ## Notifications
 
 ### Session events
 
-| Event               | Title       | Sound | Description            |
-| ------------------- | ----------- | ----- | ---------------------- |
-| `session.status`    | ⚡ OpenCode | Pop   | Session started (busy) |
-| `session.idle`      | ✅ OpenCode | Hero  | Session completed      |
-| `session.error`     | ❌ OpenCode | Basso | An error occurred      |
-| `session.compacted` | 📦 OpenCode | Purr  | Session compacted      |
+| Event Key          | Title       | Sound | Description            |
+| ------------------ | ----------- | ----- | ---------------------- |
+| `sessionStarted`   | ⚡ OpenCode | Pop   | Session started (busy) |
+| `sessionCompleted` | ✅ OpenCode | Hero  | Session completed      |
+| `sessionError`     | ❌ OpenCode | Basso | An error occurred      |
+| `sessionCompacted` | 📦 OpenCode | Purr  | Session compacted      |
 
 ### Permission events
 
-| Event              | Title       | Sound | Description               |
-| ------------------ | ----------- | ----- | ------------------------- |
-| `permission.asked` | 🔐 OpenCode | Glass | Permission approval asked |
+| Event Key             | Title       | Sound | Description               |
+| --------------------- | ----------- | ----- | ------------------------- |
+| `permissionRequested` | 🔐 OpenCode | Glass | Permission approval asked |
+
+### Decision & subagent events
+
+| Event Key           | Title       | Sound     | Description                     |
+| ------------------- | ----------- | --------- | ------------------------------- |
+| `decisionNeeded`    | 🙋 OpenCode | Glass     | Question tool (decision needed) |
+| `subagentStarted`   | 🤖 OpenCode | Submarine | Subagent task started           |
+| `subagentCompleted` | 🤖 OpenCode | Hero      | Subagent task completed         |
 
 ### Tool events
 
-| Event                 | Title       | Sound     | Description                     |
-| --------------------- | ----------- | --------- | ------------------------------- |
-| `tool.execute.before` | 🙋 OpenCode | Glass     | Question tool (decision needed) |
-| `tool.execute.before` | 🤖 OpenCode | Submarine | Subagent task started           |
-| `tool.execute.before` | 🔧 OpenCode | Tink      | MCP tool executing              |
-| `tool.execute.after`  | 🤖 OpenCode | Hero      | Subagent task completed         |
-| `tool.execute.after`  | ✓ OpenCode  | Blow      | MCP tool completed              |
+| Event Key       | Title       | Sound | Description        |
+| --------------- | ----------- | ----- | ------------------ |
+| `toolExecuting` | 🔧 OpenCode | Tink  | MCP tool executing |
+| `toolCompleted` | ✓ OpenCode  | Blow  | MCP tool completed |
+
+## Notification context
+
+Every notification message is prefixed with a context label so you can tell sessions apart at a glance:
+
+- **Session title** — if the session has a title (generated by OpenCode after the first response, or set via `/rename`), that title is used.
+- **Working directory** — otherwise, the current directory name is used as a fallback. A session that still carries OpenCode's placeholder title (`New session - <timestamp>`) counts as untitled.
+- **Delegated agent** — for subagent events (`subagentStarted` / `subagentCompleted`), the `subagent_type` passed to the `task` tool is appended to the parent session's context as `session(agent-type)` — for example, `my-project(explore)`. Events raised inside a subagent's child session, such as a permission request, resolve to the root session's title as well.
+
+The context is resolved per event, so renaming a session is reflected on subsequent notifications without restarting OpenCode.
+
+## Workspace label (Telegram)
+
+Telegram notifications are delivered remotely, so it is not always obvious which machine a notification came from. To make this clear, a workspace label is appended to the Telegram notification title — for example, `⚡ OpenCode [home-workspace]`.
+
+- Set `workspace` in `opencode-notifier.json` to use a custom label.
+- When `workspace` is omitted, the OS hostname is used as a fallback.
+
+The label is applied to **Telegram only**. macOS notifications are shown locally, so their titles are left unchanged.
 
 ## Telegram setup
 
@@ -198,6 +245,7 @@ The plugin detects the current terminal app and includes its icon in notificatio
 - iTerm2
 - Cursor
 - VS Code
+- Zed
 - Terminal.app
 - Warp
 - Hyper
