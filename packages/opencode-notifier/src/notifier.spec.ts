@@ -76,12 +76,56 @@ describe('createNotifier', () => {
   });
 
   it('absorbs a rejected delivery without an unhandled rejection', async () => {
-    const send = vi.fn().mockRejectedValue(new Error('network'));
+    const entries: ChannelEntry[] = [
+      { channel: { type: 'telegram', send: vi.fn().mockRejectedValue(new Error('network')) }, events: buildEvents() },
+    ];
+    const notifier = createNotifier(entries, '');
+
+    notifier.notify(notification, 'ctx');
+
+    await expect(notifier.flush()).resolves.toBeUndefined();
+  });
+
+  it('flush waits for deliveries that are still in flight', async () => {
+    let finish!: () => void;
+    const delivery = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const entries: ChannelEntry[] = [{ channel: { type: 'telegram', send: vi.fn(() => delivery) }, events: buildEvents() }];
+    const notifier = createNotifier(entries, '');
+
+    notifier.notify(notification, 'ctx');
+
+    let flushed = false;
+    const flushing = notifier.flush().then(() => {
+      flushed = true;
+    });
+    await Promise.resolve();
+    expect(flushed).toBe(false);
+
+    finish();
+    await flushing;
+    expect(flushed).toBe(true);
+  });
+
+  it('flush resolves immediately when nothing is pending', async () => {
+    const notifier = createNotifier([], '');
+
+    await expect(notifier.flush()).resolves.toBeUndefined();
+  });
+
+  it('drops settled deliveries so flush does not wait on them again', async () => {
+    const send = vi.fn().mockResolvedValue(undefined);
     const entries: ChannelEntry[] = [{ channel: { type: 'telegram', send }, events: buildEvents() }];
+    const notifier = createNotifier(entries, '');
 
-    createNotifier(entries, '').notify(notification, 'ctx');
+    notifier.notify(notification, 'ctx');
+    await notifier.flush();
 
-    await new Promise((resolve) => setImmediate(resolve));
-    expect(send).toHaveBeenCalledTimes(1);
+    const allSettled = vi.spyOn(Promise, 'allSettled');
+    await notifier.flush();
+
+    expect(allSettled).toHaveBeenCalledWith([]);
+    allSettled.mockRestore();
   });
 });

@@ -40,11 +40,12 @@ export const OpencodeNotifier: Plugin = async ({ client, directory }) => {
 
   const termInfo = detectTerminal(directory);
   const sessions = createSessionRegistry(client, termInfo.projectName);
-  const { notify } = createNotifier(createChannels(config, termInfo.icon), termInfo.icon);
+  const { notify, flush } = createNotifier(createChannels(config, termInfo.icon), termInfo.icon);
 
   return {
     event: createEventHandler(notify, messages, sessions),
     'tool.execute.before': createToolBeforeHandler(notify, messages, sessions),
     'tool.execute.after': createToolAfterHandler(notify, messages, sessions),
+    dispose: flush,
   };
 };
