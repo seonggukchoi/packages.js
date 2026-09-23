@@ -194,6 +194,10 @@ Every hook runs in the background (`async`) except `Stop`: Codex aborts backgrou
 | --------------------- | -------- | ----- | ------------------------- |
 | `permissionRequested` | 🔐 Codex | Glass | Permission approval asked |
 
+> **Known limitation (automatic approval review)**: Codex runs the `PermissionRequest` hook before its automatic approval reviewer (Guardian), so with `approvals_reviewer = "auto_review"` in `config.toml` you also get `permissionRequested` for requests the reviewer approves or denies on its own. The hook input carries neither the reviewer setting nor its verdict, and Codex has no hook for the moment the approval prompt is actually shown, so the plugin cannot tell these cases apart (verified against Codex 0.156.0).
+>
+> If this is too noisy, disable the event with `"events": { "permissionRequested": { "enabled": false } }`. You then also miss the rare requests the reviewer hands over to you (for example, when the review input exceeds its context limit). Codex TUI's own `[tui] notifications = ["approval-requested"]` sends a terminal notification (OSC 9 / BEL) only when an approval prompt is actually shown.
+
 ### Decision & subagent events
 
 | Event Key           | Title    | Sound     | Description                     |

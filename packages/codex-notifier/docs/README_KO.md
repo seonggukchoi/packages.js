@@ -194,6 +194,10 @@ codex plugin add codex-notifier@seonggukchoi
 | --------------------- | -------- | ------ | ---------------- |
 | `permissionRequested` | 🔐 Codex | Glass  | 권한 승인 요청됨 |
 
+> **알려진 한계 (자동 승인 검토)**: Codex는 `PermissionRequest` 훅을 자동 승인 검토자(Guardian)보다 먼저 실행합니다. 따라서 `config.toml`에 `approvals_reviewer = "auto_review"`를 설정하면, 검토자가 스스로 승인하거나 거부해서 사용자가 할 일이 없는 요청에도 `permissionRequested` 알림이 전송됩니다. 훅 입력에는 검토자 설정과 검토 결과가 없고, 실제로 승인 창이 표시되는 시점에 실행되는 훅도 없어서 플러그인은 두 경우를 구분할 수 없습니다 (Codex 0.156.0 기준으로 확인).
+>
+> 알림이 너무 많다면 `"events": { "permissionRequested": { "enabled": false } }`로 이 이벤트를 끌 수 있습니다. 이 경우 검토자가 사용자에게 판단을 넘기는 드문 요청(예: 검토 입력이 컨텍스트 한도를 넘는 경우)에도 알림이 오지 않습니다. Codex TUI 자체 설정인 `[tui] notifications = ["approval-requested"]`는 실제로 승인 창이 표시될 때만 터미널 알림(OSC 9 / BEL)을 보냅니다.
+
 ### 결정 및 서브에이전트 이벤트
 
 | 이벤트 키           | 타이틀   | 사운드    | 설명                     |
